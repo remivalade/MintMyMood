@@ -265,25 +265,25 @@ export const CHAIN_CONFIG = {
 ## 5. Critical Questions for You
 
 ### Product & Scope
-1. **Must-Have for V1**: Is gasless minting required for launch, or can it be post-launch?
-2. **Chain Priority**: Which chain is most important? Can we launch on 1-2 chains first?
-3. **Auto-Delete Timeline**: 7 days is a long testing cycle. Consider 24 hours for V1?
-4. **Mood Mismatch**: PRD says emojis (😊😐😔😡😰), but frontend has different moods (Peaceful, Reflective, Inspired, etc.). Which is correct?
+1. **Must-Have for V1**: Is gasless minting required for launch, or can it be post-launch? > not at all a priority. We just need to keep it in mind and have a plan for it.
+2. **Chain Priority**: Which chain is most important? Can we launch on 1-2 chains first? > We can launch on Base and Bob to start with.
+3. **Auto-Delete Timeline**: 7 days is a long testing cycle. Consider 24 hours for V1? > For test, we can even put 10 min.
+4. **Mood Mismatch**: PRD says emojis (😊😐😔😡😰), but frontend has different moods (Peaceful, Reflective, Inspired, etc.). Which is correct? > the frontend displays moods and adds a written mood to these emojis. Only the emoji will be present on the future nft.
 
 ### Technical
-5. **Framework Decision**: Are you committed to Next.js, or can we proceed with Vite?
-6. **Backend Preference**: Supabase vs self-hosted PostgreSQL?
-7. **Contract Deployment**: Do you have gas tokens (ETH) for mainnet deployments?
-8. **Domain & Hosting**: Do you have a domain? Hosting plan?
+5. **Framework Decision**: Are you committed to Next.js, or can we proceed with Vite? > You can do what is best for the project.
+6. **Backend Preference**: Supabase vs self-hosted PostgreSQL? > Even for a local environement, you advice is to use Supabase? If that's fine for you, I'm allright with that. I thought we would use Supabase once in prod.
+7. **Contract Deployment**: Do you have gas tokens (ETH) for mainnet deployments? > yes
+8. **Domain & Hosting**: Do you have a domain? Hosting plan? > not yet but I can get one fast.
 
 ### Team & Resources
-9. **Are you solo?** Or do you have other developers?
-10. **Time Commitment**: How many hours/week can you dedicate?
-11. **Budget**: You mentioned $50-100/month for gasless. Any other budget constraints?
+9. **Are you solo?** Or do you have other developers? > solo
+10. **Time Commitment**: How many hours/week can you dedicate? > full time
+11. **Budget**: You mentioned $50-100/month for gasless. Any other budget constraints? > no
 
 ### Design
-12. **Character Limit**: PRD says 5000 chars, WritingInterface says 400 chars, contract enforces 400 bytes. Which is correct?
-13. **Mood Labels**: Need to align PRD spec with frontend implementation
+12. **Character Limit**: PRD says 5000 chars, WritingInterface says 400 chars, contract enforces 400 bytes. Which is correct? > 400 characters is the correct answer.
+13. **Mood Labels**: Need to align PRD spec with frontend implementation > sure, you can update PRD with what's on frontend.
 
 ---
 
