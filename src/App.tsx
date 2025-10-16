@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { Toaster } from './components/ui/sonner';
 import { IntroModal } from './components/IntroModal';
 import { Gallery } from './components/Gallery';
@@ -6,69 +7,28 @@ import { WritingInterface } from './components/WritingInterface';
 import { MoodSelection } from './components/MoodSelection';
 import { MintPreview } from './components/MintPreview';
 import { ThoughtDetail } from './components/ThoughtDetail';
-import { WalletModal } from './components/WalletModal';
 import { MintingModal } from './components/MintingModal';
-
-interface Thought {
-  id: string;
-  content: string;
-  mood: string;
-  date: Date;
-  isMinted: boolean;
-  expiresAt?: Date;
-}
+import { useThoughtStore } from './store/useThoughtStore';
+import { Thought as ThoughtType } from './types';
+import { toast } from 'sonner';
 
 type View = 'writing' | 'gallery' | 'mood' | 'preview' | 'detail';
 
 export default function App() {
   const [showIntroModal, setShowIntroModal] = useState(true);
-  
-  // Sample thoughts
-  const [thoughts, setThoughts] = useState<Thought[]>([
-    {
-      id: '1',
-      content: 'Sometimes the weight of existence feels like a gentle fog—not oppressive, but present. Today I realized that uncertainty isn\'t something to fear, but a space where possibility lives. I\'m learning to sit with the questions instead of rushing to answers.',
-      mood: 'Reflective',
-      date: new Date(2025, 9, 10),
-      isMinted: true,
-    },
-    {
-      id: '2',
-      content: 'The sunrise this morning was absolutely breathtaking. Golden light spilling over the horizon, painting everything in warmth. In that moment, I felt so alive, so present. This is what I want to remember forever.',
-      mood: 'Inspired',
-      date: new Date(2025, 9, 12),
-      isMinted: true,
-    },
-    {
-      id: '3',
-      content: 'Feeling restless today. There\'s a storm of ideas brewing in my mind and I can\'t seem to catch any of them. Maybe that\'s okay. Maybe this chaos is part of the creative process.',
-      mood: 'Energized',
-      date: new Date(2025, 9, 13),
-      isMinted: false,
-      expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-    },
-    {
-      id: '4',
-      content: 'There\'s a quiet melancholy in the evening air. Not sadness exactly, but a gentle nostalgia for moments that haven\'t even passed yet. The beauty of impermanence.',
-      mood: 'Melancholic',
-      date: new Date(2025, 9, 14),
-      isMinted: false,
-      expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-    },
-  ]);
+  const { address, isConnected } = useAccount();
+  const { saveThought } = useThoughtStore();
 
   const [currentView, setCurrentView] = useState<View>('writing');
   const [currentThought, setCurrentThought] = useState<{
     content: string;
     mood?: string;
+    draftId?: string;
   }>({ content: '' });
-  const [selectedThought, setSelectedThought] = useState<Thought | null>(null);
+  const [selectedThought, setSelectedThought] = useState<ThoughtType | null>(null);
   
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false);
   const [mintingStatus, setMintingStatus] = useState<'minting' | 'success' | 'error'>('minting');
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string>();
 
   // Show intro modal only on first visit
   useEffect(() => {
@@ -83,8 +43,8 @@ export default function App() {
     localStorage.setItem('hasSeenIntro', 'true');
   };
 
-  const handleWritingComplete = (content: string) => {
-    setCurrentThought({ content });
+  const handleWritingComplete = (content: string, draftId?: string) => {
+    setCurrentThought({ content, draftId });
     setCurrentView('mood');
   };
 
@@ -93,62 +53,68 @@ export default function App() {
     setCurrentView('preview');
   };
 
-  const handleMintClick = () => {
-    if (!isWalletConnected) {
-      setIsWalletModalOpen(true);
-    } else {
-      startMinting();
+  const handleMintClick = async () => {
+    if (!isConnected || !address) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      setIsMintingModalOpen(true);
+      setMintingStatus('minting');
+
+      // TODO: Replace with actual smart contract minting
+      // For now, simulate minting process
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Save as minted thought to Supabase
+      // If we have a draftId, update that draft to minted instead of creating a new one
+      await saveThought({
+        id: currentThought.draftId, // Will update if exists, insert if undefined
+        wallet_address: address,
+        text: currentThought.content,
+        mood: currentThought.mood || '😌',
+        is_minted: true,
+        // Note: origin_chain_id, token_id, etc. will be added when we integrate smart contracts
+      });
+
+      setMintingStatus('success');
+      toast.success('Thought minted successfully!');
+    } catch (error) {
+      console.error('Error minting thought:', error);
+      setMintingStatus('error');
+      toast.error('Failed to mint thought');
     }
   };
 
-  const handleWalletConnect = (walletType: string) => {
-    console.log('Connecting to', walletType);
-    // Simulate wallet connection
-    setTimeout(() => {
-      setIsWalletConnected(true);
-      // Generate mock wallet address
-      setWalletAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb');
-      setIsWalletModalOpen(false);
-      // Only start minting if we're in the preview flow
-      if (currentView === 'preview') {
-        startMinting();
-      }
-    }, 1000);
-  };
+  const handleDiscard = async () => {
+    if (!isConnected || !address) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
 
-  const startMinting = () => {
-    setIsMintingModalOpen(true);
-    setMintingStatus('minting');
-    
-    // Simulate minting process
-    setTimeout(() => {
-      const newThought: Thought = {
-        id: Date.now().toString(),
-        content: currentThought.content,
-        mood: currentThought.mood || 'Peaceful',
-        date: new Date(),
-        isMinted: true,
-      };
-      
-      setThoughts(prev => [newThought, ...prev]);
-      setMintingStatus('success');
-    }, 3000);
-  };
+    try {
+      // Save as ephemeral thought to Supabase
+      // If we already have a draftId, update that draft instead of creating a new one
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-  const handleDiscard = () => {
-    // Save as ephemeral thought
-    const newThought: Thought = {
-      id: Date.now().toString(),
-      content: currentThought.content,
-      mood: currentThought.mood || 'Peaceful',
-      date: new Date(),
-      isMinted: false,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-    };
-    
-    setThoughts(prev => [newThought, ...prev]);
-    setCurrentThought({ content: '' });
-    setCurrentView('writing');
+      await saveThought({
+        id: currentThought.draftId, // Will update if exists, insert if undefined
+        wallet_address: address,
+        text: currentThought.content,
+        mood: currentThought.mood || '😌', // Default to Peaceful emoji
+        is_minted: false,
+        expires_at: expiresAt.toISOString(),
+      });
+
+      toast.success('Thought saved as ephemeral');
+      setCurrentThought({ content: '' });
+      setCurrentView('writing');
+    } catch (error) {
+      console.error('Error saving thought:', error);
+      toast.error('Failed to save thought');
+    }
   };
 
   const handleMintingModalClose = () => {
@@ -157,16 +123,16 @@ export default function App() {
     setCurrentView('writing');
   };
 
-  const handleThoughtClick = (thought: Thought) => {
+  const handleThoughtClick = (thought: ThoughtType) => {
     setSelectedThought(thought);
     setCurrentView('detail');
   };
 
   const handleMintFromDetail = () => {
     if (!selectedThought) return;
-    
+
     setCurrentThought({
-      content: selectedThought.content,
+      content: selectedThought.text,
       mood: selectedThought.mood,
     });
     setCurrentView('preview');
@@ -187,7 +153,6 @@ export default function App() {
 
       {currentView === 'gallery' && (
         <Gallery
-          thoughts={thoughts}
           onNewThought={() => setCurrentView('writing')}
           onThoughtClick={handleThoughtClick}
         />
@@ -211,23 +176,17 @@ export default function App() {
 
       {currentView === 'detail' && selectedThought && (
         <ThoughtDetail
-          content={selectedThought.content}
+          content={selectedThought.text}
           mood={selectedThought.mood}
-          date={selectedThought.date}
-          isMinted={selectedThought.isMinted}
+          date={new Date(selectedThought.created_at)}
+          isMinted={selectedThought.is_minted}
           onClose={() => {
             setSelectedThought(null);
             setCurrentView('gallery');
           }}
-          onMint={!selectedThought.isMinted ? handleMintFromDetail : undefined}
+          onMint={!selectedThought.is_minted ? handleMintFromDetail : undefined}
         />
       )}
-
-      <WalletModal
-        isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-        onConnect={handleWalletConnect}
-      />
 
       <MintingModal
         isOpen={isMintingModalOpen}

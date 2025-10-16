@@ -1,33 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { ThoughtCard } from './ThoughtCard';
 import { AboutModal } from './AboutModal';
-import { PenLine, Info } from 'lucide-react';
-
-interface Thought {
-  id: string;
-  content: string;
-  mood: string;
-  date: Date;
-  isMinted: boolean;
-  expiresAt?: Date;
-}
+import { ConnectButton } from './ConnectButton';
+import { PenLine, Info, Filter } from 'lucide-react';
+import { useThoughtStore } from '../store/useThoughtStore';
+import { Thought } from '../types';
 
 interface GalleryProps {
-  thoughts: Thought[];
+  thoughts?: Thought[];
   onNewThought: () => void;
   onThoughtClick: (thought: Thought) => void;
 }
 
-export function Gallery({ thoughts, onNewThought, onThoughtClick }: GalleryProps) {
+type FilterType = 'all' | 'minted' | 'ephemeral';
+
+export function Gallery({ onNewThought, onThoughtClick }: GalleryProps) {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [selectedChain, setSelectedChain] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { address, isConnected } = useAccount();
+  const { thoughts, fetchThoughts } = useThoughtStore();
+
+  // Fetch thoughts when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      setIsLoading(true);
+      fetchThoughts(address).finally(() => setIsLoading(false));
+    }
+  }, [isConnected, address, fetchThoughts]);
+
+  // Filter thoughts
+  const filteredThoughts = thoughts.filter(thought => {
+    // Filter by type
+    if (filterType === 'minted' && !thought.is_minted) return false;
+    if (filterType === 'ephemeral' && thought.is_minted) return false;
+
+    // Filter by chain
+    if (selectedChain && thought.current_chain_id !== selectedChain) return false;
+
+    return true;
+  });
+
+  const mintedCount = thoughts.filter(t => t.is_minted).length;
+  const ephemeralCount = thoughts.filter(t => !t.is_minted).length;
 
   return (
     <div className="min-h-screen p-6 md:p-12" style={{ backgroundColor: 'var(--paper-cream)' }}>
       <div className="max-w-7xl mx-auto">
-        {/* Simple Header */}
-        <div className="flex items-center justify-between mb-12">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <h1 style={{ 
+            <h1 style={{
               fontFamily: 'var(--font-serif)',
               fontSize: 'var(--text-h1)',
               fontWeight: '600',
@@ -44,37 +70,116 @@ export function Gallery({ thoughts, onNewThought, onThoughtClick }: GalleryProps
               <Info className="w-4 h-4" />
             </button>
           </div>
+          <ConnectButton />
         </div>
 
-        {/* Empty State */}
-        {thoughts.length === 0 ? (
+        {/* Wallet connection required */}
+        {!isConnected ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="text-7xl mb-6">💭</div>
-            <h2 className="mb-3" style={{ 
+            <div className="text-7xl mb-6">🔗</div>
+            <h2 className="mb-3" style={{
               fontFamily: 'var(--font-serif)',
               fontSize: 'var(--text-h2)',
               color: 'var(--soft-black)'
             }}>
-              No thoughts yet
+              Connect your wallet
             </h2>
-            <p className="mb-8 max-w-md" style={{ 
+            <p className="mb-8 max-w-md" style={{
               fontSize: 'var(--text-ui)',
               color: 'var(--medium-gray)'
             }}>
-              Your memories will appear here. Start writing to capture this moment.
+              Connect your wallet to view your thoughts and memories.
+            </p>
+            <ConnectButton />
+          </div>
+        ) : isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="text-7xl mb-6 animate-pulse">💭</div>
+            <p style={{
+              fontSize: 'var(--text-ui)',
+              color: 'var(--medium-gray)'
+            }}>
+              Loading your thoughts...
             </p>
           </div>
         ) : (
-          /* Thoughts Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {thoughts.map((thought) => (
-              <ThoughtCard
-                key={thought.id}
-                {...thought}
-                onClick={() => onThoughtClick(thought)}
-              />
-            ))}
-          </div>
+          <>
+            {/* Filters */}
+            {thoughts.length > 0 && (
+              <div className="flex items-center gap-3 mb-6 flex-wrap">
+                <div className="flex items-center gap-2 bg-white/40 backdrop-blur-sm rounded-lg p-1">
+                  <button
+                    onClick={() => setFilterType('all')}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
+                      filterType === 'all'
+                        ? 'bg-white shadow-sm text-gray-900'
+                        : 'text-gray-600 hover:bg-white/50'
+                    }`}
+                  >
+                    All ({thoughts.length})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('minted')}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
+                      filterType === 'minted'
+                        ? 'bg-white shadow-sm text-gray-900'
+                        : 'text-gray-600 hover:bg-white/50'
+                    }`}
+                  >
+                    Minted ({mintedCount})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('ephemeral')}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
+                      filterType === 'ephemeral'
+                        ? 'bg-white shadow-sm text-gray-900'
+                        : 'text-gray-600 hover:bg-white/50'
+                    }`}
+                  >
+                    Ephemeral ({ephemeralCount})
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {filteredThoughts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="text-7xl mb-6">💭</div>
+                <h2 className="mb-3" style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 'var(--text-h2)',
+                  color: 'var(--soft-black)'
+                }}>
+                  {thoughts.length === 0 ? 'No thoughts yet' : 'No thoughts match your filters'}
+                </h2>
+                <p className="mb-8 max-w-md" style={{
+                  fontSize: 'var(--text-ui)',
+                  color: 'var(--medium-gray)'
+                }}>
+                  {thoughts.length === 0
+                    ? 'Your memories will appear here. Start writing to capture this moment.'
+                    : 'Try adjusting your filters to see more thoughts.'}
+                </p>
+              </div>
+            ) : (
+              /* Thoughts Grid */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredThoughts.map((thought) => (
+                  <ThoughtCard
+                    key={thought.id}
+                    content={thought.text}
+                    mood={thought.mood}
+                    date={new Date(thought.created_at)}
+                    isMinted={thought.is_minted}
+                    expiresAt={thought.expires_at ? new Date(thought.expires_at) : undefined}
+                    chainId={thought.current_chain_id}
+                    onClick={() => onThoughtClick(thought)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {/* Floating Action Button */}

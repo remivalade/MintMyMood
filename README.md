@@ -59,26 +59,35 @@ The development server will run on http://localhost:3000
 
 ## 🏗️ Current Status
 
-**Frontend**: ✅ Complete UI prototype
-- Writing interface with auto-save
+**Sprint 1 - Week 1**: ✅ Complete (Days 1-7)
+
+**Frontend**: ✅ Complete with real data integration
+- Writing interface with auto-save (3-second debounce)
 - Mood selection
 - Mint preview
-- Gallery view
+- Gallery view with filters (All/Minted/Ephemeral)
 - Modal flows (wallet, minting, intro)
+- Chain-specific badges on NFT cards
+- Toast notifications for all save operations
 
-**Backend**: ⏳ Not yet implemented
-- PostgreSQL database setup needed
-- API routes for thought management
-- Authentication via wallet signatures
+**Backend**: ✅ Supabase connected and working
+- PostgreSQL database with omnichain schema
+- Row Level Security policies (temporary dev policies for testing)
+- Auto-save to database
+- Thought expiration tracking (7 days for ephemeral thoughts)
+- **TODO**: Implement SIWE (Sign-In with Ethereum) authentication
 
-**Smart Contracts**: ✅ Ready for deployment
-- `OnChainJournal.sol` finalized
-- Awaiting deployment to testnets/mainnets
+**Smart Contracts**: ⏳ Ready for implementation (Days 8-14)
+- Foundry setup needed
+- `OnChainJournal.sol` to be implemented with UUPS + LayerZero ONFT721
+- Deployment scripts to be created
+- Testnet deployment planned for Sprint 2
 
-**Web3 Integration**: ⏳ Not yet implemented
-- wagmi/viem integration needed
-- Wallet connection flow
-- Contract interaction
+**Web3 Integration**: ✅ Wallet connection complete
+- wagmi v2 + viem integrated
+- RainbowKit with custom styling (Rabby wallet prioritized)
+- Wallet-based data isolation
+- **TODO**: Smart contract minting integration (Sprint 2)
 
 ## 🎨 Design Philosophy
 
@@ -114,41 +123,88 @@ The development server will run on http://localhost:3000
 - Tailwind CSS
 - Radix UI (component primitives)
 - Motion (animations)
-- wagmi + viem (Web3, to be integrated)
+- wagmi v2 + viem (Web3)
+- RainbowKit (wallet connection UI)
+- Zustand (state management)
+- Sonner (toast notifications)
 
-### Backend (Planned)
-- Node.js API or Supabase
-- PostgreSQL database
+### Backend
+- Supabase (PostgreSQL)
 - Row-level security for wallet-based auth
-- Cron jobs for auto-deletion of expired thoughts
+- Auto-save with 3-second debounce
+- Zustand for state management
+- Automatic cleanup of expired thoughts (database function)
+- **TODO**: SIWE (Sign-In with Ethereum) authentication
 
-### Blockchain
+### Blockchain (Planned)
+- Foundry for smart contract development
 - Solidity ^0.8.20
-- OpenZeppelin ERC721
+- OpenZeppelin UUPS Upgradeable Contracts
+- LayerZero V2 ONFT721 for cross-chain bridging
 - On-chain SVG generation (no IPFS)
-- Deploy on: Base, Bob, Ink, HyperEVM
+- Deploy on: Base Sepolia & Bob Sepolia (testnet), then Base & Bob (mainnet)
 
 ## 🎯 Development Roadmap
 
-### Week 1: MVP Backend & Core UI ✅
-- [x] Frontend prototype complete
+### Sprint 1 - Week 1: Supabase & Web3 Setup ✅ (COMPLETE)
+**Days 1-4:**
+- [x] Supabase project with omnichain schema
+- [x] RLS policies (dev policies for testing)
+- [x] wagmi v2 + viem + RainbowKit integration
+- [x] Base Sepolia & Bob Sepolia chains configured
+- [x] Zustand store with CRUD operations
+- [x] TypeScript types for all data structures
 
-### Week 2: Backend & State Management (Current)
-- [ ] PostgreSQL setup
-- [ ] Backend API routes
-- [ ] Frontend state management (Zustand)
+**Days 5-7:**
+- [x] Auto-save with 3-second debounce
+- [x] Toast notifications for save operations
+- [x] Draft ID tracking (prevents duplicates)
+- [x] Gallery fetches from Supabase
+- [x] Filter system (All/Minted/Ephemeral)
+- [x] Chain badges on minted thoughts
+- [x] Wallet connection gating
+- [x] Loading states throughout
 
-### Week 3: Web3 Integration
-- [ ] wagmi/viem integration
-- [ ] Wallet connection
-- [ ] Testnet deployment
-- [ ] Minting functionality
+### Sprint 1 - Week 2: Smart Contract Development (Current - Days 8-14)
+**Days 8-9:**
+- [ ] Install Foundry (forge, cast, anvil)
+- [ ] Initialize Foundry project
+- [ ] Install OpenZeppelin Upgradeable + LayerZero V2 ONFT721
 
-### Week 4: Mainnet & Polish
-- [ ] Mainnet deployments (5 chains)
-- [ ] Error handling & loading states
-- [ ] Responsive design polish
-- [ ] Launch
+**Days 10-12:**
+- [ ] Implement `OnChainJournal.sol` with UUPS + LayerZero
+- [ ] Create `SVGGenerator.sol` library
+- [ ] Write comprehensive tests
+
+**Days 13-14:**
+- [ ] Create deployment scripts
+- [ ] Test on local Anvil chain
+- [ ] Document deployment process
+
+### Sprint 2 (Week 3-4): Testnet Deployment & Frontend Integration
+- [ ] Deploy to Base Sepolia & Bob Sepolia
+- [ ] Set up LayerZero trusted peers
+- [ ] Test cross-chain bridging
+- [ ] Integrate contracts with frontend
+- [ ] Implement real minting flow
+
+### Sprint 3 (Week 5-6): Bridge UI & Polish
+- [ ] Build bridge interface
+- [ ] Sync frontend SVG with on-chain SVG
+- [ ] Mobile responsiveness testing
+- [ ] End-to-end testing
+
+### Sprint 4 (Week 7-8): Governance & Mainnet
+- [ ] Set up multisig (Gnosis Safe)
+- [ ] Deploy Timelock Controller
+- [ ] Transfer ownership to governance
+- [ ] Deploy to Base Mainnet & Bob Mainnet
+
+### Sprint 5 (Week 9-10): Polish & Launch
+- [ ] Final error handling & UX polish
+- [ ] Complete documentation
+- [ ] Performance optimization
+- [ ] Public launch
 
 ## 📝 Key Features
 

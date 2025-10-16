@@ -78,26 +78,48 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const thoughtData = {
-        ...thought,
         wallet_address: thought.wallet_address!.toLowerCase(),
+        text: thought.text!,
+        mood: thought.mood!,
+        is_minted: thought.is_minted ?? false,
         expires_at: thought.expires_at || new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min default
       };
 
-      const { data, error } = await supabase
-        .from('thoughts')
-        .insert(thoughtData)
-        .select()
-        .single();
+      // If thought has an id, update it; otherwise insert
+      if (thought.id) {
+        const { data, error } = await supabase
+          .from('thoughts')
+          .update(thoughtData)
+          .eq('id', thought.id)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Add to local state
-      set(state => ({
-        thoughts: [data, ...state.thoughts],
-        isLoading: false,
-      }));
+        // Update in local state
+        set(state => ({
+          thoughts: state.thoughts.map(t => t.id === data.id ? data : t),
+          isLoading: false,
+        }));
 
-      return data;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('thoughts')
+          .insert(thoughtData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add to local state
+        set(state => ({
+          thoughts: [data, ...state.thoughts],
+          isLoading: false,
+        }));
+
+        return data;
+      }
     } catch (error: any) {
       console.error('Error saving thought:', error);
       set({ error: error.message, isLoading: false });

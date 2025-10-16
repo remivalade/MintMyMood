@@ -10,8 +10,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Frontend:** React 18 + Vite + TypeScript
 - **UI Components:** Radix UI primitives + custom components
 - **Styling:** Tailwind CSS (skeuomorphic minimalism design philosophy)
-- **Blockchain:** Solidity smart contract (ERC721) for on-chain SVG NFTs
-- **Planned Backend:** PostgreSQL database (Supabase or self-hosted)
+- **State Management:** Zustand
+- **Web3:** wagmi v2 + viem + RainbowKit
+- **Database:** Supabase (PostgreSQL with Row Level Security)
+- **Blockchain:** Foundry + Solidity (UUPS Upgradeable + LayerZero ONFT721)
+- **Notifications:** Sonner (toast notifications)
 
 ## Development Commands
 
@@ -24,6 +27,19 @@ npm run build        # Build for production
 
 The dev server runs on port 3000 and opens automatically in the browser.
 
+### Supabase Testing
+```bash
+npx tsx backend/supabase/test-connection.ts  # Test database connection
+```
+
+### Smart Contracts (Once Foundry is set up - Days 8-9)
+```bash
+forge build           # Compile contracts
+forge test            # Run tests
+forge test -vvv       # Run tests with verbose output
+anvil                 # Start local blockchain
+```
+
 ## Architecture
 
 ### Application State & Flow
@@ -33,26 +49,46 @@ The app is organized as a single-page application with view-based navigation:
 **Views:** `writing` | `gallery` | `mood` | `preview` | `detail`
 
 **Core Flow:**
-1. **Writing Interface** → User writes a thought
-2. **Mood Selection** → User selects an emoji mood (or none)
+1. **Writing Interface** → User writes a thought (auto-saves to Supabase after 3 seconds)
+2. **Mood Selection** → User selects an emoji mood
 3. **Mint Preview** → User previews the NFT and chooses to mint or discard
-4. **Gallery** → Shows all thoughts (both minted and ephemeral)
+4. **Gallery** → Shows all thoughts (both minted and ephemeral) fetched from Supabase
 5. **Detail View** → Shows individual thought details
 
-State management is handled locally in `App.tsx` using React hooks (no external state library currently, though Zustand is planned for the future).
+**State Management:**
+- **Global State:** Zustand store (`src/store/useThoughtStore.ts`) manages:
+  - Thoughts array
+  - CRUD operations (save, fetch, delete)
+  - Minting operations (currently mock, will integrate with smart contracts)
+  - Bridge operations (prepared for future cross-chain transfers)
+- **Local State:** `App.tsx` manages view navigation and current thought flow
+- **Web3 State:** wagmi hooks manage wallet connection state
 
 ### Key Data Structure
 
 ```typescript
 interface Thought {
   id: string;
-  content: string;
+  wallet_address: string;
+  text: string;
   mood: string;
-  date: Date;
-  isMinted: boolean;
-  expiresAt?: Date;  // Only for unminted thoughts
+  created_at: string;
+  is_minted: boolean;
+  expires_at: string | null;  // Only for unminted thoughts
+  origin_chain_id: number | null;
+  current_chain_id: number | null;
+  token_id: string | null;
+  mint_tx_hash: string | null;
+  nft_metadata: any | null;
 }
 ```
+
+**Database Schema** (Supabase - PostgreSQL):
+- `users` table: Stores wallet addresses and preferences
+- `thoughts` table: Stores all thoughts with minting status
+- `bridge_transactions` table: Tracks cross-chain transfers (future)
+- Row Level Security (RLS) policies enforce wallet-based access control
+- Automatic cleanup function deletes expired ephemeral thoughts
 
 ### Component Organization
 
@@ -116,15 +152,30 @@ The Solidity contract (`OnChainJournal.sol`) implements:
 - Generous whitespace for calm, focused experience
 - Subtle paper texture overlay at 3-5% opacity
 
-## Database Schema (Future Implementation)
+## Database Implementation
 
-The PRD specifies a PostgreSQL schema with:
-- `users` table (wallet-based authentication)
-- `thoughts` table with row-level security
-- Automatic cleanup cron job for expired thoughts
-- Fields track minting status, chain, token_id, tx_hash
+**Supabase PostgreSQL** with omnichain schema:
 
-Currently mocked in `App.tsx` with local state.
+**Tables:**
+- `users`: Stores wallet addresses, preferences, created_at
+- `thoughts`: Stores all thoughts with minting and chain tracking
+- `bridge_transactions`: Tracks LayerZero cross-chain transfers (future)
+
+**Key Features:**
+- Row Level Security (RLS) policies for wallet-based access
+- Temporary dev policies for testing (allows anonymous access)
+- Automatic cleanup of expired thoughts via database function
+- Indexes on wallet_address, is_minted, expires_at for performance
+
+**Connection:**
+- Supabase client initialized in `src/lib/supabaseClient.ts`
+- Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- Zustand store handles all database operations
+
+**TODO:**
+- Implement SIWE (Sign-In with Ethereum) authentication
+- Remove temporary dev RLS policies before production
+- Change draft expiration from 10 minutes (testing) to 7 days (production)
 
 ## Development Notes
 
@@ -136,35 +187,101 @@ Currently mocked in `App.tsx` with local state.
 - Target: `esnext`
 
 ### Current Implementation Status
-The codebase is currently a **frontend prototype** with:
+
+**Sprint 1 - Days 1-7**: ✅ Complete
+
+The codebase currently has:
 - ✅ Complete UI flow (writing → mood → preview → gallery)
-- ✅ Mock wallet connection
-- ✅ Simulated minting flow
-- ✅ Sample thoughts with ephemeral/minted states
-- ⏳ Web3 integration (wagmi/viem) not yet implemented
-- ⏳ Backend database integration not yet implemented
-- ⏳ Smart contract deployment not yet done
+- ✅ Real wallet connection (RainbowKit with Rabby prioritized)
+- ✅ Auto-save functionality with 3-second debounce
+- ✅ Toast notifications for all save operations
+- ✅ Draft ID tracking to prevent duplicate saves
+- ✅ Gallery fetches real data from Supabase
+- ✅ Filter system (All/Minted/Ephemeral)
+- ✅ Chain badges on minted thoughts
+- ✅ Wallet connection gating
+- ✅ Loading states throughout
+- ✅ Zustand state management
+- ✅ Supabase database integration
+- ✅ Row Level Security with temporary dev policies
+- ⏳ Smart contract implementation (Days 8-14)
+- ⏳ Real minting to blockchain (Sprint 2)
+- ⏳ Cross-chain bridging (Sprint 3)
 
-### Working with the Smart Contract
+### Working with Smart Contracts
 
-When modifying `OnChainJournal.sol`:
-- Remember to update `color1` and `color2` in `generateSVG()` for each chain deployment
-- Text limit is 400 bytes (enforced in `mintEntry`)
-- Always escape user input (use `_escapeString` helper)
-- Contract uses OpenZeppelin's `Counters.sol` for token IDs
+**Current Status**: Smart contracts to be implemented in Days 8-14
 
-### Future Features (from PRD)
-- Gasless minting sponsorship (Gelato/Biconomy)
-- Multi-chain support with chain-specific contract addresses
+**Planned Architecture:**
+- **Foundry** for development, testing, and deployment
+- **UUPS Upgradeable Pattern** for contract upgradeability
+- **LayerZero V2 ONFT721** for cross-chain NFT bridging
+- **On-chain SVG generation** (no IPFS dependencies)
+- **Chain-specific gradients** configured per deployment
+
+**Key Contract Functions** (to be implemented):
+- `mint(text, mood)`: Mint a new journal entry NFT
+- `generateSVG(tokenId)`: Generate on-chain SVG with mood-based colors
+- `send(tokenId, dstEid, ...)`: Bridge NFT to another chain via LayerZero
+- `_escapeString(text)`: Escape user input for XML safety
+
+**Deployment Plan:**
+- Test locally with Anvil
+- Deploy to Base Sepolia & Bob Sepolia (Sprint 2)
+- Set up LayerZero trusted peers between chains
+- Deploy to Base & Bob mainnet (Sprint 4)
+
+**Security Considerations:**
+- Text limit: 400 bytes (enforced in mint function)
+- Mood limit: 64 bytes
+- XML escaping required for all user input
+- UUPS upgrade pattern requires careful ownership management
+- LayerZero peer configuration must be verified before mainnet
+
+### Known Issues & Technical Debt
+
+**High Priority:**
+1. **Authentication**: Using temporary dev RLS policies
+   - Need to implement SIWE (Sign-In with Ethereum)
+   - Location: `backend/supabase/migrations/004_temporary_dev_policies.sql`
+   - Must be removed before production
+
+2. **Draft Expiration**: Currently 10 minutes for testing
+   - Need to change to 7 days for production
+   - Location: `src/components/WritingInterface.tsx:50`
+
+**Medium Priority:**
+3. **Chain Filter UI**: Infrastructure exists but UI not exposed
+   - State: `Gallery.tsx:21` (selectedChain)
+   - TODO: Add chain filter dropdown
+
+4. **Bob RPC CORS**: Warning about CORS from Bob testnet RPC
+   - Non-critical, doesn't affect functionality
+   - May need alternative RPC endpoint
+
+**Low Priority:**
+5. **Mock Minting Modal**: Still using simulated minting
+   - Will be replaced in Sprint 2 with real contract calls
+
+### Future Features (Planned)
+- Real smart contract minting (Sprint 2)
+- Cross-chain bridging via LayerZero (Sprint 3)
 - Timer countdown display for ephemeral thoughts
-- Wallet-based authentication
-- Transaction status tracking and error handling
-- Real NFT preview matching final on-chain SVG
+- Transaction status tracking with block confirmations
+- Real NFT preview matching on-chain SVG
+- Gasless minting sponsorship (Gelato/Biconomy) - post-launch
 
 ## Reference Documentation
 
 Key planning documents in the repository:
-- `MinMyMood-prd.md` - Detailed product requirements with user flows
-- `README.md` - Basic setup instructions
-- `todo.md` - Development task tracking
-- `OnChainJournal.sol` - Production-ready smart contract
+- `docs/MinMyMood-prd.md` - Detailed product requirements with user flows
+- `docs/OMNICHAIN_V1_SPRINT_PLAN.md` - Full 10-week development plan
+- `docs/SPRINT1_DAYS1-4_COMPLETE.md` - Days 1-4 completion summary
+- `docs/SPRINT1_DAYS5-7_PROGRESS.md` - Days 5-7 completion summary
+- `docs/todo.md` - Current development status and task tracking
+- `docs/GETTING_STARTED.md` - Setup and development guide
+- `docs/CTO_ASSESSMENT.md` - Technical architecture analysis
+- `README.md` - Project overview and quick start
+- `CLAUDE.md` - This file (AI assistant guidance)
+
+**Next Steps:** Days 8-14 smart contract development (see `docs/todo.md`)
