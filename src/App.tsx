@@ -182,9 +182,6 @@ export default function App() {
         <WritingInterface
           onComplete={handleWritingComplete}
           onOpenGallery={() => setCurrentView('gallery')}
-          onOpenWallet={() => setIsWalletModalOpen(true)}
-          isWalletConnected={isWalletConnected}
-          walletAddress={walletAddress}
         />
       )}
 

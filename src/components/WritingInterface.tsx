@@ -1,23 +1,18 @@
 import { useState } from 'react';
-import { Grid3x3, Wallet } from 'lucide-react';
+import { Grid3x3 } from 'lucide-react';
 import { Button } from './ui/button';
+import { ConnectButton } from './ConnectButton';
 
 interface WritingInterfaceProps {
   onComplete: (content: string) => void;
   onOpenGallery: () => void;
-  onOpenWallet: () => void;
-  isWalletConnected: boolean;
-  walletAddress?: string;
 }
 
 const MAX_CHARACTERS = 400;
 
-export function WritingInterface({ 
-  onComplete, 
-  onOpenGallery, 
-  onOpenWallet, 
-  isWalletConnected,
-  walletAddress 
+export function WritingInterface({
+  onComplete,
+  onOpenGallery
 }: WritingInterfaceProps) {
   const [content, setContent] = useState('');
   const characterCount = content.length;
@@ -44,25 +39,8 @@ export function WritingInterface({
         >
           <Grid3x3 className="w-4 h-4 text-gray-600" />
         </button>
-        
-        {isWalletConnected && walletAddress ? (
-          <button
-            onClick={onOpenWallet}
-            className="px-3 py-2 hover:bg-white/80 rounded-lg transition-all hover:shadow-sm bg-white/40 backdrop-blur-sm flex items-center gap-2"
-            title="Wallet Connected"
-          >
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-            <span className="text-xs text-gray-700 font-mono">{formatAddress(walletAddress)}</span>
-          </button>
-        ) : (
-          <button
-            onClick={onOpenWallet}
-            className="p-2 hover:bg-white/80 rounded-lg transition-all hover:shadow-sm bg-white/40 backdrop-blur-sm"
-            title="Connect Wallet"
-          >
-            <Wallet className="w-4 h-4 text-gray-600" />
-          </button>
-        )}
+
+        <ConnectButton />
       </div>
 
       {/* Writing Area */}

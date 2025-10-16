@@ -1,4 +1,12 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import {
+  metaMaskWallet,
+  rainbowWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+  rabbyWallet,
+  injectedWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 import { getSupportedChains } from './chains';
 
 /**
@@ -22,4 +30,22 @@ export const wagmiConfig = getDefaultConfig({
   projectId,
   chains: getSupportedChains(),
   ssr: false, // We're using Vite, not Next.js
+  wallets: [
+    {
+      groupName: 'Recommended',
+      wallets: [
+        rabbyWallet, // Your preferred wallet first!
+        metaMaskWallet,
+        rainbowWallet,
+        coinbaseWallet,
+      ],
+    },
+    {
+      groupName: 'More Options',
+      wallets: [
+        walletConnectWallet,
+        injectedWallet, // Catches other installed wallets
+      ],
+    },
+  ],
 });
