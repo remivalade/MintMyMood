@@ -1,0 +1,35 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
+# Remappings for dependencies
+remappings = [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@layerzerolabs/lz-evm-protocol-v2/=lib/LayerZero-v2/packages/layerzero-v2/evm/protocol/",
+    "@layerzerolabs/oapp-evm/=lib/oapp-evm/",
+    "@layerzerolabs/oapp-evm-upgradeable/=lib/oapp-evm-upgradeable/",
+    "@layerzerolabs/oft-evm-upgradeable/=lib/oft-evm-upgradeable/",
+    "@layerzerolabs/onft-evm/=lib/devtools/packages/onft-evm/",
+    "forge-std/=lib/forge-std/src/",
+]
+
+# RPC endpoints for different chains
+[rpc_endpoints]
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+bob_sepolia = "${BOB_SEPOLIA_RPC_URL}"
+base = "${BASE_MAINNET_RPC_URL}"
+bob = "${BOB_MAINNET_RPC_URL}"
+anvil = "http://127.0.0.1:8545"
+
+# Etherscan API keys for verification
+[etherscan]
+base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }
+base = { key = "${BASESCAN_API_KEY}", url = "https://api.basescan.org/api" }
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

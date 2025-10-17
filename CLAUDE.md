@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **State Management:** Zustand
 - **Web3:** wagmi v2 + viem + RainbowKit
 - **Database:** Supabase (PostgreSQL with Row Level Security)
-- **Blockchain:** Foundry + Solidity (UUPS Upgradeable + LayerZero ONFT721)
+- **Blockchain:** Foundry + Solidity (UUPS Upgradeable ERC721, LayerZero for V2)
 - **Notifications:** Sonner (toast notifications)
 
 ## Development Commands
@@ -32,10 +32,11 @@ The dev server runs on port 3000 and opens automatically in the browser.
 npx tsx backend/supabase/test-connection.ts  # Test database connection
 ```
 
-### Smart Contracts (Once Foundry is set up - Days 8-9)
+### Smart Contracts
 ```bash
+cd contracts          # Navigate to contracts directory
 forge build           # Compile contracts
-forge test            # Run tests
+forge test            # Run tests (18/18 passing ✅)
 forge test -vvv       # Run tests with verbose output
 anvil                 # Start local blockchain
 ```
@@ -110,26 +111,42 @@ src/
 │   ├── Header.tsx               # Shared header component
 │   ├── Welcome.tsx              # Welcome screen
 │   └── ui/                      # Radix UI-based components
+├── hooks/
+│   └── useEnsName.ts            # ENS resolution hook
 └── styles/
     └── globals.css              # Global styles + Tailwind
 ```
 
 ### Smart Contract
 
-The Solidity contract (`OnChainJournal.sol`) implements:
-- ERC721 NFT standard
-- On-chain SVG generation (no IPFS dependencies)
-- Chain-specific color gradients (hardcoded per deployment)
-- Input validation (400 byte text limit, 64 byte mood limit)
-- XML escaping for security
+The Solidity contract (`contracts/src/OnChainJournal.sol`) implements:
+- **UUPS Upgradeable ERC721** NFT standard
+- **On-chain SVG generation** with animations (no IPFS dependencies)
+- **ENS Support** - Optional ENS name display in SVG
+- **Advanced SVG Features:**
+  - Grain texture filter (feTurbulence)
+  - CSS keyframe animations (typewriter effect for block number)
+  - Drop shadows and blend modes
+  - ForeignObject for text wrapping
+- **Chain-specific color gradients** (hardcoded per deployment)
+- **Input validation** (400 byte text limit, 64 byte mood limit)
+- **XML escaping** for security
+- **18 comprehensive tests** - All passing ✅
 
 **Deployment Strategy:** One contract instance per chain, each with chain-specific gradient colors hardcoded.
 
-**Chain Colors:**
-- Bob: Orange gradient `#FF6B35` → `#F7931E`
-- Ink: Purple `#5D3FD3`
-- Base: Blue `#0052FF`
-- HyperEVM: Green `#00F0A0`
+**V1 Chain Support (Current):**
+- Base: Blue gradient `#0052FF` / `#3c8aff`
+- Bob: Orange gradient `#FF6B35` / `#F7931E`
+
+**V2 Plans (Future):**
+- Cross-chain bridging via LayerZero ONFT721
+- Deployed as UUPS upgrade (no redeployment needed)
+
+**SVG Design Reference:**
+- See `docs/svg/README.md` for complete SVG design specifications
+- Reference SVG files for each chain: `docs/svg/BASE.svg`, `docs/svg/BOB.svg`
+- Design includes: gradient colors, typography specs, element positioning, animations
 
 ## Design Philosophy
 
@@ -188,9 +205,12 @@ The Solidity contract (`OnChainJournal.sol`) implements:
 
 ### Current Implementation Status
 
-**Sprint 1 - Days 1-7**: ✅ Complete
+**Sprint 1**: ✅ Complete - Foundation & Infrastructure
+**Sprint 2**: ✅ Complete - Smart Contract Development
 
-The codebase currently has:
+**What's Built:**
+
+*Frontend (Sprint 1):*
 - ✅ Complete UI flow (writing → mood → preview → gallery)
 - ✅ Real wallet connection (RainbowKit with Rabby prioritized)
 - ✅ Auto-save functionality with 3-second debounce
@@ -199,44 +219,79 @@ The codebase currently has:
 - ✅ Gallery fetches real data from Supabase
 - ✅ Filter system (All/Minted/Ephemeral)
 - ✅ Chain badges on minted thoughts
+- ✅ ENS name display in header
+- ✅ ENS resolution before minting
 - ✅ Wallet connection gating
 - ✅ Loading states throughout
 - ✅ Zustand state management
 - ✅ Supabase database integration
 - ✅ Row Level Security with temporary dev policies
-- ⏳ Smart contract implementation (Days 8-14)
-- ⏳ Real minting to blockchain (Sprint 2)
-- ⏳ Cross-chain bridging (Sprint 3)
+
+*Smart Contracts (Sprint 2):*
+- ✅ UUPS Upgradeable ERC721 implementation
+- ✅ On-chain SVG generation with animations
+- ✅ ENS support (optional parameter)
+- ✅ Chain-specific gradients (Base & Bob)
+- ✅ Advanced SVG features (grain texture, CSS animations)
+- ✅ Input validation and XML escaping
+- ✅ 18 comprehensive tests passing
+- ✅ Deployment scripts ready
+- ✅ Complete documentation (CONTRACT_GUIDE.md)
+
+**Next Steps (Sprint 3):**
+- ⏳ Deploy to Base Sepolia testnet
+- ⏳ Deploy to Bob Testnet
+- ⏳ Frontend integration with deployed contracts
+- ⏳ End-to-end testing
+
+**Future (V2 - Post-Launch):**
+- 📅 LayerZero V2 ONFT721 integration
+- 📅 Cross-chain bridging (Base ↔ Bob)
+- 📅 Deploy as UUPS upgrade
 
 ### Working with Smart Contracts
 
-**Current Status**: Smart contracts to be implemented in Days 8-14
+**Location:** `contracts/src/OnChainJournal.sol`
 
-**Planned Architecture:**
-- **Foundry** for development, testing, and deployment
-- **UUPS Upgradeable Pattern** for contract upgradeability
-- **LayerZero V2 ONFT721** for cross-chain NFT bridging
-- **On-chain SVG generation** (no IPFS dependencies)
-- **Chain-specific gradients** configured per deployment
+**Key Contract Functions:**
+```solidity
+// Minting
+function mintEntry(
+    string memory _text,
+    string memory _mood,
+    string memory _ensName  // Optional ENS (empty string if none)
+) public
 
-**Key Contract Functions** (to be implemented):
-- `mint(text, mood)`: Mint a new journal entry NFT
-- `generateSVG(tokenId)`: Generate on-chain SVG with mood-based colors
-- `send(tokenId, dstEid, ...)`: Bridge NFT to another chain via LayerZero
-- `_escapeString(text)`: Escape user input for XML safety
+// Metadata
+function tokenURI(uint256 tokenId) public view returns (string memory)
+function generateSVG(JournalEntry memory entry) public view returns (string memory)
+
+// Admin (owner only)
+function updateColors(string memory _color1, string memory _color2) external
+function upgradeToAndCall(address newImplementation, bytes memory data) external
+```
+
+**Testing:**
+```bash
+cd contracts
+forge test           # Run all 18 tests
+forge test -vvv      # Verbose output
+forge test --gas-report  # Gas usage report
+```
 
 **Deployment Plan:**
-- Test locally with Anvil
-- Deploy to Base Sepolia & Bob Sepolia (Sprint 2)
-- Set up LayerZero trusted peers between chains
-- Deploy to Base & Bob mainnet (Sprint 4)
+1. Deploy to Base Sepolia testnet (Sprint 3)
+2. Deploy to Bob Testnet (Sprint 3)
+3. Test minting on both chains
+4. Beta testing (Sprint 4)
+5. Deploy to mainnet (Sprint 6)
 
 **Security Considerations:**
-- Text limit: 400 bytes (enforced in mint function)
+- Text limit: 400 bytes (enforced in mintEntry)
 - Mood limit: 64 bytes
-- XML escaping required for all user input
-- UUPS upgrade pattern requires careful ownership management
-- LayerZero peer configuration must be verified before mainnet
+- XML escaping for all user input
+- UUPS upgrade pattern (owner-controlled)
+- ENS passed from frontend (not resolved on-chain)
 
 ### Known Issues & Technical Debt
 
@@ -261,27 +316,40 @@ The codebase currently has:
 
 **Low Priority:**
 5. **Mock Minting Modal**: Still using simulated minting
-   - Will be replaced in Sprint 2 with real contract calls
+   - Will be replaced in Sprint 3 with real contract calls
 
 ### Future Features (Planned)
-- Real smart contract minting (Sprint 2)
-- Cross-chain bridging via LayerZero (Sprint 3)
+- Real smart contract minting (Sprint 3 - testnet deployment)
+- Cross-chain bridging via LayerZero (V2 - post-launch)
 - Timer countdown display for ephemeral thoughts
 - Transaction status tracking with block confirmations
-- Real NFT preview matching on-chain SVG
+- Sync frontend SVG preview with on-chain SVG
 - Gasless minting sponsorship (Gelato/Biconomy) - post-launch
+- Mobile optimization and PWA support
 
 ## Reference Documentation
 
 Key planning documents in the repository:
-- `docs/MinMyMood-prd.md` - Detailed product requirements with user flows
-- `docs/OMNICHAIN_V1_SPRINT_PLAN.md` - Full 10-week development plan
-- `docs/SPRINT1_DAYS1-4_COMPLETE.md` - Days 1-4 completion summary
-- `docs/SPRINT1_DAYS5-7_PROGRESS.md` - Days 5-7 completion summary
+
+**Primary Documentation:**
+- `docs/MintMyMood-prd.md` - Detailed product requirements with user flows
+- `docs/sprint_plan.md` - Full development plan with V1/V2 scope
 - `docs/todo.md` - Current development status and task tracking
+- `CLAUDE.md` - This file (AI assistant guidance)
+- `README.md` - Project overview and quick start
+
+**Smart Contract Documentation:**
+- `docs/CONTRACT_GUIDE.md` - Complete contract deployment guide
+- `docs/DEPLOYMENT_CHECKLIST_V1.md` - Step-by-step deployment checklist
+- `docs/V1_READY.md` - Deployment readiness summary
+- `docs/svg/README.md` - SVG design reference and specifications
+
+**Technical Documentation:**
 - `docs/GETTING_STARTED.md` - Setup and development guide
 - `docs/CTO_ASSESSMENT.md` - Technical architecture analysis
-- `README.md` - Project overview and quick start
-- `CLAUDE.md` - This file (AI assistant guidance)
 
-**Next Steps:** Days 8-14 smart contract development (see `docs/todo.md`)
+**Sprint Summaries:**
+- `docs/SPRINT1_DAYS1-4_COMPLETE.md` - Sprint 1 Part 1 completion summary
+- `docs/SPRINT1_DAYS5-7_PROGRESS.md` - Sprint 1 Part 2 completion summary
+
+**Next Steps:** Sprint 3 - Testnet deployment (see `docs/todo.md`)

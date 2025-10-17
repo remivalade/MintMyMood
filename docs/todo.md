@@ -1,17 +1,16 @@
 # MintMyMood - Development TODO
 
-**Last Updated**: October 16, 2025
-**Current Status**: Sprint 1 Days 5-7 Complete ✅
+**Current Status**: Sprint 2 Complete ✅ - Ready for Testnet Deployment
 
 ---
 
 ## 📍 Current Progress
 
-We are following the **Omnichain V1 Sprint Plan** (see `OMNICHAIN_V1_SPRINT_PLAN.md` for full 10-week breakdown).
+We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 
-### ✅ Completed: Sprint 1 - Days 1-7 (Week 1)
+### ✅ Completed: Sprint 1 - Foundation & Infrastructure
 
-**Days 1-4: Supabase & Web3 Setup**
+**Part 1: Supabase & Web3 Setup**
 - [x] Set up Supabase project with omnichain schema
 - [x] Configure RLS policies (with dev policies for testing)
 - [x] Install wagmi, viem, RainbowKit, Zustand
@@ -21,7 +20,7 @@ We are following the **Omnichain V1 Sprint Plan** (see `OMNICHAIN_V1_SPRINT_PLAN
 - [x] Create Zustand store with CRUD + minting + bridging actions
 - [x] Create TypeScript types for all data structures
 
-**Days 5-7: Auto-Save & Gallery Integration**
+**Part 2: Auto-Save & Gallery Integration**
 - [x] Connect WritingInterface to Supabase with auto-save (3-second debounce)
 - [x] Use toast notifications for save confirmations
 - [x] Track draft IDs to prevent duplicate saves
@@ -32,74 +31,122 @@ We are following the **Omnichain V1 Sprint Plan** (see `OMNICHAIN_V1_SPRINT_PLAN
 - [x] Add loading states throughout
 - [x] Fix RLS authentication with temporary dev policies
 
+### ✅ Completed: Sprint 2 - Smart Contract Development
+
+**Foundry Setup**
+- [x] Install Foundry (forge, cast, anvil)
+- [x] Initialize Foundry project in `contracts/` directory
+- [x] Install dependencies (OpenZeppelin Upgradeable Contracts)
+- [x] Configure `foundry.toml` with Base/Bob RPC URLs
+- [x] Create `.env.example` for environment variables
+- [x] Test local compilation and testing
+
+**Smart Contract Implementation**
+- [x] Create `OnChainJournal.sol` with:
+  - [x] UUPS upgradeable pattern
+  - [x] ERC721 standard compliance
+  - [x] `mintEntry(text, mood, ensName)` function
+  - [x] On-chain SVG generation with animations
+  - [x] ENS support (optional parameter)
+  - [x] Block number tracking
+  - [x] Origin chain tracking
+  - [x] Advanced SVG features (grain texture, CSS animations, drop shadows)
+- [x] Implement on-chain SVG generation:
+  - [x] Chain-specific gradient colors
+  - [x] Text escaping for XML security
+  - [x] Dynamic SVG layout with finaliz design
+  - [x] Grain texture filter (feTurbulence)
+  - [x] CSS keyframe animations (typewriter effect)
+  - [x] ForeignObject for text wrapping
+- [x] Write comprehensive tests (18/18 passing ✅):
+  - [x] Initialization tests
+  - [x] Minting functionality
+  - [x] Input validation (text/mood limits)
+  - [x] SVG generation and escaping
+  - [x] ENS support
+  - [x] Admin functions
+  - [x] Upgrade functionality
+
+**Frontend Integration**
+- [x] Create ENS resolution hook (`src/hooks/useEnsName.ts`)
+- [x] Update Header to display ENS names
+- [x] Update minting flow to resolve ENS before contract call
+- [x] Prepare for contract integration (comments and structure in place)
+
+**Documentation**
+- [x] Create `CONTRACT_GUIDE.md` with deployment guide
+- [x] Create `DEPLOYMENT_CHECKLIST_V1.md` with step-by-step process
+- [x] Create `V1_READY.md` with deployment readiness summary
+- [x] Update all docs with ENS support and SVG implementation
+
 ---
 
-## 🎯 Next Up: Sprint 1 - Days 8-14 (Week 2)
+## 🎯 Next Up: Sprint 3 - Testnet Deployment
 
-### Smart Contract Development
+### Testnet Deployment
+- [ ] Fund deployer wallet with testnet ETH
+  - [ ] Base Sepolia (~0.1 ETH)
+  - [ ] Bob Testnet (~0.1 ETH)
+- [ ] Configure environment variables in `.env`
+  - [ ] PRIVATE_KEY
+  - [ ] BASE_SEPOLIA_RPC_URL
+  - [ ] BOB_SEPOLIA_RPC_URL
+  - [ ] BASESCAN_API_KEY
 
-**Days 8-9: Foundry Setup**
-- [ ] Install Foundry (forge, cast, anvil)
-- [ ] Initialize Foundry project in `contracts/` directory
-- [ ] Install dependencies:
-  - [ ] OpenZeppelin Upgradeable Contracts
-  - [ ] LayerZero V2 ONFT721
-- [ ] Configure `foundry.toml` with Base/Bob RPC URLs
-- [ ] Create `.env` for private keys and endpoints
-- [ ] Test local deployment with Anvil
+**Base Sepolia Deployment**
+- [ ] Deploy to Base Sepolia testnet
+- [ ] Verify proxy and implementation on Basescan
+- [ ] Test basic minting via Etherscan
+- [ ] Verify SVG renders correctly
+- [ ] Test ENS name display
 
-**Days 10-12: Smart Contract Implementation**
-- [ ] Create `OnChainJournal.sol` with:
-  - [ ] UUPS upgradeable pattern
-  - [ ] LayerZero ONFT721 inheritance
-  - [ ] `mint(text, mood)` function
-  - [ ] On-chain SVG generation
-  - [ ] Origin chain tracking
-- [ ] Create `SVGGenerator.sol` library:
-  - [ ] Chain-specific gradient colors
-  - [ ] Text escaping for XML
-  - [ ] Dynamic SVG layout
-- [ ] Write comprehensive tests:
-  - [ ] Minting functionality
-  - [ ] SVG generation
-  - [ ] Upgrade functionality
-  - [ ] Cross-chain preparation
+**Bob Testnet Deployment**
+- [ ] Deploy to Bob Testnet
+- [ ] Verify contracts
+- [ ] Test basic minting
+- [ ] Verify orange gradient renders correctly
+- [ ] Test ENS name display
 
-**Days 13-14: Deployment Scripts**
-- [ ] Create `Deploy.s.sol` Foundry script
-- [ ] Test deployment on local Anvil chain
-- [ ] Create contract verification script
-- [ ] Document deployment process in `CONTRACT_GUIDE.md`
-- [ ] Prepare for testnet deployment (Sprint 2)
+**Frontend Integration**
+- [ ] Add contract ABIs to frontend
+- [ ] Update wagmi contract configurations
+- [ ] Connect real minting flow to deployed contracts
+- [ ] Test end-to-end minting with ENS
+- [ ] Test end-to-end minting without ENS
+- [ ] Update Gallery to show real on-chain NFTs
+- [ ] Test on multiple wallets (MetaMask, Rabby, etc.)
 
 ---
 
 ## 📅 Upcoming Sprints
 
-### Sprint 2 (Week 3-4): Testnet Deployment & Frontend Integration
-- [ ] Deploy to Base Sepolia & Bob Sepolia
-- [ ] Set up LayerZero trusted peers
-- [ ] Test cross-chain bridging
-- [ ] Integrate contracts with frontend
-- [ ] Implement real minting flow
+### Sprint 4: User Testing & Iteration
+- [ ] Beta testing with 5-10 users
+- [ ] Collect feedback on UX and gas costs
+- [ ] Fix any critical bugs
+- [ ] Optimize gas costs if needed
+- [ ] Monitor testnet performance
 
-### Sprint 3 (Week 5-6): Bridge UI & Polish
-- [ ] Build bridge interface
-- [ ] Sync frontend SVG with on-chain SVG
-- [ ] Mobile responsiveness testing
-- [ ] Comprehensive end-to-end testing
-
-### Sprint 4 (Week 7-8): Governance & Mainnet
+### Sprint 5: Mainnet Preparation
+- [ ] Security review (internal)
+- [ ] Consider external audit
 - [ ] Set up multisig (Gnosis Safe)
-- [ ] Deploy Timelock Controller
-- [ ] Transfer ownership to governance
-- [ ] Deploy to Base Mainnet & Bob Mainnet
+- [ ] Prepare mainnet deployment plan
+- [ ] Fund mainnet deployer wallet
 
-### Sprint 5 (Week 9-10): Polish & Launch
-- [ ] Final error handling & UX polish
-- [ ] Complete all documentation
-- [ ] Performance optimization
-- [ ] Public launch
+### Sprint 6: Mainnet Deployment
+- [ ] Deploy to Base Mainnet
+- [ ] Deploy to Bob Mainnet
+- [ ] Transfer ownership to multisig
+- [ ] Update frontend with mainnet addresses
+- [ ] Soft launch with small group
+
+### Sprint 7: Public Launch
+- [ ] Marketing preparation
+- [ ] Public announcement
+- [ ] Monitor for issues
+- [ ] Respond to user feedback
+- [ ] Plan V2 features (cross-chain bridging with LayerZero)
 
 ---
 
@@ -133,23 +180,20 @@ We are following the **Omnichain V1 Sprint Plan** (see `OMNICHAIN_V1_SPRINT_PLAN
 ## 📚 Documentation Status
 
 ### ✅ Complete
-- [x] `OMNICHAIN_V1_SPRINT_PLAN.md` - Full 10-week plan
-- [x] `SPRINT1_DAYS1-4_COMPLETE.md` - Days 1-4 summary
-- [x] `SPRINT1_DAYS5-7_PROGRESS.md` - Days 5-7 summary (updated)
+- [x] `OMNICHAIN_V1_SPRINT_PLAN.md` - Full sprint plan
+- [x] `SPRINT1_DAYS1-4_COMPLETE.md` - Sprint 1 Part 1 summary
+- [x] `SPRINT1_DAYS5-7_PROGRESS.md` - Sprint 1 Part 2 summary (updated)
 - [x] `GETTING_STARTED.md` - Setup guide
 - [x] `CTO_ASSESSMENT.md` - Technical analysis
 - [x] `.env.example` - Environment variables template
 - [x] `README.md` - Project overview (updated)
 - [x] `CLAUDE.md` - AI assistant guidance (updated)
 
-### ⏳ In Progress
-- [ ] `CONTRACT_GUIDE.md` - Will create during Days 13-14
-
 ### 📝 Planned
 - [ ] `API.md` - Backend API documentation
-- [ ] `GOVERNANCE.md` - Governance process
+- [ ] `GOVERNANCE.md` - Governance process (for mainnet)
 - [ ] `USER_GUIDE.md` - End-user documentation
-- [ ] `DEPLOYMENT.md` - Production deployment guide
+- [ ] Update `sprint_plan.md` to reflect V1 scope (single-chain) and V2 plans (omnichain)
 
 ---
 
@@ -187,12 +231,13 @@ VITE_JOURNAL_PROXY_BOB=
 
 ## 🎯 Success Criteria for Current Sprint
 
-### Week 2 Goals (Days 8-14)
-- [ ] Foundry environment set up and working
-- [ ] Smart contracts complete with tests passing
-- [ ] Deployment scripts tested on Anvil
-- [ ] Documentation for contract deployment created
-- [ ] Ready to deploy to testnets in Sprint 2
+### Sprint 3 Goals
+- [ ] Contracts deployed to Base Sepolia and Bob Testnet
+- [ ] Basic minting working on both testnets
+- [ ] SVG renders correctly with chain-specific colors
+- [ ] ENS names display properly in SVGs
+- [ ] Frontend connected to real contracts
+- [ ] End-to-end minting flow working
 
 ---
 
@@ -217,11 +262,12 @@ anvil                    # Start local blockchain
 
 ## 📞 Getting Help
 
-- **Sprint Plan**: See `docs/OMNICHAIN_V1_SPRINT_PLAN.md` for detailed breakdown
+- **Sprint Plan**: See `docs/sprint_plan.md` for detailed breakdown
+- **Contract Guide**: See `docs/CONTRACT_GUIDE.md` for deployment instructions
 - **Technical Docs**: See `docs/CTO_ASSESSMENT.md` for architecture decisions
 - **Getting Started**: See `docs/GETTING_STARTED.md` for setup instructions
 - **AI Assistant**: See `CLAUDE.md` for guidance to Claude Code
 
 ---
 
-**Next Session Goals**: Set up Foundry and begin smart contract development (Days 8-9) 🚀
+**Next Session Goals**: Deploy contracts to Base Sepolia and Bob Testnet (Sprint 3) 🚀

@@ -1,0 +1,681 @@
+# Smart Contract Guide - On-Chain Journal V1
+
+This guide covers the deployment, testing, and management of the On-Chain Journal smart contracts.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [V1 vs V2 Roadmap](#v1-vs-v2-roadmap)
+- [Architecture](#architecture)
+- [Setup](#setup)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Upgrading](#upgrading)
+- [Security Considerations](#security-considerations)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that stores journal entries entirely on-chain as SVG images. Each deployment is chain-specific with hardcoded gradient colors.
+
+### Key Features - V1
+
+- **UUPS Upgradeable**: Allows contract logic upgrades while preserving state
+- **On-chain SVG**: Fully on-chain with animations (no IPFS or external storage)
+- **ENS Support**: Optional ENS name display instead of wallet address
+- **Chain-specific gradients**: Each chain deployment has unique colors (Base & Bob)
+- **Advanced SVG Features**:
+  - Grain texture with feTurbulence filter
+  - CSS keyframe animations (typewriter effect for block number)
+  - Drop shadows and blend modes
+  - ForeignObject for text wrapping
+- **Input validation**: 400 byte text limit, 64 byte mood limit
+- **XML escaping**: Security against injection attacks
+- **Gas efficient**: Optimized for reasonable gas costs (~240k for basic mint)
+
+### What's NOT in V1
+
+- ❌ Cross-chain NFT transfers (LayerZero ONFT)
+- ❌ NFT bridging between Base and Bob
+- ✅ These features planned for V2 via UUPS upgrade
+
+---
+
+## V1 vs V2 Roadmap
+
+### V1 (Current) - Single Chain NFTs
+**Launch Target:** Testnet Week 1, Mainnet Week 4
+
+- ✅ UUPS upgradeable ERC721
+- ✅ On-chain SVG generation
+- ✅ Mint on Base (independent)
+- ✅ Mint on Bob (independent)
+- ✅ Chain-specific colors
+- ✅ Full metadata on-chain
+- ❌ No cross-chain transfers yet
+
+**User Experience:**
+- Users mint journal entries on either Base or Bob
+- Each chain is independent
+- NFTs stay on the chain where minted
+
+### V2 (Future) - Omnichain NFTs
+**Launch Target:** 4-6 weeks after V1
+
+- ✅ Everything from V1
+- ✅ LayerZero V2 ONFT integration
+- ✅ Bridge NFTs between Base ↔ Bob
+- ✅ Preserve metadata cross-chain
+- ✅ UUPS upgrade (no redeployment needed!)
+
+**User Experience:**
+- Mint on Base, bridge to Bob (or vice versa)
+- Same token ID across chains
+- Unified cross-chain gallery
+
+### Contract Addresses
+
+Contract addresses will be filled after deployment:
+
+| Network | Chain ID | Proxy Address | Implementation |
+|---------|----------|---------------|----------------|
+| Base Sepolia | 84532 | TBD | TBD |
+| Bob Sepolia | 111 | TBD | TBD |
+| Base Mainnet | 8453 | TBD | TBD |
+| Bob Mainnet | 60808 | TBD | TBD |
+
+---
+
+## Architecture
+
+### UUPS Proxy Pattern
+
+```
+┌─────────────────┐
+│   User/Frontend │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   ERC1967Proxy  │  ← Stores state & delegates calls
+│   (Proxy)       │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ OnChainJournal  │  ← Contains logic
+│ (Implementation)│
+└─────────────────┘
+```
+
+**Why UUPS?**
+- Cheaper upgrades than Transparent Proxy
+- Upgrade logic in implementation (not proxy)
+- More gas efficient for users
+- Owner-controlled upgrades
+
+### Contract Structure
+
+```solidity
+OnChainJournal (UUPS Upgradeable)
+├── ERC721Upgradeable (NFT functionality)
+├── OwnableUpgradeable (Access control)
+├── UUPSUpgradeable (Upgrade mechanism)
+└── Custom logic
+    ├── mintEntry(text, mood, ensName) - Mint new journal NFT with ENS support
+    ├── generateSVG(entry) - Create on-chain SVG with animations
+    ├── tokenURI(tokenId) - Return base64-encoded metadata JSON
+    ├── _generateSVGPart1() - SVG defs, gradients, filters
+    ├── _generateSVGPart2() - SVG content layer
+    ├── _generateGradients() - Chain-specific gradient definitions
+    ├── _generateFilter() - Grain texture filter
+    ├── _formatAddress() - Format address or use ENS name
+    └── _escapeString() - XML security
+```
+
+### State Variables
+
+```solidity
+uint256 private _nextTokenId;           // Token counter
+string public color1;                   // Primary gradient color
+string public color2;                   // Secondary gradient color
+string public chainName;                // Chain identifier
+mapping(uint256 => JournalEntry) journalEntries;  // Entry data
+```
+
+### Data Structure
+
+```solidity
+struct JournalEntry {
+    string text;            // Journal entry text (max 400 bytes)
+    string mood;            // Mood emoji (max 64 bytes)
+    uint256 timestamp;      // Block timestamp when minted
+    uint256 blockNumber;    // Block number when minted
+    address owner;          // Original minter address
+    uint256 originChainId;  // Chain where minted
+    string ensName;         // ENS name (optional, empty string if not provided)
+}
+```
+
+---
+
+## ENS Integration
+
+### Overview
+
+The contract supports optional ENS names for displaying user identity in the SVG. ENS resolution happens on the frontend, and the resolved name is passed as a parameter to `mintEntry()`.
+
+### How It Works
+
+1. **Frontend resolves ENS** using wagmi's `useEnsName` hook
+2. **Pass ENS to contract** when minting: `mintEntry(text, mood, ensName)`
+3. **Contract stores ENS** in the `JournalEntry` struct
+4. **SVG displays ENS** if provided, otherwise shows formatted address
+
+### ENS Display
+
+```solidity
+// If ENS provided: "vitalik.eth"
+// If no ENS: "0x1A2b...dE3F"
+
+function _formatAddress(address _address, string memory _ensName) internal pure returns (string memory) {
+    if (bytes(_ensName).length > 0) {
+        return _ensName;
+    }
+    // Format as 0x + first 4 hex + "..." + last 4 hex
+    return formattedAddress;
+}
+```
+
+### Frontend Integration
+
+See `src/hooks/useEnsName.ts` and `src/App.tsx:handleMintClick()` for implementation details.
+
+```typescript
+// Resolve ENS before minting
+const ensName = await getEnsNameForMinting(address, publicClient);
+
+// Pass to contract
+await contract.mintEntry(text, mood, ensName);
+```
+
+---
+
+## Setup
+
+### Prerequisites
+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) installed
+- Node.js 18+ (for frontend integration)
+- Git
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   cd MintMyMood/contracts
+   ```
+
+2. **Install dependencies**
+   ```bash
+   forge install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your values
+   ```
+
+4. **Required environment variables**
+   ```bash
+   # Deployer private key (NEVER commit this!)
+   PRIVATE_KEY=your_private_key_here
+
+   # RPC endpoints
+   BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+   BOB_SEPOLIA_RPC_URL=https://testnet.rpc.gobob.xyz
+
+   # API keys for verification
+   BASESCAN_API_KEY=your_basescan_api_key
+   ```
+
+---
+
+## Development
+
+### Build Contracts
+
+```bash
+forge build
+```
+
+Expected output:
+```
+Compiling 53 files with Solc 0.8.24
+Solc 0.8.24 finished in 3.84s
+Compiler run successful!
+```
+
+### Format Code
+
+```bash
+forge fmt
+```
+
+### Check Contract Size
+
+```bash
+forge build --sizes
+```
+
+### Gas Snapshots
+
+```bash
+forge snapshot
+```
+
+---
+
+## Testing
+
+### Run All Tests
+
+```bash
+forge test
+```
+
+### Run with Verbosity
+
+```bash
+# -v: Show test names
+# -vv: Show logs
+# -vvv: Show stack traces
+# -vvvv: Show setup traces
+# -vvvvv: Show execution traces
+
+forge test -vv
+```
+
+### Run Specific Test
+
+```bash
+forge test --match-test test_MintEntry -vv
+```
+
+### Run Test Suite
+
+```bash
+forge test --match-contract OnChainJournalTest
+```
+
+### Gas Report
+
+```bash
+forge test --gas-report
+```
+
+### Test Coverage
+
+```bash
+forge coverage
+```
+
+### Current Test Suite
+
+```
+✅ 18 Tests Passing:
+
+Initialization (3 tests)
+├── test_Initialize
+├── test_CannotReinitialize
+
+Minting (4 tests)
+├── test_MintEntry
+├── test_MintMultipleEntries
+├── test_MultipleusersMinting
+
+Validation (5 tests)
+├── test_RevertWhen_TextTooLong
+├── test_RevertWhen_MoodTooLong
+├── test_MintWith_MaxTextLength
+├── test_MintWith_MaxMoodLength
+
+Metadata & SVG (3 tests)
+├── test_TokenURI
+├── test_GenerateSVG
+├── test_SVGEscaping
+
+Admin (3 tests)
+├── test_UpdateColors
+├── test_RevertWhen_NonOwnerUpdatesColors
+├── test_Version
+
+Upgradeability (2 tests)
+├── test_UpgradeContract
+└── test_RevertWhen_NonOwnerUpgrades
+```
+
+---
+
+## Deployment
+
+### Deploy to Anvil (Local Testing)
+
+1. **Start Anvil**
+   ```bash
+   anvil
+   ```
+
+2. **Deploy contract** (in a new terminal)
+   ```bash
+   forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal \
+     --rpc-url http://127.0.0.1:8545 \
+     --broadcast
+   ```
+
+3. **Use Anvil's default account**
+   ```bash
+   # Default Anvil account #0
+   PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+   ```
+
+### Deploy to Base Sepolia
+
+```bash
+forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal \
+  --rpc-url base_sepolia \
+  --broadcast \
+  --verify
+```
+
+### Deploy to Bob Sepolia
+
+```bash
+forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal \
+  --rpc-url bob_sepolia \
+  --broadcast
+```
+
+### Deploy to Mainnet
+
+⚠️ **PRODUCTION DEPLOYMENT - PROCEED WITH CAUTION**
+
+1. **Audit the contract** (recommended)
+2. **Test on testnet thoroughly**
+3. **Prepare multisig for ownership** (Gnosis Safe)
+4. **Deploy**
+
+```bash
+# Base Mainnet
+forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal \
+  --rpc-url base \
+  --broadcast \
+  --verify
+
+# Bob Mainnet
+forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal \
+  --rpc-url bob \
+  --broadcast
+```
+
+5. **Transfer ownership to multisig**
+   ```bash
+   cast send <PROXY_ADDRESS> \
+     "transferOwnership(address)" <MULTISIG_ADDRESS> \
+     --rpc-url base \
+     --private-key $PRIVATE_KEY
+   ```
+
+### Verify Contract on Etherscan
+
+If `--verify` didn't work during deployment:
+
+```bash
+forge verify-contract <PROXY_ADDRESS> \
+  src/OnChainJournal.sol:OnChainJournal \
+  --chain base-sepolia \
+  --etherscan-api-key $BASESCAN_API_KEY
+```
+
+---
+
+## Upgrading
+
+### When to Upgrade
+
+- Critical bug fixes
+- Feature additions
+- Gas optimizations
+- Security improvements
+
+### Upgrade Process
+
+1. **Deploy new implementation**
+   ```solidity
+   // OnChainJournalV2.sol
+   contract OnChainJournalV2 is OnChainJournal {
+       // New features here
+       function newFeature() public {
+           // Implementation
+       }
+   }
+   ```
+
+2. **Test thoroughly**
+   ```bash
+   forge test --match-contract OnChainJournalV2Test
+   ```
+
+3. **Create upgrade script**
+   ```solidity
+   // script/UpgradeOnChainJournal.s.sol
+   contract UpgradeOnChainJournal is Script {
+       function run() external {
+           address proxy = vm.envAddress("PROXY_ADDRESS");
+           address newImpl = address(new OnChainJournalV2());
+
+           vm.broadcast();
+           OnChainJournal(proxy).upgradeToAndCall(newImpl, "");
+       }
+   }
+   ```
+
+4. **Execute upgrade**
+   ```bash
+   forge script script/UpgradeOnChainJournal.s.sol \
+     --rpc-url base_sepolia \
+     --broadcast
+   ```
+
+5. **Verify state persisted**
+   ```bash
+   cast call <PROXY_ADDRESS> "version()(string)" --rpc-url base_sepolia
+   cast call <PROXY_ADDRESS> "color1()(string)" --rpc-url base_sepolia
+   ```
+
+### Upgrade Safety Checks
+
+✅ **Always verify:**
+- State variables remain in same order
+- New variables added at the end
+- No variables deleted
+- No type changes
+- Initializer not re-run
+
+❌ **Never:**
+- Change existing state variable order
+- Delete state variables
+- Change variable types
+- Use `selfdestruct`
+- Use `delegatecall` carelessly
+
+---
+
+## Security Considerations
+
+### Input Validation
+
+- Text limited to 400 bytes (prevents gas griefing)
+- Mood limited to 64 bytes
+- All user input XML-escaped
+
+### Access Control
+
+- Owner-only upgrade function
+- Owner-only color update
+- Ownable pattern for admin functions
+
+### Upgrade Security
+
+- UUPS pattern requires implementation to authorize upgrades
+- Owner must call `upgradeToAndCall()`
+- Cannot be upgraded by proxy storage manipulation
+
+### XML/SVG Security
+
+All user input is escaped:
+- `&` → `&amp;`
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `"` → `&quot;`
+- `'` → `&apos;`
+
+### Recommendations
+
+1. **Use multisig for production** (Gnosis Safe)
+2. **Timelock upgrades** (24-48h delay)
+3. **Monitor events** for unexpected behavior
+4. **Rate limiting** (consider adding in V2)
+5. **Emergency pause** (consider adding if needed)
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### "Out of gas" during minting
+
+**Cause:** Large text or complex UTF-8 characters
+**Solution:** Keep text under 400 bytes, use simple emojis
+
+#### "Undeclared identifier" compile error
+
+**Cause:** Wrong Solidity version
+**Solution:** Ensure `solc_version = "0.8.24"` in `foundry.toml`
+
+#### "Failed to verify" contract
+
+**Cause:** Constructor arguments mismatch
+**Solution:** Use proxy address, not implementation
+
+#### Tests fail with "forge: command not found"
+
+**Cause:** Foundry not in PATH
+**Solution:**
+```bash
+source ~/.zshenv
+# or
+foundryup
+```
+
+### Debug Tips
+
+1. **Check contract on block explorer**
+   ```bash
+   # Read public variables
+   cast call <ADDRESS> "color1()(string)" --rpc-url base_sepolia
+   cast call <ADDRESS> "owner()(address)" --rpc-url base_sepolia
+   ```
+
+2. **Inspect proxy storage**
+   ```bash
+   cast storage <PROXY_ADDRESS> --rpc-url base_sepolia
+   ```
+
+3. **Check implementation address**
+   ```bash
+   # EIP-1967 implementation slot
+   cast storage <PROXY_ADDRESS> \
+     0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc \
+     --rpc-url base_sepolia
+   ```
+
+4. **Test SVG generation locally**
+   ```bash
+   forge test --match-test test_GenerateSVG -vvvv
+   ```
+
+### Getting Help
+
+- **Foundry Issues**: https://github.com/foundry-rs/foundry/issues
+- **OpenZeppelin Forum**: https://forum.openzeppelin.com/
+- **Project Issues**: https://github.com/yourusername/mintmymood/issues
+
+---
+
+## Next Steps
+
+### Sprint 3: Cross-Chain Integration
+
+- Research LayerZero V2 OFT pattern for ERC721
+- Implement cross-chain bridging
+- Test cross-chain message passing
+- Deploy LayerZero endpoints
+
+### Sprint 4: Frontend Integration
+
+- Connect wagmi to deployed contracts
+- Implement real minting flow
+- Add transaction status tracking
+- Sync SVG preview with on-chain generation
+
+### Future Enhancements
+
+- Gasless minting (Gelato/Biconomy)
+- Batch minting
+- NFT burning/deletion
+- Custom color palettes
+- Rarity traits
+- Social features (likes, comments)
+
+---
+
+## Contract Functions Reference
+
+### Public Functions
+
+```solidity
+// Minting
+function mintEntry(
+    string memory _text,
+    string memory _mood,
+    string memory _ensName  // Optional ENS name (pass empty string "" if none)
+) public
+
+// View functions
+function tokenURI(uint256 tokenId) public view returns (string memory)
+function generateSVG(JournalEntry memory entry) public view returns (string memory)
+function version() external pure returns (string memory)
+
+// Admin functions (owner only)
+function updateColors(string memory _color1, string memory _color2) external
+function upgradeToAndCall(address newImplementation, bytes memory data) external
+```
+
+### Constants
+
+```solidity
+uint256 public constant MAX_TEXT_LENGTH = 400;
+uint256 public constant MAX_MOOD_LENGTH = 64;
+```
+
+---
+
+**Last Updated:** October 17, 2025
+**Contract Version:** 1.0.0
+**Foundry Version:** 1.4.1-stable

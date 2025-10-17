@@ -1,17 +1,64 @@
-# MintMyMood - Product Requirements Document (Simplified)
+# MintMyMood - Product Requirements Document
 
-**Version:** 1.0 - Realistic Scope  
-**Target:** Ship in 4 weeks with minimal costs
+**Version:** 1.0 - V1 Launch (Base & Bob)
+**Last Updated:** October 17, 2025
+**Target:** Ship V1 in 4 weeks, V2 omnichain in 8-10 weeks
 
 ---
 
 ## 1. Core Concept
 
-**What:** A minimalist journaling app where thoughts can be made permanent as on-chain SVG NFTs.
+**What:** A minimalist journaling app where thoughts can be made permanent as on-chain SVG NFTs - also known as "The On-Chain Journal."
 
-**Key Innovation:** Minting NFT makes creating minted NFT meaningful and fun.
+**Key Innovation:** Thoughts are ephemeral by default (auto-delete after 7 days), but can be made permanent forever by minting as NFTs. This creates meaningful, intentional minting.
 
-**Target:** Crypto-native users who already have wallets.
+**Target:** Crypto-native users who already have wallets and value digital permanence.
+
+---
+
+## 1.5. V1 vs V2 Roadmap
+
+### V1: Base & Bob Launch (Current Scope)
+**Timeline:** 4 weeks to testnet, 6 weeks to mainnet
+
+**Features:**
+- ✅ UUPS Upgradeable ERC721 contracts
+- ✅ On-chain SVG generation with chain-specific gradients
+- ✅ Independent deployments on Base and Bob
+- ✅ Mint journal entries on either chain
+- ✅ Full metadata stored on-chain (no IPFS)
+- ✅ Supabase backend for ephemeral thoughts
+- ❌ NO cross-chain bridging (yet)
+
+**User Experience:**
+- Users choose Base or Bob when minting
+- NFTs stay on the chain where minted
+- Separate galleries for each chain
+- Simple, focused, and fast to ship
+
+### V2: Omnichain Expansion (Future)
+**Timeline:** 8-10 weeks after V1 launch
+
+**Why V2 for Omnichain:**
+Due to the technical complexity of combining UUPS upgradeability with LayerZero V2 ONFT functionality, we've strategically decided to launch V1 with single-chain deployments first. This allows us to:
+1. Ship faster and gather user feedback
+2. Properly test and audit core functionality
+3. Research and implement LayerZero ONFT integration correctly
+4. Upgrade contracts via UUPS (no redeployment needed!)
+
+**V2 Features (via UUPS Upgrade):**
+- ✅ LayerZero V2 ONFT integration
+- ✅ Cross-chain NFT bridging (Base ↔ Bob ↔ other chains)
+- ✅ Unified cross-chain gallery
+- ✅ Origin chain tracking and display
+- ✅ Same token ID across chains
+- ✅ Expansion to Ink, HyperEVM, and other chains
+
+**User Experience:**
+- Mint on any chain
+- Bridge NFTs between chains seamlessly
+- View all NFTs in one unified gallery
+- Origin chain always visible via gradient color
 
 ---
 
@@ -32,26 +79,12 @@
 
 ### Storage Strategy (Simple & Cheap)
 
-**Option A: Supabase Free Tier**
 - PostgreSQL database (500MB, 2GB bandwidth)
 - Built-in auth (but we use wallet)
 - Simple REST API
 - Cost: $0/month until scale
-- **Recommended for V1**
 
-**Option B: VPS (Hetzner/DigitalOcean)**
-- Small VPS: €4-5/month
-- PostgreSQL + simple API
-- More control, more work
-- Better for privacy (self-hosted)
 
-**Option C: Local-only (no server)**
-- Data only on device
-- Can't access from other devices
-- Simplest, $0 cost
-- But limited functionality
-
-**Let's start locally with a postgresql database**
 
 ### Security - Realistic Approach
 
@@ -72,21 +105,15 @@
 - Mint NFT with on-chain SVG metadata
 - Full entry text in SVG (no external dependencies)
 - Each chain has different color scheme
-- Example structure:
-```svg
-<svg viewBox="0 0 500 500">
-  <rect fill="[chain-color]"/>
-  <text>[Full entry text]</text>
-  <text>[Timestamp]</text>
-  <text>[Mood emoji]</text>
-</svg>
-```
 
-**Chain Colors :**
-- Bob: Orange gradient (#FF6B35 → #F7931E)
-- Ink: Purple
-- Base: Blue
-- HyperEVM: green
+**SVG Elements**
+- different background depending on blockchain,
+- block id of the minted nft,
+- mood (emoji),
+- text (max 400 characters),
+- beginning and end of the wallet address of minter OR ENS if we have it,
+- Name of the blockchain
+- MintMyMood.
 
 **Advantages:**
 - No IPFS needed ($0 cost)
@@ -143,9 +170,12 @@ The palette is designed to be calming, readable, and premium.
 
 These colors provide immediate visual identification for minted thoughts.
 
+**V1 Chains:**
+- **Base:** Blue (`#0052FF` solid)
 - **Bob:** Orange Gradient (`#FF6B35` → `#F7931E`)
+
+**V2 Future Chains:**
 - **Ink:** Purple (`#5D3FD3`)
-- **Base:** Blue (`#0052FF`)
 - **HyperEVM:** Green (`#00F0A0`)
 
 ### Typography
@@ -312,194 +342,203 @@ Tap [Mint This] → Page 3 (Mint Preview)
 
 ### Database Schema (Supabase)
 
+**Overview:**
+The database uses PostgreSQL with Row Level Security (RLS) for wallet-based access control. It's designed with omnichain support for V2 upgrades.
+
+**Key Tables:**
+- `users` - Wallet addresses and metadata
+- `thoughts` - Journal entries (ephemeral and minted)
+
+**Key Features:**
+- **400 character limit** enforced at database level
+- **Omnichain fields:** `origin_chain_id`, `current_chain_id`, `bridge_count`
+- **Auto-expiration:** `delete_expired_thoughts()` function runs automatically
+- **Row Level Security:** Users can only access their own thoughts
+- **Indexes:** Optimized for wallet lookups, expiration checks, and chain filtering
+
+**Schema Highlights:**
 ```sql
--- Users table (automatic via wallet address)
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  wallet_address TEXT UNIQUE NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Thoughts table
 CREATE TABLE thoughts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  wallet_address TEXT NOT NULL, -- denormalized for RLS
-  text TEXT NOT NULL,
-  mood TEXT, -- 'happy', 'neutral', 'sad', 'angry', 'anxious', 'none'
-  created_at TIMESTAMP DEFAULT NOW(),
-  expires_at TIMESTAMP NOT NULL, -- created_at + 24h (or chosen duration)
+  id UUID PRIMARY KEY,
+  wallet_address TEXT NOT NULL,
+  text TEXT NOT NULL CHECK (char_length(text) <= 400),
+  mood TEXT NOT NULL CHECK (char_length(mood) <= 10),
+  expires_at TIMESTAMP NOT NULL,
   is_minted BOOLEAN DEFAULT FALSE,
-  chain TEXT, -- 'base', 'zora', 'optimism', 'ethereum', 'polygon'
+  origin_chain_id INTEGER,      -- V1: Base (8453) or Bob (60808)
+  current_chain_id INTEGER,     -- V2: Track after bridging
   token_id TEXT,
-  tx_hash TEXT
+  contract_address TEXT,
+  tx_hash TEXT,
+  -- ... additional fields
 );
-
--- Row Level Security
-ALTER TABLE thoughts ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can only see their own thoughts"
-  ON thoughts FOR SELECT
-  USING (wallet_address = current_setting('request.jwt.claim.wallet_address'));
-
-CREATE POLICY "Users can only insert their own thoughts"
-  ON thoughts FOR INSERT
-  WITH CHECK (wallet_address = current_setting('request.jwt.claim.wallet_address'));
-
--- Automatic cleanup of expired thoughts (Supabase cron function)
-CREATE OR REPLACE FUNCTION delete_expired_thoughts()
-RETURNS void AS $$
-BEGIN
-  DELETE FROM thoughts 
-  WHERE expires_at < NOW() AND is_minted = FALSE;
-END;
-$$ LANGUAGE plpgsql;
-
--- Schedule: Run every hour
--- (Set up in Supabase dashboard: Database → Cron Jobs)
 ```
 
-### Smart Contract (On-Chain SVG NFT)
+**Complete Schema Documentation:**
+See `backend/supabase/migrations/001_initial_schema.sql` for full implementation details.
 
-**Deployment Strategy: One Contract Per Chain**
+### Smart Contract Architecture
 
-To simplify development, reduce gas costs, and maintain flexibility for V1, we will employ a "one contract per chain" deployment strategy.
+#### V1: Independent Chain Deployments (Current)
 
-Instead of a single, complex contract that dynamically changes SVG colors based on the chain ID, we will deploy a separate, independent instance of the `OnChainJournal` contract to each target blockchain.
+**Deployment Strategy: One Contract Per Chain with UUPS Upgradeability**
 
-For each deployment, the contract's `generateSVG` function will be hardcoded with the specific color gradient for that chain (e.g., the contract on Base will have the blue gradient, the one on Bob will have the orange gradient).
+For V1, we deploy independent, upgradeable instances of the `OnChainJournal` contract to each target blockchain. This approach provides:
 
-The frontend application will be responsible for managing the list of contract addresses and interacting with the correct one based on the user's selected chain.
+1. **Simplicity:** No cross-chain complexity in V1
+2. **Upgradeability:** UUPS proxy pattern allows adding ONFT in V2
+3. **Gas Efficiency:** Each contract optimized for its chain
+4. **Chain-Specific Colors:** Hardcoded gradients (Base = blue, Bob = orange)
 
-**Solidity Contract:**
+**Technical Implementation:**
+- **Pattern:** OpenZeppelin UUPS (Universal Upgradeable Proxy Standard)
+- **Standard:** ERC721 compliant
+- **SVG Generation:** Fully on-chain, no external dependencies
+- **Input Validation:** 400 byte text limit, 64 byte mood limit
+- **Security:** XML escaping to prevent SVG injection attacks
+
+For each deployment, the contract's `generateSVG` function is initialized with chain-specific color gradients during proxy initialization. The frontend manages contract addresses and routes users to the correct contract based on their selected chain.
+
+#### V2: Omnichain Upgrade (Future)
+
+**Upgrade Path via UUPS:**
+
+When V2 launches, we will upgrade the existing contracts to inherit from LayerZero's ONFT721 standard:
+
+1. **New Implementation:** Deploy `OnChainJournalV2` with ONFT721 integration
+2. **UUPS Upgrade:** Call `upgradeToAndCall()` on each proxy
+3. **Preserve State:** All existing NFTs and data remain intact
+4. **Add Features:** Cross-chain bridging, unified galleries, origin tracking
+
+**LayerZero Integration:**
+- **Protocol:** LayerZero V2 for cross-chain messaging
+- **Bridge Mechanism:** "Lock and mint" - burn on source, mint on destination
+- **Data Preservation:** Text, mood, origin chain ID travel with NFT
+- **Governance:** Multisig + Timelock for upgrade authorization
+
+**Cross-Chain Gating** (V2 Future Features):
+- **Same-Chain Gating:** Direct `balanceOf()` calls to NFT contracts
+- **Cross-Chain Gating:** Merkle tree proofs for gas-efficient verification
+- **Event Layouts:** Special SVG designs for token-gated events
+
+#### Smart Contract Implementation
+
+**Contract:** `OnChainJournal.sol`
+
+**Key Components:**
+- **Pattern:** UUPS Upgradeable (OpenZeppelin v5)
+- **Standard:** ERC721Upgradeable
+- **Token Name:** "On-Chain Journal" (symbol: "JOURNAL")
+
+**Core Data Structure:**
 ```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
-
-contract Onchain journalThoughts is ERC721 {
-    using Strings for uint256;
-    
-    uint256 private _tokenIdCounter;
-    
-    struct Thought {
-        string text;
-        uint256 timestamp;
-        string mood;
-    }
-    
-    mapping(uint256 => Thought) public thoughts;
-    
-    constructor() ERC721("Onchain journal Thoughts", "THOUGHT") {}
-    
-    function mint(string memory text, string memory mood) public returns (uint256) {
-        uint256 tokenId = _tokenIdCounter++;
-        _safeMint(msg.sender, tokenId);
-        
-        thoughts[tokenId] = Thought({
-            text: text,
-            timestamp: block.timestamp,
-            mood: mood
-        });
-        
-        return tokenId;
-    }
-    
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_ownerOf(tokenId) != address(0), "Token does not exist");
-        
-        Thought memory thought = thoughts[tokenId];
-        string memory svg = generateSVG(thought.text, thought.timestamp, thought.mood);
-        
-        string memory json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        '{"name": "Thought #', tokenId.toString(), '",',
-                        '"description": "A permanent thought from Onchain journal",',
-                        '"image": "data:image/svg+xml;base64,', Base64.encode(bytes(svg)), '"}'
-                    )
-                )
-            )
-        );
-        
-        return string(abi.encodePacked("data:application/json;base64,", json));
-    }
-    
-    function generateSVG(string memory text, uint256 timestamp, string memory mood) 
-        internal 
-        pure 
-        returns (string memory) 
-    {
-        // Chain color determined by network (Base = orange, Zora = purple, etc.)
-        string memory bgColor = "#FF6B35"; // Default orange for Base
-        
-        return string(
-            abi.encodePacked(
-                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">',
-                '<defs>',
-                '<linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">',
-                '<stop offset="0%" style="stop-color:', bgColor, ';stop-opacity:1" />',
-                '<stop offset="100%" style="stop-color:#F7931E;stop-opacity:1" />',
-                '</linearGradient>',
-                '</defs>',
-                '<rect width="500" height="500" fill="url(#grad)" rx="20"/>',
-                '<text x="30" y="50" font-family="serif" font-size="14" fill="rgba(255,255,255,0.7)">',
-                'Timestamp: ', Strings.toString(timestamp),
-                '</text>',
-                '<text x="470" y="50" font-size="32" text-anchor="end">',
-                mood,
-                '</text>',
-                '<foreignObject x="30" y="80" width="440" height="360">',
-                '<div xmlns="http://www.w3.org/1999/xhtml" style="color:white;font-family:serif;font-size:18px;line-height:1.6;">',
-                text,
-                '</div>',
-                '</foreignObject>',
-                '<text x="30" y="480" font-family="monospace" font-size="12" fill="rgba(255,255,255,0.6)">',
-                'On-Chain Journal',
-                '</text>',
-                '</svg>'
-            )
-        );
-    }
+struct JournalEntry {
+    string text;           // Max 400 bytes
+    string mood;           // Max 64 bytes (emoji)
+    uint256 timestamp;     // Block timestamp
+    address owner;         // Original minter
+    uint256 originChainId; // Chain where minted
 }
 ```
 
-**Chain Colors (add to contract or frontend):**
-- Base: `#FF6B35` → `#F7931E` (orange)
-- Zora: `#8B5CF6` → `#A78BFA` (purple)
-- Optimism: `#FF0420` → `#FF4144` (red)
-- Ethereum: `#627EEA` → `#8B9FFA` (blue)
-- Polygon: `#8247E5` → `#A374F4` (purple)
+**Key Functions:**
+- `mintEntry(text, mood)` - Mint new journal entry NFT
+- `tokenURI(tokenId)` - Returns Base64-encoded JSON with embedded SVG
+- `generateSVG(entry)` - Creates on-chain SVG with chain-specific colors
+- `updateColors(color1, color2)` - Admin function to update gradient (emergency use)
+- `upgradeToAndCall(newImplementation, data)` - UUPS upgrade function (owner only)
 
-### Frontend Stack
+**Security Features:**
+- Input validation (400 byte text, 64 byte mood limits)
+- XML escaping via `_escapeString()` internal function
+- Custom errors for gas efficiency
+- Owner-only upgrade authorization
 
-**Framework:** Next.js (React)
-- Pages: `/write`, `/gallery`, `/mint/[id]`
-- API routes: `/api/thoughts/*` (proxy to Supabase)
-
-**Web3:**
-- wagmi + viem for wallet connection
-- Multi-chain support (Base, Zora, Optimism, Ethereum, Polygon)
-- Gelato/Biconomy for gasless (TBD based on testing)
-
-**Styling:** Tailwind CSS
-
-**State:** Zustand (lightweight)
+**Complete Contract Documentation:**
+See `docs/CONTRACT_GUIDE.md` and `contracts/src/OnChainJournal.sol` for full implementation.
 
 ---
 
-## 5. Feature Specifications
+## 4.5. Security & Governance Best Practices
+
+While a formal third-party audit is deferred for V1, we implement industry-standard practices to build user trust and secure the protocol.
+
+### Source Code Verification
+
+**Mandatory for both V1 and V2:**
+- Publicly verify source code for **both Proxy and Implementation contracts** on block explorers (Basescan, etc.)
+- Provides on-chain guarantee that deployed code matches public repository
+- Enables community review and transparency
+- Required for listing on NFT marketplaces
+
+### Upgrade Governance (V1 Launch)
+
+**Initial Setup:**
+- Contract ownership: Deployer EOA (externally owned account)
+- Used for initial deployment and testing
+- **Temporary:** Will be transferred to multisig before mainnet launch
+
+**Production Setup (Before Mainnet):**
+- **Multisig Wallet:** 3-of-5 founders/trusted parties (Gnosis Safe)
+  - Prevents single point of failure
+  - Requires multiple approvals for upgrades
+  - Protects against compromised keys
+
+- **Timelock Contract:** 48-hour mandatory delay (OpenZeppelin TimelockController)
+  - Enforces public notice period for upgrades
+  - Community can review proposed changes
+  - Time to react if malicious upgrade proposed
+  - Increases transparency and trust
+
+**Upgrade Flow:**
+1. Deploy new implementation contract
+2. Test thoroughly on testnet
+3. Propose upgrade via multisig
+4. 3-of-5 signers approve
+5. Timelock enforces 48-hour wait
+6. Execute upgrade after delay
+7. Announce to community
+
+### On-Chain SVG Security
+
+**Input Sanitization:**
+All user-provided strings (`text`, `mood`) **must be escaped** before inclusion in SVG to prevent "SVG injection" attacks.
+
+**Escape Characters:**
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `&` → `&amp;`
+- `"` → `&quot;`
+- `'` → `&apos;`
+
+**Implementation:** Dedicated `_escapeString()` internal function in contract.
+
+### Gas Optimization for On-Chain SVG
+
+**Best Practice:** Use `abi.encodePacked()` for efficient string concatenation:
+```solidity
+string memory svg = string(abi.encodePacked(
+    '<svg ...>',
+    ' ... SVG parts ... ',
+    '</svg>'
+));
+```
+
+**Modular Code:** Separate SVG layout logic into internal functions:
+- `_generateDefaultSVG()` - Standard layout
+- `_generateEventSVG()` - Special event layouts (V2)
+- Main `tokenURI()` acts as router
+
+---
+
+## 5. Feature Specifications (V1)
 
 ### Page 1: Writing Interface
 
 **Layout:**
 ```
 ┌─────────────────────────────────────┐
-│ [⏱ Deletes in 24h]    [Connect]   │ ← Header (60px)
+│ [⏱ Deletes in 7 days]  [Connect]   │ ← Header (60px)
 ├─────────────────────────────────────┤
 │                                     │
 │                                     │
@@ -521,8 +560,9 @@ contract Onchain journalThoughts is ERC721 {
 **Behavior:**
 - Auto-save every 3 seconds to Supabase
 - "Next" button disabled until text.length > 0
-- Character limit: 5000 characters (display counter at 4500+)
-- Timer in header counts down from creation time
+- Character limit: 400 bytes (enforced by smart contract)
+- Display character counter when approaching limit
+- Timer in header counts down from creation time (7 days default)
 
 ### Page 2: Mood Selection
 
@@ -577,19 +617,24 @@ contract Onchain journalThoughts is ERC721 {
 └─────────────────────────────────────┘
 ```
 
-**Chain Dropdown:**
+**Chain Dropdown (V1):**
 ```
-Base          ~$0.001  ✓ Gasless
-Zora          ~$0.001  ✓ Gasless
-Optimism      ~$0.002  Pay gas
-Ethereum      ~$0.15   Pay gas
-Polygon       ~$0.001  Pay gas
+Base          ~$0.001  Pay gas
+Bob           ~$0.001  Pay gas
+```
+
+**Future Chains (V2):**
+```
+Ink           TBD
+HyperEVM      TBD
++ Other chains via LayerZero
 ```
 
 **Behavior:**
-- Selecting chain changes preview card gradient color
+- Selecting chain changes preview card gradient color (Base = blue, Bob = orange)
 - "Mint on [Chain]" button updates dynamically
 - "Discard" → Confirms "Delete this thought? It cannot be recovered" → Deletes from DB
+- **V1 Note:** Each chain is independent - NFTs cannot be bridged between chains yet
 
 ### Page 4: Wallet Connection (If Needed)
 
@@ -724,71 +769,133 @@ Polygon       ~$0.001  Pay gas
 - Width: 48% (2 columns mobile), 32% (3 columns desktop)
 - Aspect ratio: ~4:5 (portrait-ish)
 - Background: White with soft shadow
-- Minted badge: Colored dot (chain color) in corner
+- Minted badge: Colored dot (chain color) in corner - Blue (Base), Orange (Bob)
 - Timer: Red text when < 6h remaining
+- **V1:** Gallery shows all thoughts from both Base and Bob deployments
 
 ---
 
+## 6. V1 Deployment Timeline
+
+### Sprint 2 (Weeks 2-3): Smart Contract Development ✅ COMPLETE
+**Status:** Contract ready for testnet deployment
+
+- ✅ Foundry setup with OpenZeppelin Upgradeable v5
+- ✅ OnChainJournal.sol with UUPS pattern
+- ✅ 18 comprehensive tests (all passing)
+- ✅ Deployment scripts for Base & Bob
+- ✅ Chain-specific color configuration
+- ✅ Input validation (400 byte text, 64 byte mood)
+- ✅ XML escaping for SVG security
+- ⏳ **BLOCKED:** Awaiting final SVG layout specifications
+
+### Sprint 3 (Week 4): Testnet Deployment & Integration
+- [ ] Finalize SVG layout design
+- [ ] Deploy to Base Sepolia testnet
+- [ ] Deploy to Bob Testnet
+- [ ] Update frontend with contract addresses
+- [ ] Integration testing (mint flow, SVG rendering)
+- [ ] Beta testing with real users
+- [ ] Monitor gas costs
+
+**Deliverable:** Fully functional testnet deployment
+
+### Sprint 4 (Weeks 5-6): Mainnet Launch
+- [ ] Security review (internal)
+- [ ] Consider external audit (optional for V1)
+- [ ] Set up multisig wallet (Gnosis Safe)
+- [ ] Deploy to Base mainnet
+- [ ] Deploy to Bob mainnet
+- [ ] Transfer ownership to multisig
+- [ ] Monitor for 1-2 weeks
+- [ ] Public launch announcement
+
+**Deliverable:** Production V1 on Base & Bob mainnet
+
+### Post-Launch (Weeks 7-10): V2 Planning
+- [ ] Gather user feedback
+- [ ] Research LayerZero ONFT integration patterns
+- [ ] Design V2 upgrade architecture
+- [ ] Implement ONFT functionality
+- [ ] Test cross-chain bridging thoroughly
+- [ ] Deploy V2 upgrade via UUPS
+
+**Deliverable:** V2 with omnichain functionality
 
 ---
 
-## 7. Development Phases (4 Weeks)
+## 7. Development Phases - LEGACY (Pre-V1/V2 Split)
 
-### Week 1: Core Writing + Gallery
-- [ ] Next.js setup + Tailwind
-- [ ] Supabase setup + schema
-- [ ] Page 1: Writing interface with auto-save
-- [ ] Page 6: Gallery view with cards
-- [ ] Auto-delete cron job (Supabase function)
+**Note:** This section reflects the original 4-week plan before the strategic decision to defer omnichain to V2. Kept for reference.
 
-**Deliverable:** Can write thoughts, see gallery, thoughts auto-delete.
+### Week 1: Core Writing + Gallery ✅ COMPLETE (Sprint 1)
+- ✅ Vite + React setup + Tailwind
+- ✅ Supabase setup + schema
+- ✅ Page 1: Writing interface with auto-save
+- ✅ Page 6: Gallery view with cards
+- ✅ Auto-delete database function (Supabase)
+- ✅ Zustand state management
+- ✅ RainbowKit wallet integration
 
-### Week 2: Mood + Preview
-- [ ] Page 2: Mood selection
-- [ ] Page 3: Mint preview with SVG generation
-- [ ] Chain selector (frontend only)
-- [ ] "Discard" functionality
+**Deliverable:** ✅ Can write thoughts, see gallery, thoughts auto-delete.
 
-**Deliverable:** Complete write → mood → preview flow (no actual minting yet).
+### Week 2: Mood + Preview ✅ COMPLETE (Sprint 1)
+- ✅ Page 2: Mood selection
+- ✅ Page 3: Mint preview with SVG generation
+- ✅ Chain selector (frontend mock)
+- ✅ "Discard" functionality
 
-### Week 3: Web3 Integration
-- [ ] Smart contract (deploy on testnets)
-- [ ] Page 4: Wallet connection (wagmi)
-- [ ] Page 5: Minting flow (transaction handling)
-- [ ] Gallery: Minted badge display
-- [ ] Chain color variations in SVG
+**Deliverable:** ✅ Complete write → mood → preview flow (mock minting).
 
-**Deliverable:** Can actually mint NFTs on testnets.
+### Week 3: Smart Contracts ✅ COMPLETE (Sprint 2)
+- ✅ Foundry setup
+- ✅ OnChainJournal.sol (UUPS upgradeable)
+- ✅ Comprehensive test suite (18/18 passing)
+- ✅ Deployment scripts with chain detection
+- ✅ Documentation (CONTRACT_GUIDE, DEPLOYMENT_CHECKLIST, V1_READY)
 
-### Week 4: Mainnet + Polish
-- [ ] Deploy contracts to mainnets (5 chains)
-- [ ] Gasless relay integration (Gelato/Biconomy)
-- [ ] Error handling (all flows)
-- [ ] Loading states + animations
-- [ ] Responsive design (mobile/desktop)
-- [ ] Testing with real wallets + real ETH
+**Deliverable:** ✅ Production-ready smart contracts (awaiting SVG specs).
 
-**Deliverable:** Production-ready app on mainnet.
+### Week 4-6: Testnet → Mainnet (Current Phase)
+- [ ] Finalize SVG layout
+- [ ] Deploy to Base Sepolia & Bob Testnet
+- [ ] Real minting integration with frontend
+- [ ] Beta testing
+- [ ] Mainnet deployment with multisig
+
+**Deliverable:** Production V1 on Base & Bob mainnet.
 
 ---
 
 ## 8. Tech Stack Summary
 
 **Frontend:**
-- Next.js 14 (App Router)
-- React 18
+- Vite + React 18
+- TypeScript
 - Tailwind CSS
-- wagmi + viem (Web3)
-- Zustand (state)
+- wagmi v2 + viem (Web3)
+- RainbowKit (wallet connection)
+- Zustand (state management)
+- Radix UI (component primitives)
+- Sonner (toast notifications)
 
 **Backend:**
-- Supabase (PostgreSQL + Auth + Cron)
-- OR: Node.js API + PostgreSQL on VPS
+- Supabase (PostgreSQL + Row Level Security)
+- Automatic cleanup function for expired thoughts
+- No auth server needed (wallet-based access)
 
-**Blockchain:**
-- Solidity smart contracts (OpenZeppelin ERC721)
-- Deploy on: Base, Zora, Optimism, Ethereum, Polygon
-- Gelato Relay (gasless, TBD)
+**Blockchain (V1):**
+- Solidity 0.8.24
+- Foundry (dev framework)
+- OpenZeppelin Upgradeable Contracts v5
+- UUPS Proxy Pattern
+- Deploy on: **Base & Bob only**
+- On-chain SVG generation (no IPFS)
+
+**Blockchain (V2 Future):**
+- LayerZero V2 ONFT integration
+- Cross-chain bridging
+- Expand to Ink, HyperEVM, and other chains
 
 **Hosting:**
 - Vercel (frontend) - Free tier
@@ -799,20 +906,84 @@ Polygon       ~$0.001  Pay gas
 
 ## 9. Cost Estimate
 
-### One-Time Costs
+### One-Time Costs (V1)
 - Domain: $10-15/year
-- Contract deployment (5 chains): ~$100
-- **Total:** ~$115
+- Contract deployment (2 chains - Base & Bob testnets): ~$20-30
+- Contract deployment (2 chains - Base & Bob mainnets): ~$50-100
+- **Total V1:** ~$80-145
+
+### One-Time Costs (V2 Future)
+- V2 Upgrade deployment (2 chains): ~$50-100
+- Additional chain deployments (Ink, HyperEVM, etc.): ~$20-40 per chain
+- LayerZero trusted peer setup: ~$20-50 per chain pair
+- **Total V2:** ~$150-300
 
 ### Monthly Costs (V1)
 - Hosting: $0 (Vercel free tier)
-- Database: $0 (Supabase free tier)
-- Gasless relay: $50-100 (your budget)
-- **Total:** $50-100/month
+- Database: $0 (Supabase free tier for <500MB)
+- RPC endpoints: $0 (public RPCs initially)
+- **Total:** $0/month initially
 
-### Future Costs (If Scale)
-- Vercel Pro: $20/month (if needed)
-- Supabase Pro: $25/month (if > 500MB data)
-- VPS alternative: €5/month
-- Gasless: Scale with usage
+### Monthly Costs (V2 Future)
+- Hosting: $0-20 (Vercel free → Pro if scaling)
+- Database: $0-25 (Supabase free → Pro if > 500MB)
+- RPC endpoints: $0-50 (may need dedicated RPCs for reliability)
+- LayerZero messaging: Pay-per-use (users pay gas)
+- **Total:** $0-95/month
+
+### Future Costs (If Significant Scale)
+- Vercel Pro: $20/month (for team features & analytics)
+- Supabase Pro: $25/month (if > 500MB data or need better performance)
+- Dedicated RPC: $50-200/month (Alchemy/Infura for reliability)
+- Smart contract audit: $5,000-15,000 (one-time, recommended before V2 mainnet)
+- Multisig setup: ~$50-100 (Gnosis Safe deployment)
+
+---
+
+## 10. Strategic Rationale: Why V1 First, V2 Later
+
+### The Original Challenge
+During Sprint 2, we discovered that combining LayerZero's ONFT721 standard with OpenZeppelin's UUPS upgradeable pattern is complex:
+
+1. **Architectural Conflicts:** ONFT721 uses standard constructors while UUPS requires initializers
+2. **Limited Documentation:** LayerZero V2's upgradeable ONFT patterns are not well-documented
+3. **Testing Complexity:** Cross-chain testing requires multiple testnets, complex setup, and time
+4. **Audit Risk:** Combining two advanced patterns increases security review surface area
+
+### The Strategic Pivot
+Rather than delay launch to solve these challenges, we chose a **progressive deployment strategy**:
+
+**V1 Benefits:**
+- ✅ Ship faster (4 weeks vs 8-10 weeks)
+- ✅ Gather real user feedback early
+- ✅ Validate product-market fit
+- ✅ Thoroughly test core functionality
+- ✅ Build community before adding complexity
+- ✅ Simpler security review
+- ✅ Lower initial costs
+
+**V2 Upgrade Path:**
+- ✅ UUPS allows seamless upgrade (no redeployment)
+- ✅ Existing NFTs remain intact
+- ✅ Time to properly research LayerZero integration
+- ✅ Can implement learnings from V1
+- ✅ Community input on V2 features
+- ✅ Professional audit before cross-chain launch
+
+### What This Means for Users
+
+**V1 Experience:**
+- Users mint journal entries on Base or Bob
+- Each chain is independent
+- NFTs stay on the chain where minted
+- Simpler, faster, proven technology
+
+**V2 Upgrade (Future):**
+- Same contract addresses (via proxy upgrade)
+- Existing NFTs gain bridging capability
+- Cross-chain gallery view
+- Origin chain always visible (via gradient color)
+- No action required from users to upgrade
+
+This approach follows the **"ship early, iterate often"** philosophy while maintaining technical excellence and user trust.
 

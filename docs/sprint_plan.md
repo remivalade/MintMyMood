@@ -1,29 +1,48 @@
-# Omnichain V1 - 10 Week Sprint Plan
+# MintMyMood - Sprint Plan
 
 **Project**: MintMyMood (On-Chain Journal)
-**Timeline**: 10 weeks to production launch
 **Target Chains**: Base (Sepolia → Mainnet), Bob (Testnet → Mainnet)
-**Architecture**: UUPS Upgradeable + LayerZero ONFT721
+**V1 Architecture**: UUPS Upgradeable ERC721 (single-chain)
+**V2 Architecture**: V1 + LayerZero ONFT721 (cross-chain bridging)
+
+---
+
+## ⚠️ Important Note: V1 vs V2 Scope
+
+**V1 (Current Implementation):**
+- ✅ UUPS Upgradeable ERC721
+- ✅ On-chain SVG with animations and ENS support
+- ✅ Deploy independently on Base and Bob
+- ✅ Single-chain minting (no cross-chain transfers)
+- ✅ **Status: Ready for testnet deployment**
+
+**V2 (Future Upgrade - Post-Launch):**
+- ✅ Everything from V1
+- ✅ LayerZero V2 ONFT integration
+- ✅ Cross-chain NFT bridging (Base ↔ Bob)
+- ✅ Will be deployed via UUPS upgrade (no redeployment needed)
+
+**This sprint plan originally included omnichain (LayerZero) features in V1. We've decided to ship V1 as single-chain first, then add cross-chain features in V2 via UUPS upgrade.**
 
 ---
 
 ## Sprint Overview
 
-| Sprint | Duration | Focus | Deliverable |
-|--------|----------|-------|-------------|
-| Sprint 1 | Week 1-2 | Foundation & Infrastructure | Supabase + wagmi working, basic frontend integration |
-| Sprint 2 | Week 3-4 | Smart Contract Development | UUPS + LayerZero contracts ready, testnet deployed |
-| Sprint 3 | Week 5-6 | Bridge Integration & Testing | Cross-chain minting/bridging working on testnet |
-| Sprint 4 | Week 7-8 | Governance & Mainnet | Multisig setup, mainnet deployment |
-| Sprint 5 | Week 9-10 | Polish & Launch | Production-ready, documented, launched |
+| Sprint | Focus | Deliverable |
+|--------|-------|-------------|
+| Sprint 1 | Foundation & Infrastructure | Supabase + wagmi working, basic frontend integration |
+| Sprint 2 | Smart Contract Development | UUPS + LayerZero contracts ready, testnet deployed |
+| Sprint 3 | Bridge Integration & Testing | Cross-chain minting/bridging working on testnet |
+| Sprint 4 | Governance & Mainnet | Multisig setup, mainnet deployment |
+| Sprint 5 | Polish & Launch | Production-ready, documented, launched |
 
 ---
 
-## 📅 Sprint 1: Foundation & Infrastructure (Week 1-2)
+## 📅 Sprint 1: Foundation & Infrastructure
 
-### Week 1: Backend & Database
+### Part 1: Backend & Database
 
-#### Day 1-2: Supabase Setup
+#### Supabase Setup
 - [ ] Create Supabase project
 - [ ] Set up database schema with updated fields:
   ```sql
@@ -77,7 +96,7 @@
 
 - [ ] Document Supabase setup in `docs/API.md`
 
-#### Day 3-4: Frontend Web3 Integration
+#### Frontend Web3 Integration
 
 - [ ] Install dependencies:
   ```bash
@@ -130,7 +149,7 @@
 - [ ] Replace mock wallet connection with real RainbowKit modal
 - [ ] Test wallet connection on both Base Sepolia and Bob Sepolia
 
-#### Day 5: State Management
+#### State Management
 
 - [ ] Set up Zustand store:
   ```typescript
@@ -150,7 +169,7 @@
 - [ ] Connect WritingInterface to real auto-save (every 3 seconds)
 - [ ] Update Gallery to fetch from Supabase
 
-#### Day 6-7: Testing & Integration
+#### Testing & Integration
 
 - [ ] Test complete flow: Write → Save to Supabase → View in Gallery
 - [ ] Test wallet authentication
@@ -158,13 +177,13 @@
 - [ ] Test 10-minute expiry (create thought, wait, verify deletion)
 - [ ] Fix any bugs
 
-**Week 1 Deliverable**: Users can connect wallet, write thoughts, auto-save to Supabase, view in gallery
+**Part 1 Deliverable**: Users can connect wallet, write thoughts, auto-save to Supabase, view in gallery
 
 ---
 
-### Week 2: Contract Development Environment
+### Part 2: Contract Development Environment
 
-#### Day 8-9: Foundry Setup
+#### Foundry Setup
 
 - [ ] Install Foundry:
   ```bash
@@ -226,7 +245,7 @@
   JOURNAL_PROXY_BOB_SEPOLIA=
   ```
 
-#### Day 10-12: Smart Contract Development
+#### Smart Contract Development
 
 - [ ] Create base contract structure:
   ```
@@ -261,7 +280,7 @@
   forge test -vvv
   ```
 
-#### Day 13-14: Deployment Scripts
+#### Deployment Scripts
 
 - [ ] Create deployment script `script/Deploy.s.sol`:
   - Deploy implementation contract
@@ -278,15 +297,15 @@
 
 - [ ] Document deployment process in `docs/CONTRACT_GUIDE.md`
 
-**Week 2 Deliverable**: Smart contracts complete, tested, ready for testnet deployment
+**Part 2 Deliverable**: Smart contracts complete, tested, ready for testnet deployment
 
 ---
 
-## 📅 Sprint 2: Smart Contract Deployment & Integration (Week 3-4)
+## 📅 Sprint 2: Smart Contract Deployment & Integration
 
-### Week 3: Testnet Deployment
+### Part 1: Testnet Deployment
 
-#### Day 15-16: Base Sepolia Deployment
+#### Base Sepolia Deployment
 
 - [ ] Deploy to Base Sepolia:
   ```bash
@@ -300,7 +319,7 @@
 - [ ] Test basic minting via Etherscan write functions
 - [ ] Verify SVG renders correctly in OpenSea testnet
 
-#### Day 17-18: Bob Sepolia Deployment
+#### Bob Sepolia Deployment
 
 - [ ] Deploy to Bob Sepolia (same process)
 - [ ] Verify contracts
@@ -313,7 +332,7 @@
   setPeer(baseSepoliaChainId, baseSepoliaContractAddress);
   ```
 
-#### Day 19-20: Bridge Testing
+#### Bridge Testing
 
 - [ ] Mint NFT on Base Sepolia
 - [ ] Bridge to Bob Sepolia via LayerZero
@@ -322,7 +341,7 @@
 - [ ] Bridge back to Base Sepolia
 - [ ] Test edge cases (invalid data, failed bridges, etc.)
 
-#### Day 21: Documentation
+#### Documentation
 
 - [ ] Update `CONTRACT_GUIDE.md` with:
   - Deployed addresses
@@ -330,13 +349,13 @@
   - How to set peers
   - Common issues
 
-**Week 3 Deliverable**: Contracts deployed on both testnets, bridging working
+**Part 1 Deliverable**: Contracts deployed on both testnets, bridging working
 
 ---
 
-### Week 4: Frontend Contract Integration
+### Part 2: Frontend Contract Integration
 
-#### Day 22-24: Contract ABIs & Config
+#### Contract ABIs & Config
 
 - [ ] Generate TypeScript types from ABIs:
   ```bash
@@ -359,7 +378,7 @@
   };
   ```
 
-#### Day 25-26: Minting Flow
+#### Minting Flow
 
 - [ ] Update MintPreview component:
   - Show chain selector (Base/Bob)
@@ -384,7 +403,7 @@
 
 - [ ] Update MintingModal with real transaction status
 
-#### Day 27-28: Gallery Integration
+#### Gallery Integration
 
 - [ ] Update ThoughtCard to show:
   - Chain badge (Base/Bob)
@@ -396,15 +415,15 @@
 - [ ] Add filter by minted/unminted
 - [ ] Test complete user flow
 
-**Week 4 Deliverable**: Complete mint flow working on testnets
+**Part 2 Deliverable**: Complete mint flow working on testnets
 
 ---
 
-## 📅 Sprint 3: Bridge UI & Polish (Week 5-6)
+## 📅 Sprint 3: Bridge UI & Polish
 
-### Week 5: Bridge Interface
+### Part 1: Bridge Interface
 
-#### Day 29-31: Bridge Component
+#### Bridge Component
 
 - [ ] Create BridgeModal component:
   - Show current chain
@@ -428,7 +447,7 @@
   - Waiting for confirmation
   - NFT received on destination chain
 
-#### Day 32-34: Chain Switching & UX
+#### Chain Switching & UX
 
 - [ ] Add "Switch Network" button when user is on wrong chain
 - [ ] Show warning if user tries to mint on wrong chain
@@ -436,7 +455,7 @@
 - [ ] Add loading states for all transactions
 - [ ] Add error recovery (transaction failed, retry, etc.)
 
-#### Day 35: Integration Testing
+#### Integration Testing
 
 - [ ] Test complete flow:
   1. Connect wallet → Base Sepolia
@@ -448,13 +467,13 @@
 - [ ] Test error cases
 - [ ] Fix bugs
 
-**Week 5 Deliverable**: Bridge UI complete, fully functional on testnets
+**Part 1 Deliverable**: Bridge UI complete, fully functional on testnets
 
 ---
 
-### Week 6: SVG Preview Matching
+### Part 2: SVG Preview Matching
 
-#### Day 36-38: SVG Sync
+#### SVG Sync
 
 - [ ] Ensure MintPreview matches on-chain SVG exactly:
   - Same fonts (need to embed in SVG)
@@ -466,7 +485,7 @@
 - [ ] Test with various text lengths and emojis
 - [ ] Handle edge cases (long words, special characters, etc.)
 
-#### Day 39-41: Mobile Responsiveness
+#### Mobile Responsiveness
 
 - [ ] Test on mobile devices (iOS Safari, Android Chrome)
 - [ ] Fix responsive issues
@@ -474,7 +493,7 @@
 - [ ] Test bridge flow on mobile
 - [ ] Optimize for slow connections
 
-#### Day 42: Comprehensive Testing
+#### Comprehensive Testing
 
 - [ ] End-to-end testing checklist:
   - [ ] Connect wallet (desktop)
@@ -488,15 +507,15 @@
   - [ ] Bridge back
   - [ ] Expired thoughts delete after 10 min
 
-**Week 6 Deliverable**: Polished testnet version ready for mainnet
+**Part 2 Deliverable**: Polished testnet version ready for mainnet
 
 ---
 
-## 📅 Sprint 4: Governance & Mainnet (Week 7-8)
+## 📅 Sprint 4: Governance & Mainnet
 
-### Week 7: Multisig & Governance Setup
+### Part 1: Multisig & Governance Setup
 
-#### Day 43-44: Gnosis Safe Setup
+#### Gnosis Safe Setup
 
 - [ ] Deploy Gnosis Safe on Base:
   - 3-of-5 multisig (or your preferred threshold)
@@ -505,7 +524,7 @@
 - [ ] Deploy Gnosis Safe on Bob
 - [ ] Test multisig transactions on testnet first
 
-#### Day 45-46: Timelock Setup
+#### Timelock Setup
 
 - [ ] Deploy OpenZeppelin TimelockController on Base:
   - Set delay: 48 hours
@@ -515,7 +534,7 @@
 - [ ] Deploy TimelockController on Bob
 - [ ] Test timelock flow on testnet
 
-#### Day 47-48: Transfer Ownership
+#### Transfer Ownership
 
 - [ ] Transfer proxy admin to timelock on testnet
 - [ ] Test upgrade flow:
@@ -526,7 +545,7 @@
 
 - [ ] Document governance process in `docs/GOVERNANCE.md`
 
-#### Day 49: Mainnet Preparation
+#### Mainnet Preparation
 
 - [ ] Audit deployment checklist:
   - [ ] All contracts verified on testnet
@@ -536,13 +555,13 @@
   - [ ] Gas tokens ready for mainnet
   - [ ] Block explorer API keys ready
 
-**Week 7 Deliverable**: Governance setup complete and tested on testnet
+**Part 1 Deliverable**: Governance setup complete and tested on testnet
 
 ---
 
-### Week 8: Mainnet Deployment
+### Part 2: Mainnet Deployment
 
-#### Day 50-51: Base Mainnet
+#### Base Mainnet
 
 - [ ] Deploy contracts to Base mainnet:
   ```bash
@@ -557,13 +576,13 @@
 - [ ] Transfer ownership to timelock
 - [ ] Test mint functionality (mint your own test NFT)
 
-#### Day 52-53: Bob Mainnet
+#### Bob Mainnet
 
 - [ ] Deploy to Bob mainnet (same process)
 - [ ] Set up LayerZero trusted remotes (mainnet)
 - [ ] Test bridge with small amount first
 
-#### Day 54-55: Frontend Configuration
+#### Frontend Configuration
 
 - [ ] Update frontend with mainnet addresses
 - [ ] Deploy frontend to Vercel:
@@ -576,7 +595,7 @@
 - [ ] Point domain to Vercel
 - [ ] Test production deployment
 
-#### Day 56: Final Mainnet Testing
+#### Final Mainnet Testing
 
 - [ ] Mint real NFT on Base mainnet
 - [ ] Bridge to Bob mainnet
@@ -584,15 +603,15 @@
 - [ ] Test all flows with real money
 - [ ] Monitor gas costs
 
-**Week 8 Deliverable**: Fully deployed on mainnet, production-ready
+**Part 2 Deliverable**: Fully deployed on mainnet, production-ready
 
 ---
 
-## 📅 Sprint 5: Polish & Launch (Week 9-10)
+## 📅 Sprint 5: Polish & Launch
 
-### Week 9: Polish & Documentation
+### Part 1: Polish & Documentation
 
-#### Day 57-59: Error Handling & Edge Cases
+#### Error Handling & Edge Cases
 
 - [ ] Comprehensive error messages:
   - Transaction rejected
@@ -604,7 +623,7 @@
 - [ ] Add transaction history
 - [ ] Add recent activity feed
 
-#### Day 60-62: Documentation
+#### Documentation
 
 - [ ] Complete `docs/CONTRACT_GUIDE.md`:
   - Architecture overview
@@ -629,7 +648,7 @@
   - Environment variables
   - Monitoring setup
 
-#### Day 63: Performance Optimization
+#### Performance Optimization
 
 - [ ] Optimize bundle size
 - [ ] Lazy load components
@@ -637,13 +656,13 @@
 - [ ] Add caching strategies
 - [ ] Test on slow connections
 
-**Week 9 Deliverable**: Production-ready with complete documentation
+**Part 1 Deliverable**: Production-ready with complete documentation
 
 ---
 
-### Week 10: Launch Week
+### Part 2: Launch
 
-#### Day 64-65: Pre-Launch
+#### Pre-Launch
 
 - [ ] Security checklist:
   - [ ] Contracts verified on both chains
@@ -658,14 +677,14 @@
   - [ ] Blog post
   - [ ] Demo video
 
-#### Day 66-67: Soft Launch
+#### Soft Launch
 
 - [ ] Invite 10-20 beta testers
 - [ ] Monitor for bugs
 - [ ] Collect feedback
 - [ ] Fix critical issues
 
-#### Day 68-69: Public Launch
+#### Public Launch
 
 - [ ] Announce on Twitter
 - [ ] Post on relevant communities
@@ -673,14 +692,14 @@
 - [ ] Respond to user questions
 - [ ] Fix bugs quickly
 
-#### Day 70: Post-Launch
+#### Post-Launch
 
 - [ ] Monitor contract events
 - [ ] Track user metrics (Supabase)
 - [ ] Collect user feedback
 - [ ] Plan V1.1 improvements
 
-**Week 10 Deliverable**: Successfully launched, users minting and bridging
+**Part 2 Deliverable**: Successfully launched, users minting and bridging
 
 ---
 
@@ -732,11 +751,11 @@
 
 ---
 
-## 📋 Daily Standup Template
+## 📋 Progress Tracking
 
-Each day, track:
-- [ ] What did I complete yesterday?
-- [ ] What will I work on today?
+Track regularly:
+- [ ] What have I completed?
+- [ ] What am I working on now?
 - [ ] Any blockers?
 - [ ] Any decisions needed?
 
@@ -784,4 +803,4 @@ Each day, track:
 
 ---
 
-**Ready to start? Let me know and we'll begin Sprint 1, Day 1! 🚀**
+**Ready to start? Let me know and we'll begin Sprint 1! 🚀**

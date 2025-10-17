@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
 import { Toaster } from './components/ui/sonner';
 import { IntroModal } from './components/IntroModal';
 import { Gallery } from './components/Gallery';
@@ -11,12 +11,14 @@ import { MintingModal } from './components/MintingModal';
 import { useThoughtStore } from './store/useThoughtStore';
 import { Thought as ThoughtType } from './types';
 import { toast } from 'sonner';
+import { getEnsNameForMinting } from './hooks/useEnsName';
 
 type View = 'writing' | 'gallery' | 'mood' | 'preview' | 'detail';
 
 export default function App() {
   const [showIntroModal, setShowIntroModal] = useState(true);
   const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
   const { saveThought } = useThoughtStore();
 
   const [currentView, setCurrentView] = useState<View>('writing');
@@ -63,7 +65,14 @@ export default function App() {
       setIsMintingModalOpen(true);
       setMintingStatus('minting');
 
+      // Resolve ENS name for the connected wallet
+      let ensName = '';
+      if (publicClient) {
+        ensName = await getEnsNameForMinting(address, publicClient);
+      }
+
       // TODO: Replace with actual smart contract minting
+      // When integrating with contract, call: mintEntry(text, mood, ensName)
       // For now, simulate minting process
       await new Promise(resolve => setTimeout(resolve, 3000));
 
@@ -76,6 +85,7 @@ export default function App() {
         mood: currentThought.mood || '😌',
         is_minted: true,
         // Note: origin_chain_id, token_id, etc. will be added when we integrate smart contracts
+        // ENS name will be passed to contract: mintEntry(text, mood, ensName)
       });
 
       setMintingStatus('success');
