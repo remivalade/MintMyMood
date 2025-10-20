@@ -1,6 +1,6 @@
 # MintMyMood - Development TODO
 
-**Current Status**: Sprint 2 Complete ✅ - Ready for Testnet Deployment
+**Current Status**: Sprint 3 Complete ✅ - Production Ready for Beta Testing
 
 ---
 
@@ -79,55 +79,78 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 - [x] Create `V1_READY.md` with deployment readiness summary
 - [x] Update all docs with ENS support and SVG implementation
 
----
+### ✅ Completed: Sprint 3 - Testnet Deployment & Frontend Integration
 
-## 🎯 Next Up: Sprint 3 - Testnet Deployment
-
-### Testnet Deployment
-- [ ] Fund deployer wallet with testnet ETH
-  - [ ] Base Sepolia (~0.1 ETH)
-  - [ ] Bob Testnet (~0.1 ETH)
-- [ ] Configure environment variables in `.env`
-  - [ ] PRIVATE_KEY
-  - [ ] BASE_SEPOLIA_RPC_URL
-  - [ ] BOB_SEPOLIA_RPC_URL
-  - [ ] BASESCAN_API_KEY
-
-**Base Sepolia Deployment**
-- [ ] Deploy to Base Sepolia testnet
-- [ ] Verify proxy and implementation on Basescan
-- [ ] Test basic minting via Etherscan
-- [ ] Verify SVG renders correctly
-- [ ] Test ENS name display
-
-**Bob Testnet Deployment**
-- [ ] Deploy to Bob Testnet
-- [ ] Verify contracts
-- [ ] Test basic minting
-- [ ] Verify orange gradient renders correctly
-- [ ] Test ENS name display
+**Testnet Deployment**
+- [x] Fund deployer wallet with testnet ETH (Base Sepolia & Bob Testnet)
+- [x] Configure environment variables in `.env`
+- [x] Deploy to Base Sepolia testnet
+- [x] Deploy to Bob Testnet
+- [x] Verify contracts on Basescan (Base Sepolia)
+- [x] Test basic minting via contract calls
+- [x] Verify SVG renders correctly with chain-specific gradients
+- [x] Test ENS name display in SVGs
 
 **Frontend Integration**
-- [ ] Add contract ABIs to frontend
-- [ ] Update wagmi contract configurations
-- [ ] Connect real minting flow to deployed contracts
-- [ ] Test end-to-end minting with ENS
-- [ ] Test end-to-end minting without ENS
-- [ ] Update Gallery to show real on-chain NFTs
-- [ ] Test on multiple wallets (MetaMask, Rabby, etc.)
+- [x] Add contract ABIs to frontend (`src/contracts/OnChainJournal.abi.json`)
+- [x] Update wagmi contract configurations (`src/contracts/config.ts`)
+- [x] Create minting hook (`src/hooks/useMintJournalEntry.ts`)
+- [x] Connect real minting flow to deployed contracts
+- [x] Test end-to-end minting with ENS resolution
+- [x] Implement PreviewChain Context for wallet-independent chain switching
+- [x] Create local SVG generation utility matching on-chain output
+- [x] Update Gallery to show real minted NFTs as SVGs
+- [x] Add React Router for proper URL navigation
+- [x] Fix all user-reported issues through 5 testing sessions
+
+**User Testing Fixes (5 Sessions)**
+- [x] Session 1: Chain switcher positioning, contract verification, transaction links
+- [x] Session 2: Contract redeployment with correct naming, emoji display, SVG preview
+- [x] Session 3: PreviewChain Context, local SVG generation, ENS resolution
+- [x] Session 4: Gallery SVG display, React Router, delete button functionality
+- [x] Session 5: Perfect square cards, delete button positioning
+
+**Contract Addresses (Same on Both Chains)**:
+- Proxy: `0xceC072B04bF99517f12a86E8b19eb1e6AAf8b0eF`
+- Implementation: `0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B`
+
+---
+
+## 🎯 Next Up: Sprint 4 - User Testing & Beta Launch
+
+### Beta Testing Program
+- [ ] Deploy frontend to testnet subdomain (e.g., testnet.mintmymood.xyz)
+- [ ] Create beta testing documentation
+- [ ] Recruit 5-10 beta testers from community
+- [ ] Set up feedback collection system (Google Forms or Typeform)
+- [ ] Create testing scenarios and scripts
+
+### Monitoring & Metrics
+- [ ] Set up analytics (Vercel Analytics or similar)
+- [ ] Monitor gas costs across different transaction types
+- [ ] Track user flows and drop-off points
+- [ ] Monitor contract interactions on both chains
+- [ ] Set up error tracking (Sentry or similar)
+
+### Bug Fixes & Iteration
+- [ ] Collect and triage user feedback
+- [ ] Fix critical bugs within 24 hours
+- [ ] Fix medium-priority bugs within 1 week
+- [ ] Document known issues and workarounds
+- [ ] Update documentation based on user questions
+
+### UX Improvements
+- [ ] Optimize loading states and transitions
+- [ ] Add more helpful error messages
+- [ ] Consider gasless transactions (optional)
+- [ ] Mobile responsiveness testing
+- [ ] Cross-browser testing (Chrome, Firefox, Safari, Brave)
 
 ---
 
 ## 📅 Upcoming Sprints
 
-### Sprint 4: User Testing & Iteration
-- [ ] Beta testing with 5-10 users
-- [ ] Collect feedback on UX and gas costs
-- [ ] Fix any critical bugs
-- [ ] Optimize gas costs if needed
-- [ ] Monitor testnet performance
-
-### Sprint 5: Mainnet Preparation
+### Sprint 5: Mainnet Preparation (After Beta Testing)
 - [ ] Security review (internal)
 - [ ] Consider external audit
 - [ ] Set up multisig (Gnosis Safe)
@@ -231,13 +254,23 @@ VITE_JOURNAL_PROXY_BOB=
 
 ## 🎯 Success Criteria for Current Sprint
 
-### Sprint 3 Goals
-- [ ] Contracts deployed to Base Sepolia and Bob Testnet
-- [ ] Basic minting working on both testnets
-- [ ] SVG renders correctly with chain-specific colors
-- [ ] ENS names display properly in SVGs
-- [ ] Frontend connected to real contracts
-- [ ] End-to-end minting flow working
+### Sprint 3 Goals ✅ ALL COMPLETE
+- [x] Contracts deployed to Base Sepolia and Bob Testnet
+- [x] Basic minting working on both testnets
+- [x] SVG renders correctly with chain-specific colors
+- [x] ENS names display properly in SVGs
+- [x] Frontend connected to real contracts
+- [x] End-to-end minting flow working
+- [x] 5 rounds of user testing completed with all issues fixed
+
+### Sprint 4 Goals (Current)
+- [ ] Deploy to public testnet URL
+- [ ] Complete beta testing with 5-10 external users
+- [ ] Collect and document feedback
+- [ ] Fix any critical bugs discovered
+- [ ] Optimize UX based on real user behavior
+- [ ] Achieve 90%+ task completion rate in user testing
+- [ ] Mobile and cross-browser compatibility verified
 
 ---
 
@@ -270,4 +303,4 @@ anvil                    # Start local blockchain
 
 ---
 
-**Next Session Goals**: Deploy contracts to Base Sepolia and Bob Testnet (Sprint 3) 🚀
+**Next Session Goals**: Deploy to public testnet and begin beta testing (Sprint 4) 🚀

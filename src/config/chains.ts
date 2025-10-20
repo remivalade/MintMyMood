@@ -51,16 +51,16 @@ export const bobSepolia = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['https://testnet.rpc.gobob.xyz'],
+      http: ['https://bob-sepolia.rpc.gobob.xyz'],
     },
     public: {
-      http: ['https://testnet.rpc.gobob.xyz'],
+      http: ['https://bob-sepolia.rpc.gobob.xyz'],
     },
   },
   blockExplorers: {
     default: {
       name: 'Bob Explorer',
-      url: 'https://testnet.explorer.gobob.xyz',
+      url: 'https://bob-sepolia.explorer.gobob.xyz',
     },
   },
   testnet: true,

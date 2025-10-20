@@ -8,12 +8,15 @@ import {
   injectedWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { getSupportedChains } from './chains';
+import { mainnet } from 'wagmi/chains';
 
 /**
  * Wagmi Configuration for MintMyMood
  *
  * Uses RainbowKit for beautiful wallet connection UI
  * Automatically switches between testnet/mainnet based on environment
+ *
+ * NOTE: Mainnet is always included for ENS resolution, even in testnet mode
  */
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
@@ -25,10 +28,14 @@ if (!projectId) {
   );
 }
 
+// Get supported chains and always include mainnet for ENS resolution
+const supportedChains = getSupportedChains();
+const allChains = [...supportedChains, mainnet] as const;
+
 export const wagmiConfig = getDefaultConfig({
   appName: 'MintMyMood',
   projectId,
-  chains: getSupportedChains(),
+  chains: allChains,
   ssr: false, // We're using Vite, not Next.js
   wallets: [
     {

@@ -1,0 +1,8 @@
+{
+  "chain": "Base Sepolia",
+  "chainId": 84532,
+  "implementation": "0x9d2A042C64E27f1B3f48f929bF9e1E265a5c88dD",
+  "proxy": "0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8",
+  "deployer": "0x1319938D4D9A1596937eF136905bEaFF3Ac0c753",
+  "timestamp": 1760960446
+}

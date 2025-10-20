@@ -207,6 +207,7 @@ The Solidity contract (`contracts/src/OnChainJournal.sol`) implements:
 
 **Sprint 1**: ✅ Complete - Foundation & Infrastructure
 **Sprint 2**: ✅ Complete - Smart Contract Development
+**Sprint 3**: ✅ Complete - Testnet Deployment & Integration
 
 **What's Built:**
 
@@ -238,11 +239,29 @@ The Solidity contract (`contracts/src/OnChainJournal.sol`) implements:
 - ✅ Deployment scripts ready
 - ✅ Complete documentation (CONTRACT_GUIDE.md)
 
-**Next Steps (Sprint 3):**
-- ⏳ Deploy to Base Sepolia testnet
-- ⏳ Deploy to Bob Testnet
-- ⏳ Frontend integration with deployed contracts
-- ⏳ End-to-end testing
+*Testnet Deployment (Sprint 3):*
+- ✅ Deployed to Base Sepolia testnet (verified on Basescan)
+- ✅ Deployed to Bob Testnet
+- ✅ Frontend integration with deployed contracts
+- ✅ Real minting hook with wagmi (`useMintJournalEntry`)
+- ✅ PreviewChain Context for wallet-independent chain switching
+- ✅ Local SVG generation utility matching on-chain output
+- ✅ Gallery displays minted NFTs as actual SVGs
+- ✅ React Router for proper URL navigation
+- ✅ ENS resolution with Ethereum Mainnet
+- ✅ Custom wallet connection modal
+- ✅ Transaction tracking and explorer links
+- ✅ 5 rounds of user testing with all issues fixed
+
+**Contract Addresses (Both Chains):**
+- Proxy: `0xceC072B04bF99517f12a86E8b19eb1e6AAf8b0eF`
+- Implementation: `0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B`
+
+**Next Steps (Sprint 4):**
+- 🎯 Deploy to public testnet URL
+- 🎯 Beta testing with 5-10 external users
+- 🎯 Collect feedback and optimize UX
+- 🎯 Mobile and cross-browser testing
 
 **Future (V2 - Post-Launch):**
 - 📅 LayerZero V2 ONFT721 integration
@@ -315,15 +334,17 @@ forge test --gas-report  # Gas usage report
    - May need alternative RPC endpoint
 
 **Low Priority:**
-5. **Mock Minting Modal**: Still using simulated minting
-   - Will be replaced in Sprint 3 with real contract calls
+5. **Bob Testnet Verification**: Contract deployed but manual verification needed
+   - Explorer API has TLS issues
+   - Contract is functional and deployed
 
 ### Future Features (Planned)
-- Real smart contract minting (Sprint 3 - testnet deployment)
+- ✅ Real smart contract minting - COMPLETE (Sprint 3)
+- ✅ React Router navigation - COMPLETE (Sprint 3)
+- ✅ Gallery SVG display - COMPLETE (Sprint 3)
 - Cross-chain bridging via LayerZero (V2 - post-launch)
 - Timer countdown display for ephemeral thoughts
 - Transaction status tracking with block confirmations
-- Sync frontend SVG preview with on-chain SVG
 - Gasless minting sponsorship (Gelato/Biconomy) - post-launch
 - Mobile optimization and PWA support
 
@@ -351,5 +372,7 @@ Key planning documents in the repository:
 **Sprint Summaries:**
 - `docs/SPRINT1_DAYS1-4_COMPLETE.md` - Sprint 1 Part 1 completion summary
 - `docs/SPRINT1_DAYS5-7_PROGRESS.md` - Sprint 1 Part 2 completion summary
+- `docs/SPRINT3_DEPLOYMENT_COMPLETE.md` - Sprint 3 complete documentation (5 testing sessions)
+- `docs/SPRINT3_PR_SUMMARY.md` - Sprint 3 GitHub PR summary
 
-**Next Steps:** Sprint 3 - Testnet deployment (see `docs/todo.md`)
+**Next Steps:** Sprint 4 - Beta testing (see `docs/todo.md`)

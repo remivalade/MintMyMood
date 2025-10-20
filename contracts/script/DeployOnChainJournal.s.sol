@@ -82,32 +82,10 @@ contract DeployOnChainJournal is Script {
         console.log("Chain Name:", journal.chainName());
         console.log("==========================\n");
 
-        // 6. Save deployment addresses (for frontend integration)
-        string memory deploymentInfo = string(
-            abi.encodePacked(
-                "{\n",
-                '  "chain": "', config.name, '",\n',
-                '  "chainId": ', vm.toString(block.chainid), ',\n',
-                '  "implementation": "', vm.toString(address(implementation)), '",\n',
-                '  "proxy": "', vm.toString(address(proxy)), '",\n',
-                '  "deployer": "', vm.toString(deployer), '",\n',
-                '  "timestamp": ', vm.toString(block.timestamp), '\n',
-                "}\n"
-            )
-        );
-
-        string memory fileName = string(
-            abi.encodePacked(
-                "deployments/",
-                config.name,
-                "-",
-                vm.toString(block.chainid),
-                ".json"
-            )
-        );
-
-        vm.writeFile(fileName, deploymentInfo);
-        console.log("Deployment info saved to:", fileName);
+        // 6. Note: Deployment info will be saved manually
+        console.log("\nIMPORTANT: Save these addresses to your .env file:");
+        console.log("JOURNAL_PROXY_ADDRESS=", address(proxy));
+        console.log("JOURNAL_IMPL_ADDRESS=", address(implementation));
     }
 
     /**
@@ -121,7 +99,7 @@ contract DeployOnChainJournal is Script {
         if (chainId == 84532) {
             config.color1 = "#0052FF";
             config.color2 = "#0052FF";
-            config.name = "Base Sepolia";
+            config.name = "Base";
         }
         // Base Mainnet (8453)
         else if (chainId == 8453) {
@@ -129,11 +107,11 @@ contract DeployOnChainJournal is Script {
             config.color2 = "#0052FF";
             config.name = "Base";
         }
-        // Bob Testnet (111)
-        else if (chainId == 111) {
+        // Bob Testnet/Sepolia (808813 or 111)
+        else if (chainId == 111 || chainId == 808813) {
             config.color1 = "#FF6B35";
             config.color2 = "#F7931E";
-            config.name = "Bob Testnet";
+            config.name = "Bob";
         }
         // Bob Mainnet (60808)
         else if (chainId == 60808) {

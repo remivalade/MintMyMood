@@ -49,8 +49,8 @@ contract OnChainJournalTest is Test {
     // ============================================
 
     function test_Initialize() public view {
-        assertEq(journal.name(), "On-Chain Journal");
-        assertEq(journal.symbol(), "JOURNAL");
+        assertEq(journal.name(), "MintMyMood");
+        assertEq(journal.symbol(), "MMM");
         assertEq(journal.color1(), COLOR1);
         assertEq(journal.color2(), COLOR2);
         assertEq(journal.chainName(), CHAIN_NAME);

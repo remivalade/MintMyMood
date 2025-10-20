@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAccount, usePublicClient } from 'wagmi';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useAccount, usePublicClient, useWaitForTransactionReceipt, useChainId } from 'wagmi';
 import { Toaster } from './components/ui/sonner';
 import { IntroModal } from './components/IntroModal';
 import { Gallery } from './components/Gallery';
@@ -8,29 +9,46 @@ import { MoodSelection } from './components/MoodSelection';
 import { MintPreview } from './components/MintPreview';
 import { ThoughtDetail } from './components/ThoughtDetail';
 import { MintingModal } from './components/MintingModal';
+import { WalletPromptModal } from './components/WalletPromptModal';
 import { useThoughtStore } from './store/useThoughtStore';
 import { Thought as ThoughtType } from './types';
 import { toast } from 'sonner';
-import { getEnsNameForMinting } from './hooks/useEnsName';
+import { useMintJournalEntry } from './hooks/useMintJournalEntry';
+import { baseSepolia, bobSepolia } from './config/chains';
+import { getContractAddress } from './contracts/config';
 
-type View = 'writing' | 'gallery' | 'mood' | 'preview' | 'detail';
+const moodEmojis: Record<string, string> = {
+  'Peaceful': '😌',
+  'Reflective': '💭',
+  'Inspired': '✨',
+  'Melancholic': '🌙',
+  'Passionate': '🔥',
+  'Growing': '🌱',
+  'Dreamy': '💫',
+  'Energized': '⚡',
+};
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
+
   const [showIntroModal, setShowIntroModal] = useState(true);
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const publicClient = usePublicClient();
-  const { saveThought } = useThoughtStore();
+  const { saveThought, markAsMinted, thoughts } = useThoughtStore();
+  const { mint, hash, isLoading: isMintLoading, isSuccess: isMintSuccess, error: mintError } = useMintJournalEntry();
 
-  const [currentView, setCurrentView] = useState<View>('writing');
   const [currentThought, setCurrentThought] = useState<{
     content: string;
     mood?: string;
     draftId?: string;
   }>({ content: '' });
-  const [selectedThought, setSelectedThought] = useState<ThoughtType | null>(null);
   
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false);
   const [mintingStatus, setMintingStatus] = useState<'minting' | 'success' | 'error'>('minting');
+  const [isWalletPromptOpen, setIsWalletPromptOpen] = useState(false);
 
   // Show intro modal only on first visit
   useEffect(() => {
@@ -47,17 +65,19 @@ export default function App() {
 
   const handleWritingComplete = (content: string, draftId?: string) => {
     setCurrentThought({ content, draftId });
-    setCurrentView('mood');
+    navigate('/mood');
   };
 
   const handleMoodSelected = (mood: string) => {
     setCurrentThought(prev => ({ ...prev, mood }));
-    setCurrentView('preview');
+    navigate('/preview');
   };
+
+  const [currentMintingThoughtId, setCurrentMintingThoughtId] = useState<string | null>(null);
 
   const handleMintClick = async () => {
     if (!isConnected || !address) {
-      toast.error('Please connect your wallet first');
+      setIsWalletPromptOpen(true);
       return;
     }
 
@@ -65,41 +85,106 @@ export default function App() {
       setIsMintingModalOpen(true);
       setMintingStatus('minting');
 
-      // Resolve ENS name for the connected wallet
-      let ensName = '';
-      if (publicClient) {
-        ensName = await getEnsNameForMinting(address, publicClient);
-      }
+      // Convert mood name to emoji
+      const moodEmoji = currentThought.mood ? moodEmojis[currentThought.mood] || '😌' : '😌';
 
-      // TODO: Replace with actual smart contract minting
-      // When integrating with contract, call: mintEntry(text, mood, ensName)
-      // For now, simulate minting process
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Save as minted thought to Supabase
-      // If we have a draftId, update that draft to minted instead of creating a new one
-      await saveThought({
-        id: currentThought.draftId, // Will update if exists, insert if undefined
+      // Save thought to database first to get an ID
+      const savedThought = await saveThought({
+        id: currentThought.draftId,
         wallet_address: address,
         text: currentThought.content,
-        mood: currentThought.mood || '😌',
-        is_minted: true,
-        // Note: origin_chain_id, token_id, etc. will be added when we integrate smart contracts
-        // ENS name will be passed to contract: mintEntry(text, mood, ensName)
+        mood: moodEmoji,
+        is_minted: false, // Not minted yet
       });
 
-      setMintingStatus('success');
-      toast.success('Thought minted successfully!');
-    } catch (error) {
+      if (!savedThought) {
+        throw new Error('Failed to save thought');
+      }
+
+      // Store the thought ID for later update
+      setCurrentMintingThoughtId(savedThought.id);
+
+      // Mint the NFT on-chain with emoji
+      await mint(savedThought.id, currentThought.content, moodEmoji);
+
+      toast.info('Transaction submitted! Waiting for confirmation...');
+    } catch (error: any) {
       console.error('Error minting thought:', error);
       setMintingStatus('error');
-      toast.error('Failed to mint thought');
+      toast.error(error?.message || 'Failed to mint thought');
     }
   };
 
+  // Watch for minting transaction confirmation
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+
+  useEffect(() => {
+    const updateMintedStatus = async () => {
+      if (isConfirmed && hash && currentMintingThoughtId && address) {
+        setMintingStatus('success');
+
+        // Get contract address for this chain
+        const contractAddress = getContractAddress(chainId);
+
+        if (contractAddress) {
+          // Mark thought as minted in database
+          await markAsMinted(
+            currentMintingThoughtId,
+            chainId,
+            '0', // Token ID - we'd need to get this from the contract events
+            contractAddress,
+            hash
+          );
+        }
+
+        // Generate explorer link based on chain
+        const getExplorerUrl = (chainId: number, txHash: string) => {
+          if (chainId === baseSepolia.id) {
+            return `https://sepolia.basescan.org/tx/${txHash}`;
+          } else if (chainId === bobSepolia.id) {
+            return `https://bob-sepolia.explorer.gobob.xyz/tx/${txHash}`;
+          }
+          return null;
+        };
+
+        const explorerUrl = getExplorerUrl(chainId, hash);
+
+        if (explorerUrl) {
+          toast.success(
+            <div>
+              Thought minted successfully!{' '}
+              <a
+                href={explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-semibold"
+              >
+                View transaction
+              </a>
+            </div>
+          );
+        } else {
+          toast.success('Thought minted successfully!');
+        }
+
+        // Clear the minting thought ID
+        setCurrentMintingThoughtId(null);
+      }
+    };
+
+    updateMintedStatus();
+  }, [isConfirmed, hash, chainId, currentMintingThoughtId, address, markAsMinted]);
+
+  useEffect(() => {
+    if (mintError) {
+      setMintingStatus('error');
+      toast.error('Minting failed');
+    }
+  }, [mintError]);
+
   const handleDiscard = async () => {
     if (!isConnected || !address) {
-      toast.error('Please connect your wallet first');
+      setIsWalletPromptOpen(true);
       return;
     }
 
@@ -120,7 +205,7 @@ export default function App() {
 
       toast.success('Thought saved as ephemeral');
       setCurrentThought({ content: '' });
-      setCurrentView('writing');
+      navigate('/write');
     } catch (error) {
       console.error('Error saving thought:', error);
       toast.error('Failed to save thought');
@@ -130,48 +215,65 @@ export default function App() {
   const handleMintingModalClose = () => {
     setIsMintingModalOpen(false);
     setCurrentThought({ content: '' });
-    setCurrentView('writing');
+    navigate('/write');
   };
 
   const handleThoughtClick = (thought: ThoughtType) => {
-    setSelectedThought(thought);
-    setCurrentView('detail');
+    navigate(`/thought/${thought.id}`, { state: { thought } });
   };
 
   const handleMintFromDetail = () => {
-    if (!selectedThought) return;
+    const thought = location.state?.thought as ThoughtType;
+    if (!thought) return;
 
     setCurrentThought({
-      content: selectedThought.text,
-      mood: selectedThought.mood,
+      content: thought.text,
+      mood: thought.mood,
     });
-    setCurrentView('preview');
-    setSelectedThought(null);
+    navigate('/preview');
   };
+
+  const handleMintFromGallery = (thought: ThoughtType) => {
+    setCurrentThought({
+      content: thought.text,
+      mood: thought.mood,
+      draftId: thought.id,
+    });
+    navigate('/mood');
+  };
+
+  // Get current thought from URL params if on detail page
+  const selectedThought = location.pathname.startsWith('/thought/')
+    ? (location.state?.thought as ThoughtType) || thoughts.find(t => t.id === params.id)
+    : null;
+
+  // Get current view from route
+  const currentView = location.pathname.split('/')[1] || 'write';
 
   return (
     <div className="min-h-screen">
       {/* Intro Modal - shown only once */}
       <IntroModal isOpen={showIntroModal} onClose={handleCloseIntro} />
 
-      {currentView === 'writing' && (
+      {currentView === 'write' && (
         <WritingInterface
           onComplete={handleWritingComplete}
-          onOpenGallery={() => setCurrentView('gallery')}
+          onOpenGallery={() => navigate('/gallery')}
         />
       )}
 
       {currentView === 'gallery' && (
         <Gallery
-          onNewThought={() => setCurrentView('writing')}
+          onNewThought={() => navigate('/write')}
           onThoughtClick={handleThoughtClick}
+          onMintFromGallery={handleMintFromGallery}
         />
       )}
 
       {currentView === 'mood' && (
         <MoodSelection
           onSelectMood={handleMoodSelected}
-          onBack={() => setCurrentView('writing')}
+          onBack={() => navigate('/write')}
         />
       )}
 
@@ -184,16 +286,13 @@ export default function App() {
         />
       )}
 
-      {currentView === 'detail' && selectedThought && (
+      {currentView === 'thought' && selectedThought && (
         <ThoughtDetail
           content={selectedThought.text}
           mood={selectedThought.mood}
           date={new Date(selectedThought.created_at)}
           isMinted={selectedThought.is_minted}
-          onClose={() => {
-            setSelectedThought(null);
-            setCurrentView('gallery');
-          }}
+          onClose={() => navigate('/gallery')}
           onMint={!selectedThought.is_minted ? handleMintFromDetail : undefined}
         />
       )}
@@ -203,6 +302,11 @@ export default function App() {
         status={mintingStatus}
         onClose={handleMintingModalClose}
         onViewGallery={handleMintingModalClose}
+      />
+
+      <WalletPromptModal
+        isOpen={isWalletPromptOpen}
+        onClose={() => setIsWalletPromptOpen(false)}
       />
 
       <Toaster />

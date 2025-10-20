@@ -110,7 +110,7 @@ contract OnChainJournal is
         string memory _chainName,
         address _owner
     ) public initializer {
-        __ERC721_init("On-Chain Journal", "JOURNAL");
+        __ERC721_init("MintMyMood", "MMM");
         __Ownable_init(_owner);
 
         color1 = _color1;

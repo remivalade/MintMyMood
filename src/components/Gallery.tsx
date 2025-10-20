@@ -1,28 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ThoughtCard } from './ThoughtCard';
+import { MintedNFTCard } from './MintedNFTCard';
 import { AboutModal } from './AboutModal';
 import { ConnectButton } from './ConnectButton';
 import { PenLine, Info, Filter } from 'lucide-react';
 import { useThoughtStore } from '../store/useThoughtStore';
 import { Thought } from '../types';
+import { toast } from 'sonner';
 
 interface GalleryProps {
   thoughts?: Thought[];
   onNewThought: () => void;
   onThoughtClick: (thought: Thought) => void;
+  onMintFromGallery?: (thought: Thought) => void;
 }
 
 type FilterType = 'all' | 'minted' | 'ephemeral';
 
-export function Gallery({ onNewThought, onThoughtClick }: GalleryProps) {
+export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: GalleryProps) {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [selectedChain, setSelectedChain] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { address, isConnected } = useAccount();
-  const { thoughts, fetchThoughts } = useThoughtStore();
+  const { thoughts, fetchThoughts, deleteThought } = useThoughtStore();
 
   // Fetch thoughts when wallet connects
   useEffect(() => {
@@ -46,6 +49,22 @@ export function Gallery({ onNewThought, onThoughtClick }: GalleryProps) {
 
   const mintedCount = thoughts.filter(t => t.is_minted).length;
   const ephemeralCount = thoughts.filter(t => !t.is_minted).length;
+
+  const handleDelete = async (thoughtId: string) => {
+    try {
+      await deleteThought(thoughtId);
+      toast.success('Thought deleted');
+    } catch (error) {
+      console.error('Error deleting thought:', error);
+      toast.error('Failed to delete thought');
+    }
+  };
+
+  const handleMint = (thought: Thought) => {
+    if (onMintFromGallery) {
+      onMintFromGallery(thought);
+    }
+  };
 
   return (
     <div className="min-h-screen p-6 md:p-12" style={{ backgroundColor: 'var(--paper-cream)' }}>
@@ -165,18 +184,36 @@ export function Gallery({ onNewThought, onThoughtClick }: GalleryProps) {
             ) : (
               /* Thoughts Grid */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredThoughts.map((thought) => (
-                  <ThoughtCard
-                    key={thought.id}
-                    content={thought.text}
-                    mood={thought.mood}
-                    date={new Date(thought.created_at)}
-                    isMinted={thought.is_minted}
-                    expiresAt={thought.expires_at ? new Date(thought.expires_at) : undefined}
-                    chainId={thought.current_chain_id}
-                    onClick={() => onThoughtClick(thought)}
-                  />
-                ))}
+                {filteredThoughts.map((thought) => {
+                  // Render minted thoughts as SVG NFT cards
+                  if (thought.is_minted && thought.current_chain_id && address) {
+                    return (
+                      <MintedNFTCard
+                        key={thought.id}
+                        content={thought.text}
+                        mood={thought.mood}
+                        chainId={thought.current_chain_id}
+                        walletAddress={address}
+                        onClick={() => onThoughtClick(thought)}
+                      />
+                    );
+                  }
+
+                  // Render ephemeral thoughts as cards
+                  return (
+                    <ThoughtCard
+                      key={thought.id}
+                      content={thought.text}
+                      mood={thought.mood}
+                      date={new Date(thought.created_at)}
+                      isMinted={thought.is_minted}
+                      expiresAt={thought.expires_at ? new Date(thought.expires_at) : undefined}
+                      chainId={thought.current_chain_id}
+                      onClick={() => onThoughtClick(thought)}
+                      onDelete={() => handleDelete(thought.id)}
+                    />
+                  );
+                })}
               </div>
             )}
           </>
