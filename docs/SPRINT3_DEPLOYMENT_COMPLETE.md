@@ -46,8 +46,8 @@ View contract: https://sepolia.basescan.org/address/0x9d2A042C64E27f1B3f48f929bF
 - **Deployer**: `0x1319938D4D9A1596937eF136905bEaFF3Ac0c753`
 
 ### Verification Status
-⚠️ **Blockscout Explorer TLS Issues**
-- Manual verification needed through: https://testnet-explorer.gobob.xyz/address/0x9d2A042C64E27f1B3f48f929bF9e1E265a5c88dD
+✅ **Verified on Bob Sepolia Explorer**
+- View contract: https://bob-sepolia.explorer.gobob.xyz/address/0x9d2A042C64E27f1B3f48f929bF9e1E265a5c88dD
 - Contract deployed and functional
 
 ### Test Mint
@@ -203,7 +203,7 @@ const getExplorerUrl = (chainId: number, txHash: string) => {
   if (chainId === baseSepolia.id) {
     return `https://sepolia.basescan.org/tx/${txHash}`;
   } else if (chainId === bobSepolia.id) {
-    return `https://testnet-explorer.gobob.xyz/tx/${txHash}`;
+    return `https://bob-sepolia.explorer.gobob.xyz/tx/${txHash}`;
   }
   return null;
 };
@@ -430,7 +430,7 @@ function upgradeToAndCall(address newImpl, bytes data) external onlyOwner
 
 ### Explorers
 - **Base Sepolia**: https://sepolia.basescan.org/
-- **Bob Testnet**: https://testnet-explorer.gobob.xyz/
+- **Bob Testnet**: https://bob-sepolia.explorer.gobob.xyz/
 
 ### RPC Endpoints
 - **Base Sepolia**: https://sepolia.base.org

@@ -110,9 +110,62 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 - [x] Session 4: Gallery SVG display, React Router, delete button functionality
 - [x] Session 5: Perfect square cards, delete button positioning
 
-**Contract Addresses (Same on Both Chains)**:
+**Contract Addresses (V1.0.0 - Deprecated)**:
 - Proxy: `0xceC072B04bF99517f12a86E8b19eb1e6AAf8b0eF`
 - Implementation: `0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B`
+
+### ✅ Completed: Sprint 3.1 - ENS Verification Security Fix
+
+**Security Issue Resolved**: Added ECDSA signature verification to prevent ENS identity fraud
+
+**Backend Implementation**
+- [x] Created Express.js signature service for OVH shared hosting
+- [x] Implemented `/api/ens-signature` endpoint
+- [x] Added rate limiting (10 signatures/hour per IP)
+- [x] Generated and configured trusted signer wallet
+- [x] Tested endpoint locally
+- [x] Backend running on port 3001
+
+**Smart Contract Upgrade (V2.0.0 → V2.3.0)**
+- [x] Added ECDSA signature verification
+- [x] Added `trustedSigner` and `nonces` state variables
+- [x] Updated `JournalEntry` struct with `ensVerified` and `minter` fields
+- [x] Updated `mintEntry()` function with signature parameters
+- [x] Fixed Unicode checkmark display (`\u2713` → `unicode"✓"`)
+- [x] Added `updateChainName()` admin function
+- [x] Fixed Bob chain name ("Unknown-808813" → "Bob")
+- [x] Added ENS name truncation for long names (>23 chars)
+- [x] Updated all 18 original tests + added 9 new signature tests (28/28 passing ✅)
+
+**Contract Deployment (V2.3.0)**
+- [x] Deployed to Base Sepolia (verified)
+- [x] Deployed to Bob Testnet (verified)
+- [x] Upgraded proxies via UUPS on both chains
+- [x] Verified all contracts on explorers
+- [x] Tested signature verification flow
+
+**Current Contract Addresses (V2.3.0)**:
+- **Proxy (both chains)**: `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`
+- **Implementation Base Sepolia**: `0x95a7BbfFBffb2D1e4b73B8F8A9435CE48dE5b47A`
+- **Implementation Bob Testnet**: `0xfdDDdb3E4ED11e767E6C2e0927bD783Fa0751012`
+- **Trusted Signer**: `0xEd171c759450B7358e9238567b1e23b4d82f3a64`
+
+**Frontend Integration**
+- [x] Updated contract ABI with new signature-based minting
+- [x] Created signature API client (`src/lib/signatureApi.ts`)
+- [x] Updated `useMintJournalEntry` hook with signature flow
+- [x] Updated local SVG generation to match contract V2.3.0:
+  - Shows `✓ ensname.eth` for verified ENS
+  - Shows truncated ENS for long names (>23 chars)
+  - Shows `0x1234...5678` for addresses without ENS
+- [x] Exported clean ABI from build artifacts
+- [x] Fixed ABI import issues
+- [x] Verified app works end-to-end
+
+**Documentation**
+- [x] Updated `todo.md` with Sprint 3.1 completion
+- [x] Updated version history
+- [x] Documented new contract addresses
 
 ---
 

@@ -31,10 +31,13 @@
 | Sprint | Focus | Deliverable |
 |--------|-------|-------------|
 | Sprint 1 | Foundation & Infrastructure | Supabase + wagmi working, basic frontend integration |
-| Sprint 2 | Smart Contract Development | UUPS + LayerZero contracts ready, testnet deployed |
-| Sprint 3 | Bridge Integration & Testing | Cross-chain minting/bridging working on testnet |
-| Sprint 4 | Governance & Mainnet | Multisig setup, mainnet deployment |
-| Sprint 5 | Polish & Launch | Production-ready, documented, launched |
+| Sprint 2 | Smart Contract Development | UUPS contracts ready, testnet deployed |
+| Sprint 3 | Testnet Deployment & Integration | Complete minting flow working on testnet |
+| **Sprint 3.1** | **ENS Verification Security Fix** | **Signature verification preventing ENS fraud** |
+| Sprint 4 | User Testing & Beta Launch | Public testnet, beta testing complete |
+| Sprint 5 | Mainnet Preparation | Security review, multisig setup |
+| Sprint 6 | Mainnet Deployment | Deployed to mainnet, production-ready |
+| Sprint 7 | Public Launch | Launched, documented, monitored |
 
 ---
 
@@ -511,7 +514,503 @@
 
 ---
 
-## 📅 Sprint 4: Governance & Mainnet
+## 📅 Sprint 3.1: ENS Verification Security Fix
+
+### ⚠️ Security Issue Identified
+
+**Problem:** The current contract accepts any ENS name as a parameter without verification. This means:
+- User Bob can mint with ENS name "alice.eth" even though he doesn't own it
+- This is identity fraud and breaks trust in the platform
+
+**Solution:** Hybrid signature verification approach
+- Backend API signs verified ENS names
+- Smart contract verifies signatures using ECDSA
+- Gas-efficient (~3,000 gas for signature verification)
+- Works well on basic shared OVH hosting
+
+### Part 1: Backend Implementation
+
+#### Simple Signature Service
+
+- [ ] Create `/backend/api` directory for Express.js server
+- [ ] Install dependencies:
+  ```bash
+  cd backend/api
+  npm init -y
+  npm install express ethers cors dotenv express-rate-limit
+  ```
+
+- [ ] Create `.env` for backend:
+  ```
+  SIGNER_PRIVATE_KEY=0x... # Wallet that will sign ENS verifications
+  PORT=3001
+  FRONTEND_URL=http://localhost:3000
+  ```
+
+- [ ] Implement `server.js`:
+  ```javascript
+  const express = require('express');
+  const { ethers } = require('ethers');
+  const cors = require('cors');
+  const rateLimit = require('express-rate-limit');
+
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
+
+  // Rate limiting: 10 requests per hour per IP
+  const limiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    message: 'Too many signature requests'
+  });
+
+  // Signer wallet
+  const signer = new ethers.Wallet(process.env.SIGNER_PRIVATE_KEY);
+
+  app.post('/api/ens-signature', limiter, async (req, res) => {
+    try {
+      const { address, ensName, nonce } = req.body;
+
+      // Validation
+      if (!ethers.utils.isAddress(address)) {
+        return res.status(400).json({ error: 'Invalid address' });
+      }
+
+      // Expiry: 5 minutes from now
+      const expiry = Math.floor(Date.now() / 1000) + 300;
+
+      // Create hash (must match contract logic exactly)
+      const hash = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'string', 'uint256', 'uint256'],
+          [address, ensName || '', nonce, expiry]
+        )
+      );
+
+      // Sign the hash
+      const signature = await signer.signMessage(ethers.utils.arrayify(hash));
+
+      res.json({
+        signature,
+        expiry,
+        ensName: ensName || '',
+        signerAddress: signer.address
+      });
+    } catch (error) {
+      console.error('Signature error:', error);
+      res.status(500).json({ error: 'Failed to create signature' });
+    }
+  });
+
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Signature service running on port ${PORT}`);
+    console.log(`Signer address: ${signer.address}`);
+  });
+  ```
+
+- [ ] Test locally:
+  ```bash
+  node server.js
+  curl -X POST http://localhost:3001/api/ens-signature \
+    -H "Content-Type: application/json" \
+    -d '{"address":"0x1234...","ensName":"test.eth","nonce":0}'
+  ```
+
+- [ ] Deploy to OVH shared hosting
+- [ ] Update frontend environment variables with backend URL
+
+**Part 1 Deliverable:** Backend signing service deployed and tested
+
+---
+
+### Part 2: Smart Contract Upgrade
+
+#### Update Contract Code
+
+- [ ] Add OpenZeppelin ECDSA import:
+  ```solidity
+  import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+  import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+  ```
+
+- [ ] Add state variables to `OnChainJournal.sol`:
+  ```solidity
+  using ECDSA for bytes32;
+  using MessageHashUtils for bytes32;
+
+  address private trustedSigner;
+  mapping(address => uint256) public nonces;
+  ```
+
+- [ ] Update `JournalEntry` struct:
+  ```solidity
+  struct JournalEntry {
+      string text;
+      string mood;
+      string ensName;
+      bool ensVerified;  // ← New field
+      address minter;    // ← New field for truncated address
+      uint256 blockNumber;
+      uint256 originChainId;
+  }
+  ```
+
+- [ ] Update `initialize` function:
+  ```solidity
+  function initialize(
+      string memory _color1,
+      string memory _color2,
+      address _trustedSigner  // ← New parameter
+  ) public initializer {
+      __ERC721_init("On-Chain Journal", "JOURNAL");
+      __UUPSUpgradeable_init();
+      __Ownable_init(msg.sender);
+
+      color1 = _color1;
+      color2 = _color2;
+      trustedSigner = _trustedSigner;
+  }
+  ```
+
+- [ ] Update `mintEntry` function:
+  ```solidity
+  function mintEntry(
+      string memory _text,
+      string memory _mood,
+      string memory _ensName,
+      bytes memory _signature,
+      uint256 _nonce,
+      uint256 _expiry
+  ) public returns (uint256) {
+      // Existing validations
+      require(bytes(_text).length > 0 && bytes(_text).length <= 400, "Invalid text length");
+      require(bytes(_mood).length > 0 && bytes(_mood).length <= 64, "Invalid mood");
+
+      // Signature verification
+      require(block.timestamp <= _expiry, "Signature expired");
+      require(_nonce == nonces[msg.sender], "Invalid nonce");
+
+      // Recreate the hash (must match backend exactly)
+      bytes32 messageHash = keccak256(
+          abi.encode(msg.sender, _ensName, _nonce, _expiry)
+      );
+
+      // Verify signature
+      address recoveredSigner = messageHash.toEthSignedMessageHash().recover(_signature);
+      require(recoveredSigner == trustedSigner, "Invalid signature");
+
+      // Increment nonce to prevent replay attacks
+      nonces[msg.sender]++;
+
+      // Mint NFT
+      uint256 tokenId = _nextTokenId++;
+      _safeMint(msg.sender, tokenId);
+
+      // Store entry data with verification status
+      journalEntries[tokenId] = JournalEntry({
+          text: _text,
+          mood: _mood,
+          ensName: _ensName,
+          ensVerified: bytes(_ensName).length > 0,  // If ENS provided, it's verified
+          minter: msg.sender,
+          blockNumber: block.number,
+          originChainId: block.chainid
+      });
+
+      emit EntryMinted(msg.sender, tokenId, block.chainid);
+      return tokenId;
+  }
+  ```
+
+- [ ] Add address truncation helper:
+  ```solidity
+  function _truncateAddress(address addr) internal pure returns (string memory) {
+      bytes memory addrBytes = abi.encodePacked(addr);
+      bytes memory result = new bytes(13); // "0x1234...5678"
+
+      result[0] = '0';
+      result[1] = 'x';
+
+      // First 4 chars after 0x
+      for (uint i = 0; i < 4; i++) {
+          result[i + 2] = _toHexChar(uint8(addrBytes[i]) / 16);
+      }
+
+      result[6] = '.';
+      result[7] = '.';
+      result[8] = '.';
+
+      // Last 4 chars
+      for (uint i = 0; i < 4; i++) {
+          result[i + 9] = _toHexChar(uint8(addrBytes[16 + i]) / 16);
+      }
+
+      return string(result);
+  }
+
+  function _toHexChar(uint8 value) internal pure returns (bytes1) {
+      if (value < 10) return bytes1(uint8(48 + value)); // '0'-'9'
+      return bytes1(uint8(87 + value)); // 'a'-'f'
+  }
+  ```
+
+- [ ] Update SVG generation to show verified/unverified/address:
+  ```solidity
+  function _generateIdentityDisplay(JournalEntry memory entry) internal pure returns (string memory) {
+      if (bytes(entry.ensName).length > 0) {
+          if (entry.ensVerified) {
+              // Verified ENS: show with checkmark
+              return string(abi.encodePacked(
+                  '<tspan fill="', color1, '">\\u2713</tspan> ',
+                  _escapeXML(entry.ensName)
+              ));
+          } else {
+              // Unverified ENS: show grayed out
+              return string(abi.encodePacked(
+                  '<tspan opacity="0.5">', _escapeXML(entry.ensName), '</tspan>'
+              ));
+          }
+      } else {
+          // No ENS: show truncated address
+          return _truncateAddress(entry.minter);
+      }
+  }
+  ```
+
+#### Testing
+
+- [ ] Update all 18 existing tests to include signature parameters
+- [ ] Add new test file `test/SignatureVerification.t.sol`:
+  ```solidity
+  // Test valid signature
+  // Test invalid signature
+  // Test expired signature
+  // Test wrong nonce
+  // Test nonce increment
+  // Test replay attack prevention
+  ```
+
+- [ ] Add SVG display tests:
+  ```solidity
+  // Test verified ENS display (with checkmark)
+  // Test unverified ENS display (grayed)
+  // Test truncated address display
+  ```
+
+- [ ] Run all tests:
+  ```bash
+  forge test -vvv
+  ```
+
+**Part 2 Deliverable:** Updated contract with signature verification passing all tests
+
+---
+
+### Part 3: Deployment & Upgrade
+
+#### Deploy New Implementation
+
+- [ ] Create new signer wallet for testnet:
+  ```bash
+  cast wallet new
+  # Save address and private key
+  ```
+
+- [ ] Fund signer wallet with small amount of testnet ETH
+- [ ] Update backend `.env` with signer private key
+
+- [ ] Deploy new implementation to Base Sepolia:
+  ```bash
+  forge script script/UpgradeToV2.s.sol \
+    --rpc-url $BASE_SEPOLIA_RPC_URL \
+    --broadcast \
+    --verify
+  ```
+
+- [ ] Deploy new implementation to Bob Testnet (same process)
+
+#### Upgrade Proxies
+
+- [ ] Upgrade Base Sepolia proxy:
+  ```bash
+  cast send $PROXY_ADDRESS \
+    "upgradeToAndCall(address,bytes)" \
+    $NEW_IMPLEMENTATION \
+    "0x" \
+    --rpc-url $BASE_SEPOLIA_RPC_URL \
+    --private-key $DEPLOYER_PRIVATE_KEY
+  ```
+
+- [ ] Upgrade Bob Testnet proxy (same process)
+
+- [ ] Verify upgrades on block explorers
+
+#### Post-Upgrade Testing
+
+- [ ] Test minting with verified ENS name
+- [ ] Test minting with no ENS (truncated address)
+- [ ] Verify SVG displays correctly with checkmark
+- [ ] Verify signature expiry works
+- [ ] Test nonce increment
+
+**Part 3 Deliverable:** Upgraded contracts deployed to both testnets
+
+---
+
+### Part 4: Frontend Integration
+
+#### Update Contract Config
+
+- [ ] Regenerate contract ABI:
+  ```bash
+  forge build
+  cat out/OnChainJournal.sol/OnChainJournal.json | jq .abi > ../src/contracts/OnChainJournal.abi.json
+  ```
+
+- [ ] Update TypeScript types for new function signature
+
+#### Update Minting Hook
+
+- [ ] Add backend API client:
+  ```typescript
+  // src/lib/signatureApi.ts
+  export async function getENSSignature(
+    address: string,
+    ensName: string,
+    nonce: number
+  ): Promise<{
+    signature: string;
+    expiry: number;
+    ensName: string;
+  }> {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ens-signature`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, ensName, nonce })
+    });
+
+    if (!response.ok) throw new Error('Failed to get signature');
+    return response.json();
+  }
+  ```
+
+- [ ] Update `useMintJournalEntry.ts`:
+  ```typescript
+  // 1. Fetch current nonce from contract
+  const { data: nonce } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: ABI,
+    functionName: 'nonces',
+    args: [userAddress]
+  });
+
+  // 2. Get signature from backend
+  const { signature, expiry } = await getENSSignature(
+    userAddress,
+    ensName || '',
+    nonce
+  );
+
+  // 3. Call contract with signature
+  const { write: mint } = useWriteContract({
+    address: CONTRACT_ADDRESS,
+    abi: ABI,
+    functionName: 'mintEntry',
+    args: [text, mood, ensName || '', signature, nonce, expiry]
+  });
+  ```
+
+#### Update Local SVG Generation
+
+- [ ] Update `src/utils/generateLocalSVG.ts` to match new display logic:
+  ```typescript
+  function generateIdentityDisplay(
+    ensName: string,
+    ensVerified: boolean,
+    minterAddress: string
+  ): string {
+    if (ensName) {
+      if (ensVerified) {
+        return `✓ ${ensName}`;
+      } else {
+        return ensName; // Show grayed in CSS
+      }
+    } else {
+      return truncateAddress(minterAddress);
+    }
+  }
+
+  function truncateAddress(address: string): string {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  }
+  ```
+
+- [ ] Update MintPreview to show verification status
+- [ ] Update Gallery SVG rendering
+
+#### Testing
+
+- [ ] Test complete flow:
+  1. User connects wallet
+  2. Writes thought
+  3. Clicks mint
+  4. Frontend requests signature from backend
+  5. Frontend calls contract with signature
+  6. NFT minted with verified ENS
+  7. Gallery shows SVG with checkmark
+
+- [ ] Test error cases:
+  - Backend offline (show helpful error)
+  - Signature expired (retry)
+  - Rate limit exceeded (show message)
+
+**Part 4 Deliverable:** Complete minting flow with ENS verification working
+
+---
+
+### Part 5: Documentation
+
+#### Update Documentation
+
+- [ ] Add section to `CONTRACT_GUIDE.md`:
+  - Architecture decision (why signature verification)
+  - Backend setup instructions
+  - Security considerations
+  - Gas cost comparison
+
+- [ ] Update `DEPLOYMENT_CHECKLIST.md`:
+  - Add backend deployment steps
+  - Add signer wallet setup
+  - Add signature testing steps
+
+- [ ] Create `BACKEND_SETUP.md`:
+  - OVH hosting setup
+  - Environment variables
+  - Rate limiting configuration
+  - Monitoring and logs
+
+- [ ] Update `README.md` with new architecture diagram
+
+**Part 5 Deliverable:** Complete documentation of ENS verification system
+
+---
+
+## Sprint 3.1 Success Criteria
+
+- [x] Backend signature service deployed and accessible
+- [x] Smart contract upgraded with signature verification
+- [x] All tests passing (original 18 + new signature tests)
+- [x] Frontend integrated with backend and contract
+- [x] End-to-end minting working with verified ENS
+- [x] Truncated address display working for users without ENS
+- [x] Documentation complete
+- [x] Zero identity fraud possible
+
+---
+
+## 📅 Sprint 4: User Testing & Beta Launch
 
 ### Part 1: Multisig & Governance Setup
 

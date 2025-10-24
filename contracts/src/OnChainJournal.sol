@@ -7,6 +7,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title OnChainJournal
@@ -37,6 +39,8 @@ contract OnChainJournal is
     UUPSUpgradeable
 {
     using Strings for uint256;
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
 
     // ============================================
     // STATE VARIABLES
@@ -52,6 +56,12 @@ contract OnChainJournal is
     /// @notice Chain name identifier
     string public chainName;
 
+    /// @notice Trusted signer address for ENS verification
+    address public trustedSigner;
+
+    /// @notice Nonces for signature replay protection
+    mapping(address => uint256) public nonces;
+
     /// @notice Journal entry data structure
     struct JournalEntry {
         string text;
@@ -61,6 +71,7 @@ contract OnChainJournal is
         address owner;
         uint256 originChainId;  // Chain ID where NFT was originally minted
         string ensName;         // Optional ENS name (empty if not provided)
+        bool ensVerified;       // Whether the ENS name was cryptographically verified
     }
 
     /// @notice Mapping from token ID to journal entry
@@ -84,6 +95,9 @@ contract OnChainJournal is
     error TextTooLong(uint256 length, uint256 maxLength);
     error MoodTooLong(uint256 length, uint256 maxLength);
     error TokenDoesNotExist(uint256 tokenId);
+    error SignatureExpired(uint256 expiry, uint256 currentTime);
+    error InvalidNonce(uint256 provided, uint256 expected);
+    error InvalidSignature();
 
     // ============================================
     // CONSTANTS
@@ -98,17 +112,19 @@ contract OnChainJournal is
     }
 
     /**
-     * @notice Initializes the contract with chain-specific colors
+     * @notice Initializes the contract with chain-specific colors and trusted signer
      * @param _color1 Primary gradient color (hex format with #)
      * @param _color2 Secondary gradient color (hex format with #)
      * @param _chainName Name of the chain (e.g., "Bob", "Base")
      * @param _owner Address of the contract owner
+     * @param _trustedSigner Address of the backend signer for ENS verification
      */
     function initialize(
         string memory _color1,
         string memory _color2,
         string memory _chainName,
-        address _owner
+        address _owner,
+        address _trustedSigner
     ) public initializer {
         __ERC721_init("MintMyMood", "MMM");
         __Ownable_init(_owner);
@@ -116,6 +132,7 @@ contract OnChainJournal is
         color1 = _color1;
         color2 = _color2;
         chainName = _chainName;
+        trustedSigner = _trustedSigner;
     }
 
     // ============================================
@@ -123,12 +140,22 @@ contract OnChainJournal is
     // ============================================
 
     /**
-     * @notice Mints a new journal entry NFT
+     * @notice Mints a new journal entry NFT with ENS verification
      * @param _text The journal entry text (max 400 bytes)
      * @param _mood The mood emoji or text (max 64 bytes)
      * @param _ensName Optional ENS name (pass empty string if none)
+     * @param _signature Signature from trusted backend verifying ENS name
+     * @param _nonce Current nonce for the minter (prevents replay attacks)
+     * @param _expiry Signature expiry timestamp
      */
-    function mintEntry(string memory _text, string memory _mood, string memory _ensName) public {
+    function mintEntry(
+        string memory _text,
+        string memory _mood,
+        string memory _ensName,
+        bytes memory _signature,
+        uint256 _nonce,
+        uint256 _expiry
+    ) public {
         // Input validation
         uint256 textLength = bytes(_text).length;
         if (textLength > MAX_TEXT_LENGTH) {
@@ -140,8 +167,36 @@ contract OnChainJournal is
             revert MoodTooLong(moodLength, MAX_MOOD_LENGTH);
         }
 
+        // Signature verification
+        if (block.timestamp > _expiry) {
+            revert SignatureExpired(_expiry, block.timestamp);
+        }
+
+        if (_nonce != nonces[msg.sender]) {
+            revert InvalidNonce(_nonce, nonces[msg.sender]);
+        }
+
+        // Recreate the hash that was signed by the backend
+        // MUST match the backend signing logic exactly
+        bytes32 messageHash = keccak256(
+            abi.encode(msg.sender, _ensName, _nonce, _expiry)
+        );
+
+        // Verify the signature
+        address recoveredSigner = messageHash.toEthSignedMessageHash().recover(_signature);
+        if (recoveredSigner != trustedSigner) {
+            revert InvalidSignature();
+        }
+
+        // Increment nonce to prevent replay attacks
+        nonces[msg.sender]++;
+
+        // Mint the NFT
         uint256 tokenId = _nextTokenId++;
         _safeMint(msg.sender, tokenId);
+
+        // Determine if ENS is verified (non-empty string means it's verified)
+        bool ensVerified = bytes(_ensName).length > 0;
 
         journalEntries[tokenId] = JournalEntry({
             text: _text,
@@ -150,7 +205,8 @@ contract OnChainJournal is
             blockNumber: block.number,
             owner: msg.sender,
             originChainId: block.chainid,
-            ensName: _ensName
+            ensName: _ensName,
+            ensVerified: ensVerified
         });
 
         emit EntryMinted(tokenId, msg.sender, _mood, block.timestamp);
@@ -234,7 +290,7 @@ contract OnChainJournal is
     function generateSVG(JournalEntry memory entry) public view returns (string memory) {
         string memory escapedText = _escapeString(entry.text);
         string memory escapedMood = _escapeString(entry.mood);
-        string memory displayAddress = _formatAddress(entry.owner, entry.ensName);
+        string memory displayAddress = _formatAddress(entry);
 
         // Generate chain-specific gradient IDs
         string memory gradientId = string(abi.encodePacked("gradient-", chainName));
@@ -363,19 +419,25 @@ contract OnChainJournal is
     }
 
     /**
-     * @notice Formats an address for display (ENS or shortened address)
-     * @param _address The wallet address
-     * @param _ensName The ENS name (empty if not provided)
+     * @notice Formats an address for display with verification status
+     * @param entry The journal entry
      * @return Formatted display string
      */
-    function _formatAddress(address _address, string memory _ensName) internal pure returns (string memory) {
-        // If ENS name provided, use it
-        if (bytes(_ensName).length > 0) {
-            return _ensName;
+    function _formatAddress(JournalEntry memory entry) internal pure returns (string memory) {
+        // If ENS name provided and verified, show with checkmark
+        if (bytes(entry.ensName).length > 0 && entry.ensVerified) {
+            // Truncate long ENS names to fit in SVG (max ~25 chars including checkmark)
+            string memory truncatedEns = _truncateEnsName(entry.ensName, 23); // 23 chars + "✓ " = 25 total
+            return string(abi.encodePacked(unicode"✓ ", truncatedEns));
+        }
+
+        // If ENS name provided but not verified (shouldn't happen with new logic)
+        if (bytes(entry.ensName).length > 0) {
+            return _truncateEnsName(entry.ensName, 25);
         }
 
         // Otherwise, format address as 0x1A2b...dE3F
-        string memory addrStr = Strings.toHexString(uint256(uint160(_address)), 20);
+        string memory addrStr = Strings.toHexString(uint256(uint160(entry.owner)), 20);
         bytes memory addrBytes = bytes(addrStr);
 
         // Extract first 6 chars (0x1A2b) and last 4 chars (dE3F)
@@ -395,6 +457,37 @@ contract OnChainJournal is
         for (uint i = 0; i < 4; i++) {
             result[9 + i] = addrBytes[38 + i]; // 42 total - 4 = 38
         }
+
+        return string(result);
+    }
+
+    /**
+     * @notice Truncates an ENS name if it's too long, adding "..." at the end
+     * @param ensName The ENS name to truncate
+     * @param maxLength Maximum length before truncation
+     * @return Truncated ENS name with "..." if needed
+     */
+    function _truncateEnsName(string memory ensName, uint256 maxLength) internal pure returns (string memory) {
+        bytes memory ensBytes = bytes(ensName);
+
+        // If ENS name fits, return as-is
+        if (ensBytes.length <= maxLength) {
+            return ensName;
+        }
+
+        // Truncate and add "..."
+        // We want to show first (maxLength - 3) chars + "..."
+        bytes memory result = new bytes(maxLength);
+
+        // Copy first (maxLength - 3) characters
+        for (uint i = 0; i < maxLength - 3; i++) {
+            result[i] = ensBytes[i];
+        }
+
+        // Add "..."
+        result[maxLength - 3] = '.';
+        result[maxLength - 2] = '.';
+        result[maxLength - 1] = '.';
 
         return string(result);
     }
@@ -475,10 +568,26 @@ contract OnChainJournal is
     }
 
     /**
+     * @notice Updates the chain name
+     * @param _newChainName New name for the chain
+     */
+    function updateChainName(string memory _newChainName) external onlyOwner {
+        chainName = _newChainName;
+    }
+
+    /**
+     * @notice Updates the trusted signer address
+     * @param _newSigner Address of the new trusted signer
+     */
+    function updateTrustedSigner(address _newSigner) external onlyOwner {
+        trustedSigner = _newSigner;
+    }
+
+    /**
      * @notice Returns the current contract version
      * @return Version string
      */
     function version() external pure returns (string memory) {
-        return "1.0.0";
+        return "2.3.0";
     }
 }

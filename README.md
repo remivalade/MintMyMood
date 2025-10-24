@@ -59,35 +59,50 @@ The development server will run on http://localhost:3000
 
 ## 🏗️ Current Status
 
-**Sprint 1 - Week 1**: ✅ Complete (Days 1-7)
+**Sprint 3.1**: ✅ Complete - ENS Verification Security Fix
 
-**Frontend**: ✅ Complete with real data integration
+**Frontend**: ✅ Production Ready
 - Writing interface with auto-save (3-second debounce)
-- Mood selection
-- Mint preview
+- Mood selection with emoji picker
+- NFT mint preview with real on-chain SVG rendering
 - Gallery view with filters (All/Minted/Ephemeral)
+- React Router for proper URL navigation
 - Modal flows (wallet, minting, intro)
-- Chain-specific badges on NFT cards
-- Toast notifications for all save operations
+- Chain-specific badges and gradients
+- Toast notifications for all operations
+- ENS name display and verification
+- Local SVG generation matching on-chain output
 
-**Backend**: ✅ Supabase connected and working
-- PostgreSQL database with omnichain schema
+**Backend**: ✅ ENS Signature Service Live
+- Express.js API on port 3001
+- `/api/ens-signature` endpoint for ECDSA signatures
+- Rate limiting (10 signatures/hour per IP)
+- Trusted signer wallet: `0xEd171c759450B7358e9238567b1e23b4d82f3a64`
+- Supabase PostgreSQL with omnichain schema
 - Row Level Security policies (temporary dev policies for testing)
-- Auto-save to database
-- Thought expiration tracking (7 days for ephemeral thoughts)
 - **TODO**: Implement SIWE (Sign-In with Ethereum) authentication
 
-**Smart Contracts**: ⏳ Ready for implementation (Days 8-14)
-- Foundry setup needed
-- `OnChainJournal.sol` to be implemented with UUPS + LayerZero ONFT721
-- Deployment scripts to be created
-- Testnet deployment planned for Sprint 2
+**Smart Contracts**: ✅ V2.3.0 Deployed to Testnets
+- UUPS Upgradeable ERC721 implementation
+- On-chain SVG generation with animations
+- ENS signature verification with ECDSA
+- Chain-specific gradients (Base: blue, Bob: orange)
+- Advanced SVG features (grain texture, CSS animations)
+- Input validation and XML escaping
+- 28/28 tests passing
+- **Deployed Contracts (V2.3.0)**:
+  - Proxy (both chains): `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`
+  - Implementation Base Sepolia: `0x95a7BbfFBffb2D1e4b73B8F8A9435CE48dE5b47A` (verified)
+  - Implementation Bob Testnet: `0xfdDDdb3E4ED11e767E6C2e0927bD783Fa0751012`
 
-**Web3 Integration**: ✅ Wallet connection complete
+**Web3 Integration**: ✅ Complete
 - wagmi v2 + viem integrated
 - RainbowKit with custom styling (Rabby wallet prioritized)
-- Wallet-based data isolation
-- **TODO**: Smart contract minting integration (Sprint 2)
+- Real minting to deployed contracts
+- ENS resolution with Ethereum Mainnet
+- Transaction tracking with explorer links
+- PreviewChain Context for wallet-independent chain switching
+- 5 rounds of user testing with all issues fixed
 
 ## 🎨 Design Philosophy
 
@@ -134,20 +149,23 @@ The development server will run on http://localhost:3000
 - Auto-save with 3-second debounce
 - Zustand for state management
 - Automatic cleanup of expired thoughts (database function)
+- Express.js API for ENS signature verification
+- ECDSA signing service with rate limiting
 - **TODO**: SIWE (Sign-In with Ethereum) authentication
 
-### Blockchain (Planned)
+### Blockchain
 - Foundry for smart contract development
 - Solidity ^0.8.20
 - OpenZeppelin UUPS Upgradeable Contracts
-- LayerZero V2 ONFT721 for cross-chain bridging
 - On-chain SVG generation (no IPFS)
-- Deploy on: Base Sepolia & Bob Sepolia (testnet), then Base & Bob (mainnet)
+- ECDSA signature verification for ENS
+- Deployed on: Base Sepolia & Bob Testnet (V2.3.0)
+- **Future**: LayerZero V2 ONFT721 for cross-chain bridging (V2)
 
 ## 🎯 Development Roadmap
 
-### Sprint 1 - Week 1: Supabase & Web3 Setup ✅ (COMPLETE)
-**Days 1-4:**
+### ✅ Sprint 1: Foundation & Infrastructure (COMPLETE)
+**Part 1: Supabase & Web3 Setup**
 - [x] Supabase project with omnichain schema
 - [x] RLS policies (dev policies for testing)
 - [x] wagmi v2 + viem + RainbowKit integration
@@ -155,7 +173,7 @@ The development server will run on http://localhost:3000
 - [x] Zustand store with CRUD operations
 - [x] TypeScript types for all data structures
 
-**Days 5-7:**
+**Part 2: Auto-Save & Gallery Integration**
 - [x] Auto-save with 3-second debounce
 - [x] Toast notifications for save operations
 - [x] Draft ID tracking (prevents duplicates)
@@ -165,46 +183,94 @@ The development server will run on http://localhost:3000
 - [x] Wallet connection gating
 - [x] Loading states throughout
 
-### Sprint 1 - Week 2: Smart Contract Development (Current - Days 8-14)
-**Days 8-9:**
-- [ ] Install Foundry (forge, cast, anvil)
-- [ ] Initialize Foundry project
-- [ ] Install OpenZeppelin Upgradeable + LayerZero V2 ONFT721
+### ✅ Sprint 2: Smart Contract Development (COMPLETE)
+**Foundry Setup**
+- [x] Install Foundry (forge, cast, anvil)
+- [x] Initialize Foundry project
+- [x] Install OpenZeppelin Upgradeable Contracts
+- [x] Configure foundry.toml with RPC URLs
 
-**Days 10-12:**
-- [ ] Implement `OnChainJournal.sol` with UUPS + LayerZero
-- [ ] Create `SVGGenerator.sol` library
-- [ ] Write comprehensive tests
+**Smart Contract Implementation**
+- [x] Implement `OnChainJournal.sol` with UUPS upgradeable pattern
+- [x] On-chain SVG generation with animations
+- [x] ENS support (optional parameter)
+- [x] Chain-specific gradients
+- [x] Advanced SVG features (grain texture, CSS animations)
+- [x] 18 comprehensive tests passing
 
-**Days 13-14:**
-- [ ] Create deployment scripts
-- [ ] Test on local Anvil chain
-- [ ] Document deployment process
+**Frontend Integration**
+- [x] Create ENS resolution hook
+- [x] Update Header to display ENS names
+- [x] Update minting flow with ENS resolution
 
-### Sprint 2 (Week 3-4): Testnet Deployment & Frontend Integration
-- [ ] Deploy to Base Sepolia & Bob Sepolia
-- [ ] Set up LayerZero trusted peers
-- [ ] Test cross-chain bridging
-- [ ] Integrate contracts with frontend
-- [ ] Implement real minting flow
+### ✅ Sprint 3: Testnet Deployment & Frontend Integration (COMPLETE)
+**Testnet Deployment**
+- [x] Deploy to Base Sepolia testnet
+- [x] Deploy to Bob Testnet
+- [x] Verify contracts on explorers
+- [x] Test basic minting via contract calls
 
-### Sprint 3 (Week 5-6): Bridge UI & Polish
-- [ ] Build bridge interface
-- [ ] Sync frontend SVG with on-chain SVG
+**Frontend Integration**
+- [x] Add contract ABIs to frontend
+- [x] Update wagmi contract configurations
+- [x] Create minting hook (useMintJournalEntry)
+- [x] Connect real minting flow to deployed contracts
+- [x] PreviewChain Context for wallet-independent chain switching
+- [x] Local SVG generation utility matching on-chain output
+- [x] Gallery displays real minted NFTs as SVGs
+- [x] React Router for proper URL navigation
+- [x] 5 rounds of user testing with all issues fixed
+
+### ✅ Sprint 3.1: ENS Verification Security Fix (COMPLETE)
+**Backend Implementation**
+- [x] Express.js signature service for ENS verification
+- [x] `/api/ens-signature` endpoint with ECDSA signing
+- [x] Rate limiting (10 signatures/hour per IP)
+- [x] Trusted signer wallet configuration
+
+**Smart Contract Upgrade (V2.0.0 → V2.3.0)**
+- [x] Added ECDSA signature verification
+- [x] Fixed Unicode checkmark display
+- [x] Added updateChainName() admin function
+- [x] Fixed Bob chain name display
+- [x] Added ENS truncation for long names
+- [x] Updated all tests (28/28 passing)
+
+**Contract Deployment**
+- [x] Deployed to Base Sepolia (verified)
+- [x] Deployed to Bob Testnet
+- [x] Upgraded proxies via UUPS
+
+### 🎯 Sprint 4: Beta Testing & Public Launch (CURRENT)
+**Beta Testing Program**
+- [ ] Deploy frontend to testnet subdomain
+- [ ] Recruit 5-10 beta testers
+- [ ] Set up feedback collection system
+- [ ] Monitor gas costs and user flows
+- [ ] Fix critical bugs within 24 hours
+
+**UX Improvements**
+- [ ] Optimize loading states and transitions
 - [ ] Mobile responsiveness testing
-- [ ] End-to-end testing
+- [ ] Cross-browser testing
 
-### Sprint 4 (Week 7-8): Governance & Mainnet
+### 📅 Sprint 5: Mainnet Preparation
+- [ ] Security review (internal)
+- [ ] Consider external audit
 - [ ] Set up multisig (Gnosis Safe)
-- [ ] Deploy Timelock Controller
-- [ ] Transfer ownership to governance
-- [ ] Deploy to Base Mainnet & Bob Mainnet
+- [ ] Fund mainnet deployer wallet
 
-### Sprint 5 (Week 9-10): Polish & Launch
-- [ ] Final error handling & UX polish
-- [ ] Complete documentation
-- [ ] Performance optimization
-- [ ] Public launch
+### 📅 Sprint 6: Mainnet Deployment
+- [ ] Deploy to Base Mainnet
+- [ ] Deploy to Bob Mainnet
+- [ ] Transfer ownership to multisig
+- [ ] Update frontend with mainnet addresses
+
+### 📅 Sprint 7: Public Launch & V2 Planning
+- [ ] Marketing preparation
+- [ ] Public announcement
+- [ ] Monitor for issues
+- [ ] Plan V2 features (LayerZero cross-chain bridging)
 
 ## 📝 Key Features
 

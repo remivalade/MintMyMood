@@ -13,33 +13,48 @@ interface SVGParams {
   chainId: number;
   walletAddress?: string;
   ensName?: string;
+  ensVerified?: boolean;
   blockNumber?: string;
 }
 
 /**
- * Get chain-specific colors and name
+ * Get chain-specific colors and name (matches contract colors exactly)
  */
 function getChainStyles(chainId: number) {
   const metadata = getChainMetadata(chainId);
-  const shortName = metadata?.shortName || 'Unknown';
 
-  // Map to SVG gradient colors (from docs/svg/)
-  // Base uses #3c8aff, Bob uses #ff9500
+  let chainName: string;
   let primaryColor: string;
   let gradientColor: string;
 
-  if (shortName === 'Base') {
-    primaryColor = '#0000ff';
-    gradientColor = '#3c8aff';
-  } else if (shortName === 'Bob') {
-    primaryColor = '#f25d00';
-    gradientColor = '#ff9500';
+  // Map chain IDs to names and colors (matching contract)
+  if (chainId === 84532) {
+    // Base Sepolia
+    chainName = 'Base Sepolia';
+    primaryColor = '#0052FF';
+    gradientColor = '#0052FF';
+  } else if (chainId === 8453) {
+    // Base Mainnet
+    chainName = 'Base';
+    primaryColor = '#0052FF';
+    gradientColor = '#0052FF';
+  } else if (chainId === 808813 || chainId === 111) {
+    // Bob Testnet
+    chainName = 'Bob';
+    primaryColor = '#FF6B35';
+    gradientColor = '#F7931E';
+  } else if (chainId === 60808) {
+    // Bob Mainnet
+    chainName = 'Bob';
+    primaryColor = '#FF6B35';
+    gradientColor = '#F7931E';
   } else {
+    chainName = metadata?.shortName || 'Unknown';
     primaryColor = '#000000';
     gradientColor = '#666666';
   }
 
-  return { shortName, primaryColor, gradientColor };
+  return { chainName, primaryColor, gradientColor };
 }
 
 /**
@@ -55,11 +70,40 @@ function escapeXml(text: string): string {
 }
 
 /**
- * Format wallet address (first 6 and last 4 chars)
+ * Truncate ENS name if too long (matches contract logic)
  */
-function formatAddress(address: string): string {
-  if (address.length < 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+function truncateEnsName(ensName: string, maxLength: number): string {
+  if (ensName.length <= maxLength) {
+    return ensName;
+  }
+  // Take first (maxLength - 3) chars and add "..."
+  return ensName.slice(0, maxLength - 3) + '...';
+}
+
+/**
+ * Format display address with ENS verification (matches contract _formatAddress)
+ */
+function formatDisplayAddress(
+  walletAddress: string,
+  ensName?: string,
+  ensVerified?: boolean
+): string {
+  // If ENS name provided and verified, show with checkmark
+  if (ensName && ensName.length > 0 && ensVerified) {
+    const truncated = truncateEnsName(ensName, 23); // 23 chars + "✓ " = 25 total
+    return `✓ ${truncated}`;
+  }
+
+  // If ENS name provided but not verified
+  if (ensName && ensName.length > 0) {
+    return truncateEnsName(ensName, 25);
+  }
+
+  // Otherwise, format address as 0x1A2b...dE3F (matches contract logic)
+  if (walletAddress.length < 42) return walletAddress;
+
+  // Extract first 6 chars (0x1A2b) and last 4 chars (dE3F)
+  return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
 }
 
 /**
@@ -71,12 +115,13 @@ export function generateSVG({
   chainId,
   walletAddress = '0x0000000000000000000000000000000000000000',
   ensName,
+  ensVerified = false,
   blockNumber = '000000',
 }: SVGParams): string {
-  const { shortName, primaryColor, gradientColor } = getChainStyles(chainId);
+  const { chainName, primaryColor, gradientColor } = getChainStyles(chainId);
   const escapedText = escapeXml(text);
-  const displayName = ensName || formatAddress(walletAddress);
-  const chainPrefix = shortName.toLowerCase();
+  const displayName = formatDisplayAddress(walletAddress, ensName, ensVerified);
+  const chainPrefix = chainName.toLowerCase().replace(/\s+/g, '-');
 
   return `
 <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
@@ -149,7 +194,7 @@ export function generateSVG({
                     </div>
                 </div>
             </foreignObject>
-            <text x="35" y="465" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">${shortName.toUpperCase()}</text>
+            <text x="35" y="465" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">${chainName}</text>
             <text x="465" y="465" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text>
         </g>
     </g>

@@ -208,6 +208,7 @@ The Solidity contract (`contracts/src/OnChainJournal.sol`) implements:
 **Sprint 1**: ✅ Complete - Foundation & Infrastructure
 **Sprint 2**: ✅ Complete - Smart Contract Development
 **Sprint 3**: ✅ Complete - Testnet Deployment & Integration
+**Sprint 3.1**: ✅ Complete - ENS Verification Security Fix
 
 **What's Built:**
 
@@ -253,9 +254,31 @@ The Solidity contract (`contracts/src/OnChainJournal.sol`) implements:
 - ✅ Transaction tracking and explorer links
 - ✅ 5 rounds of user testing with all issues fixed
 
-**Contract Addresses (Both Chains):**
-- Proxy: `0xceC072B04bF99517f12a86E8b19eb1e6AAf8b0eF`
-- Implementation: `0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B`
+*ENS Verification Security (Sprint 3.1):*
+- ✅ Backend Express.js signature service (`/api/ens-signature`)
+- ✅ ECDSA signature verification in smart contract
+- ✅ Nonce-based replay protection
+- ✅ Rate limiting (10 signatures/hour per IP)
+- ✅ Unicode checkmark for verified ENS (✓ ensname.eth)
+- ✅ ENS name truncation for long names (>23 chars)
+- ✅ Truncated address display (0x1234...5678)
+- ✅ Fixed Bob chain name display
+- ✅ UUPS upgrades to V2.3.0 on both chains
+- ✅ 28 tests passing (18 original + 9 signature tests + 1 truncation test)
+
+**Contract Addresses (V2.3.0 - Current):**
+- **Proxy (both chains)**: `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`
+- **Implementation Base Sepolia**: `0x95a7BbfFBffb2D1e4b73B8F8A9435CE48dE5b47A` (verified)
+- **Implementation Bob Testnet**: `0xfdDDdb3E4ED11e767E6C2e0927bD783Fa0751012`
+- **Trusted Signer**: `0xEd171c759450B7358e9238567b1e23b4d82f3a64`
+- **Backend API**: `http://localhost:3001` (dev)
+
+**Version History:**
+- V1.0.0: Initial deployment (deprecated)
+- V2.0.0: Added ENS signature verification with ECDSA
+- V2.1.0: Fixed Unicode checkmark display
+- V2.2.0: Added updateChainName() function, fixed Bob chain name
+- V2.3.0: Added ENS truncation for long names (current)
 
 **Next Steps (Sprint 4):**
 - 🎯 Deploy to public testnet URL
