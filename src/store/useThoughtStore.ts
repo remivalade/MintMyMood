@@ -75,6 +75,7 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
   },
 
   // Save a new thought (or update existing draft)
+  // Note: user_id is auto-populated by database trigger based on auth.uid()
   saveThought: async (thought: Partial<Thought>) => {
     set({ isLoading: true, error: null });
     try {
@@ -83,7 +84,8 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
         text: thought.text!,
         mood: thought.mood!,
         is_minted: thought.is_minted ?? false,
-        expires_at: thought.expires_at || new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min default
+        // expires_at has a default of 7 days, but we can override for testing (10 min)
+        expires_at: thought.expires_at,
       };
 
       // If thought has an id, update it; otherwise insert

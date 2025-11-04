@@ -128,23 +128,42 @@ export default function App() {
     }
   };
 
-  // Watch for minting transaction confirmation
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+  // Watch for minting transaction confirmation and extract token ID from receipt
+  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
   useEffect(() => {
     const updateMintedStatus = async () => {
-      if (isConfirmed && hash && currentMintingThoughtId && address) {
+      if (isConfirmed && hash && currentMintingThoughtId && address && receipt) {
         setMintingStatus('success');
 
         // Get contract address for this chain
         const contractAddress = getContractAddress(chainId);
 
         if (contractAddress) {
-          // Mark thought as minted in database
+          // Extract token ID from EntryMinted event
+          // Event signature: EntryMinted(uint256 indexed tokenId, address indexed owner, string mood, uint256 timestamp)
+          let tokenId = '0';
+
+          if (receipt.logs && receipt.logs.length > 0) {
+            // Find the EntryMinted event (topic[0] is event signature hash)
+            // The Transfer event from ERC721 has the tokenId as topic[3]
+            const transferEvent = receipt.logs.find((log: any) =>
+              log.topics.length === 4 && // Transfer event has 4 topics: signature, from, to, tokenId
+              log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000000' // from = address(0) for minting
+            );
+
+            if (transferEvent && transferEvent.topics[3]) {
+              // Convert the hex tokenId to decimal string
+              tokenId = BigInt(transferEvent.topics[3]).toString();
+              console.log('Extracted token ID from receipt:', tokenId);
+            }
+          }
+
+          // Mark thought as minted in database with actual token ID
           await markAsMinted(
             currentMintingThoughtId,
             chainId,
-            '0', // Token ID - we'd need to get this from the contract events
+            tokenId,
             contractAddress,
             hash
           );
@@ -207,11 +226,14 @@ export default function App() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
+      // Convert mood name to emoji (same as minting flow)
+      const moodEmoji = currentThought.mood ? moodEmojis[currentThought.mood] || '😌' : '😌';
+
       await saveThought({
         id: currentThought.draftId, // Will update if exists, insert if undefined
         wallet_address: address,
         text: currentThought.content,
-        mood: currentThought.mood || '😌', // Default to Peaceful emoji
+        mood: moodEmoji,
         is_minted: false,
         expires_at: expiresAt.toISOString(),
       });
@@ -305,6 +327,10 @@ export default function App() {
           mood={selectedThought.mood}
           date={new Date(selectedThought.created_at)}
           isMinted={selectedThought.is_minted}
+          walletAddress={selectedThought.wallet_address}
+          chainId={selectedThought.current_chain_id}
+          txHash={selectedThought.tx_hash}
+          tokenId={selectedThought.token_id}
           onClose={() => navigate('/gallery')}
           onMint={!selectedThought.is_minted ? handleMintFromDetail : undefined}
         />

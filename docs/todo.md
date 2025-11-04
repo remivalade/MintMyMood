@@ -214,18 +214,53 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 
 ---
 
-## 🚧 In Progress: Sprint 3.4 - ENS Profile Enhancement
+## 🚧 In Progress: Sprint 3.4 - Post-SIWE Bug Fixes
 
 **Status**: 🚧 **IN PROGRESS**
-**Priority**: 🟡 **MEDIUM** - Nice to have before beta
-**Objective**: Investigate and implement ENS name storage in user profiles
+**Started**: November 4, 2025
+**Priority**: 🔴 **CRITICAL** - Must fix before beta testing
+**Objective**: Fix breaking issues introduced during Sprint 3.3 SIWE migration
+
+### Issues Discovered
+After Sprint 3.3, three critical issues were identified:
+1. ❌ **Thoughts not saving**: `thoughts` table requires `user_id` (UUID from auth), but code only passes `wallet_address`
+2. ❌ **Minting broken**: Likely authentication-related due to missing user_id linkage
+3. ℹ️ **ENS not stored**: Supabase Web3 auth doesn't include ENS in metadata (expected, requires resolution)
+
+### Root Cause Analysis
+**Issue #1 & #2**: The `thoughts` table has a `user_id` column (UUID foreign key to `auth.users.id`) that is `NOT NULL`, but the code was only providing `wallet_address`. After SIWE migration, RLS policies use `auth.uid()` which returns the UUID, not the wallet address.
+
+**Issue #3**: Supabase's `signInWithWeb3()` stores wallet address in `raw_user_meta_data.custom_claims.address`, but does not resolve or store ENS names. This is expected behavior.
 
 ### Tasks
-- [ ] Investigate why ENS is not stored during user creation
-- [ ] Check if Supabase Web3 auth includes ENS in metadata
-- [ ] If not included, implement ENS resolution after auth
-- [ ] Update database trigger to store ENS if available
-- [ ] Test ENS display in profile
+- [x] Create migration to auto-populate `user_id` from `auth.uid()`
+- [x] Add database trigger to set `user_id` on insert
+- [x] Backfill existing thoughts with `user_id`
+- [x] Update `saveThought()` to remove manual `user_id` handling
+- [x] Test thought saving end-to-end
+- [x] Test minting functionality
+- [x] Fix token_id extraction from transaction receipt (was hardcoded to '0')
+- [x] Test token_id is correctly stored after minting ✅
+- [x] Fix emoji not being saved in handleDiscard (was saving label instead)
+- [ ] Test emoji is correctly saved when saving ephemeral thought
+- [ ] Investigate ENS resolution options (defer to Sprint 3.5 if needed)
+
+### Implementation Details
+
+**Migration 016**: `backend/supabase/migrations/016_fix_thoughts_user_id.sql`
+- Auto-populates `user_id` from `auth.uid()` via database trigger
+- Sets default `expires_at` to 7 days
+- Backfills existing thoughts with correct `user_id`
+
+**Token ID Extraction**: `src/App.tsx:147-160`
+- Extracts actual token ID from ERC721 Transfer event in transaction receipt
+- Uses `receipt.logs` to find the Transfer event (from address(0) for minting)
+- Converts hex token ID to decimal string for database storage
+
+**Emoji Storage Fix**: `src/App.tsx:229-230`
+- Fixed `handleDiscard()` to convert mood label to emoji before saving
+- Previously saved "Peaceful" instead of "😌"
+- Now uses same `moodEmojis` mapping as minting flow
 
 
 ---
