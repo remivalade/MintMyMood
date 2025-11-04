@@ -21,8 +21,12 @@
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
+# Start development (frontend + backend together)
+npm run dev:all
+
+# Or run individually:
+npm run dev              # Frontend only (port 3000)
+npm run dev:backend      # Backend only (port 3001)
 
 # Test smart contracts
 cd contracts && forge test
@@ -152,13 +156,15 @@ See [SVG design specs](docs/svg/README.md) for complete visual reference.
 ## 🛠️ Development Commands
 
 ```bash
-# Frontend
-npm run dev              # Start dev server (http://localhost:3000)
-npm run build            # Build for production
+# Development (Recommended)
+npm run dev:all          # Start both frontend & backend together
 
-# Backend API
-cd backend/api
-npm start                # Start signature service (http://localhost:3001)
+# Individual Services
+npm run dev              # Frontend only (http://localhost:3000)
+npm run dev:backend      # Backend only (http://localhost:3001)
+
+# Production
+npm run build            # Build frontend for production
 
 # Smart Contracts
 cd contracts
@@ -166,16 +172,6 @@ forge build              # Compile contracts
 forge test               # Run tests (28/28 should pass)
 forge test -vvv          # Verbose test output
 ```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) for:
-- Code style guidelines
-- Git workflow
-- Pull request process
-- Testing requirements
 
 ---
 
@@ -187,7 +183,6 @@ TBD
 
 ## 🔗 Links
 
-- **Figma Design**: [Design Specs](https://www.figma.com/design/fvBhclGBJrTCp3GsHGLaV5/Design-Pensieve-App-Screens)
 - **Base Sepolia**: [Contract on Basescan](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
 - **Bob Testnet**: [Contract on Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
 

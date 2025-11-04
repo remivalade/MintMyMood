@@ -17,7 +17,7 @@ export function Header({ isWalletConnected, walletAddress, onConnectWallet }: He
         <div className="flex items-center gap-2">
           <span className="text-2xl">💭</span>
           <h1 className="text-xl" style={{ fontFamily: 'Georgia, serif' }}>
-            Pensieve
+            MintMyMood
           </h1>
         </div>
 

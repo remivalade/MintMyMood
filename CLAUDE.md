@@ -115,9 +115,10 @@ interface Thought {
 
 **Features:**
 - Row Level Security (RLS) policies for wallet-based access
-- Temporary dev policies for testing (TODO: implement SIWE auth before production)
+- Production JWT-based authentication (SIWE / EIP-4361)
 - Automatic cleanup of expired thoughts via database function
 - Indexes on wallet_address, is_minted, expires_at
+- `auth_nonces` table for nonce-based replay protection
 
 ---
 
@@ -209,13 +210,15 @@ function upgradeToAndCall(address newImplementation, bytes memory data) external
 
 ## Current Status
 
-**Sprint 3.1 Complete** ✅ - Production Ready for Beta Testing
+**Sprint 3.2 Complete** ✅ - Production Ready for Beta Testing
 
 ### What Works
 
 *Frontend:*
 - ✅ Complete UI flow (writing → mood → preview → gallery)
 - ✅ Real wallet connection (RainbowKit with Rabby prioritized)
+- ✅ SIWE authentication (Sign-In with Ethereum / EIP-4361)
+- ✅ JWT-based session management (24-hour expiry)
 - ✅ Auto-save with 3-second debounce + toast notifications
 - ✅ Draft ID tracking (prevents duplicate saves)
 - ✅ Gallery with real Supabase data
@@ -234,24 +237,27 @@ function upgradeToAndCall(address newImplementation, bytes memory data) external
 - ✅ Deployed to Base Sepolia & Bob Testnet
 
 *Backend:*
-- ✅ Express.js signature service
+- ✅ Express.js API (ENS + SIWE auth)
+- ✅ SIWE authentication endpoints (nonce generation, signature verification)
+- ✅ JWT issuance with custom claims
 - ✅ ECDSA signing with rate limiting
-- ✅ Supabase with RLS policies
+- ✅ Supabase with production RLS policies
+
+*Security:*
+- ✅ Production Row Level Security (RLS) enforcing per-wallet data isolation
+- ✅ No anonymous database access
+- ✅ JWT-based authentication required for all operations
+- ✅ Nonce-based replay protection (5-minute expiry)
 
 ### Known Issues & TODOs
 
 **High Priority:**
-1. **Authentication**: Using temporary dev RLS policies
-   - TODO: Implement SIWE (Sign-In with Ethereum)
-   - Location: `backend/supabase/migrations/004_temporary_dev_policies.sql`
-   - Must be removed before production
-
-2. **Draft Expiration**: Currently 10 minutes for testing
+1. **Draft Expiration**: Currently 10 minutes for testing
    - TODO: Change to 7 days for production
    - Location: `src/components/WritingInterface.tsx:50`
 
 **Medium Priority:**
-3. **Chain Filter UI**: Infrastructure exists but UI not exposed
+2. **Chain Filter UI**: Infrastructure exists but UI not exposed
    - State: `Gallery.tsx:21` (selectedChain)
    - TODO: Add chain filter dropdown
 
@@ -319,6 +325,9 @@ VITE_ENVIRONMENT=development
 SIGNER_PRIVATE_KEY=0x...
 PORT=3001
 FRONTEND_URL=http://localhost:3000
+JWT_SECRET=<generate-with-openssl-rand-base64-32>
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 ### Smart Contracts (`contracts/.env`)

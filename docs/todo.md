@@ -1,6 +1,6 @@
 # MintMyMood - Development TODO
 
-**Current Status**: Sprint 3 Complete ✅ - Production Ready for Beta Testing
+**Current Status**: Sprint 3.3 Complete ✅ - SIWE Native Auth Implemented
 
 ---
 
@@ -169,6 +169,102 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 
 ---
 
+## ✅ Completed: Sprint 3.3 - SIWE Authentication (Supabase Native)
+
+**Status**: ✅ **COMPLETE**
+**Completed**: November 4, 2025
+**Objective**: Migrated to Supabase's native `signInWithWeb3()` authentication while preserving ENS signature service for minting
+
+**Key Benefits:**
+- ✅ ~500 lines of authentication code removed
+- ✅ Production-grade security via Supabase
+- ✅ Automatic token refresh
+- ✅ Simplified codebase
+- ✅ ENS signature service preserved for minting
+
+### Implementation Summary
+
+**See**: `docs/SIWE_IMPLEMENTATION_ACTUAL.md` for complete implementation details.
+
+**Key Implementation Differences from Plan**:
+1. ✅ **Database trigger** auto-creates profile (not manual upsert)
+2. ✅ **Direct REST API** for profile fetch (Supabase client queries not firing)
+3. ✅ **onAuthStateChange only** (getSession() was hanging)
+4. ✅ **Single-call signInWithWeb3()** (Supabase handles everything)
+5. ✅ **Wallet disconnect → sign out** (prevents session mismatch)
+
+### Testing Results
+
+| Test | Result |
+|------|--------|
+| ✅ First-time authentication | PASS |
+| ✅ Session restoration on refresh | PASS |
+| ✅ Sign out functionality | PASS |
+| ✅ Re-authentication | PASS |
+| ✅ Wallet switching | PASS |
+| ✅ RLS isolation (2 wallets) | PASS |
+
+### Files Modified
+
+- `src/lib/supabase.ts` - Added auth config
+- `src/store/useAuthStore.ts` - Complete rewrite (direct REST API)
+- `src/hooks/useAuth.ts` - Simplified to single call
+- `src/components/ConnectButton.tsx` - Added disconnect flow
+- `backend/supabase/migrations/015_auto_create_profile_trigger.sql` - New
+
+---
+
+## 🚧 In Progress: Sprint 3.4 - Post-SIWE Bug Fixes
+
+**Status**: 🚧 **IN PROGRESS**
+**Started**: November 4, 2025
+**Priority**: 🔴 **CRITICAL** - Must fix before beta testing
+**Objective**: Fix breaking issues introduced during Sprint 3.3 SIWE migration
+
+### Issues Discovered
+After Sprint 3.3, three critical issues were identified:
+1. ❌ **Thoughts not saving**: `thoughts` table requires `user_id` (UUID from auth), but code only passes `wallet_address`
+2. ❌ **Minting broken**: Likely authentication-related due to missing user_id linkage
+3. ℹ️ **ENS not stored**: Supabase Web3 auth doesn't include ENS in metadata (expected, requires resolution)
+
+### Root Cause Analysis
+**Issue #1 & #2**: The `thoughts` table has a `user_id` column (UUID foreign key to `auth.users.id`) that is `NOT NULL`, but the code was only providing `wallet_address`. After SIWE migration, RLS policies use `auth.uid()` which returns the UUID, not the wallet address.
+
+**Issue #3**: Supabase's `signInWithWeb3()` stores wallet address in `raw_user_meta_data.custom_claims.address`, but does not resolve or store ENS names. This is expected behavior.
+
+### Tasks
+- [x] Create migration to auto-populate `user_id` from `auth.uid()`
+- [x] Add database trigger to set `user_id` on insert
+- [x] Backfill existing thoughts with `user_id`
+- [x] Update `saveThought()` to remove manual `user_id` handling
+- [x] Test thought saving end-to-end
+- [x] Test minting functionality
+- [x] Fix token_id extraction from transaction receipt (was hardcoded to '0')
+- [x] Test token_id is correctly stored after minting ✅
+- [x] Fix emoji not being saved in handleDiscard (was saving label instead)
+- [ ] Test emoji is correctly saved when saving ephemeral thought
+- [ ] Investigate ENS resolution options (defer to Sprint 3.5 if needed)
+
+### Implementation Details
+
+**Migration 016**: `backend/supabase/migrations/016_fix_thoughts_user_id.sql`
+- Auto-populates `user_id` from `auth.uid()` via database trigger
+- Sets default `expires_at` to 7 days
+- Backfills existing thoughts with correct `user_id`
+
+**Token ID Extraction**: `src/App.tsx:147-160`
+- Extracts actual token ID from ERC721 Transfer event in transaction receipt
+- Uses `receipt.logs` to find the Transfer event (from address(0) for minting)
+- Converts hex token ID to decimal string for database storage
+
+**Emoji Storage Fix**: `src/App.tsx:229-230`
+- Fixed `handleDiscard()` to convert mood label to emoji before saving
+- Previously saved "Peaceful" instead of "😌"
+- Now uses same `moodEmojis` mapping as minting flow
+
+
+---
+
 ## 🎯 Next Up: Sprint 4 - User Testing & Beta Launch
 
 ### Beta Testing Program
@@ -229,14 +325,16 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 ## 🐛 Known Issues & Technical Debt
 
 ### High Priority
-1. **Authentication**: Using temporary dev RLS policies
-   - Need to implement proper SIWE (Sign-In with Ethereum)
-   - Location: `backend/supabase/migrations/004_temporary_dev_policies.sql`
-   - TODO: Create migration `005_siwe_authentication.sql`
+1. ~~**Authentication**: Using temporary dev RLS policies~~ ✅ **RESOLVED**
+   - **Status**: Sprint 3.2 complete (Nov 3, 2025)
+   - **Solution**: SIWE (Sign-In with Ethereum) with JWT-based RLS now active
+   - Production RLS policies enforce per-wallet data isolation
+   - All temporary dev policies removed
 
 2. **Draft Expiration**: Currently 10 minutes for testing
    - Need to change to 7 days for production
    - Location: `src/components/WritingInterface.tsx:50`
+   - Can be changed in 1 minute (simple constant update)
 
 ### Medium Priority
 3. **Chain Filter UI**: Infrastructure exists but UI not exposed
@@ -324,35 +422,6 @@ VITE_JOURNAL_PROXY_BOB=
 - [ ] Optimize UX based on real user behavior
 - [ ] Achieve 90%+ task completion rate in user testing
 - [ ] Mobile and cross-browser compatibility verified
-
----
-
-## 🚀 Quick Commands
-
-```bash
-# Frontend
-npm run dev              # Start dev server
-npm run build            # Build for production
-
-# Supabase
-npx tsx backend/supabase/test-connection.ts  # Test DB connection
-
-# Smart Contracts (once Foundry is set up)
-forge build              # Compile contracts
-forge test               # Run tests
-forge test -vvv          # Run tests with verbose output
-anvil                    # Start local blockchain
-```
-
----
-
-## 📞 Getting Help
-
-- **Sprint Plan**: See `docs/sprint_plan.md` for detailed breakdown
-- **Contract Guide**: See `docs/CONTRACT_GUIDE.md` for deployment instructions
-- **Technical Docs**: See `docs/CTO_ASSESSMENT.md` for architecture decisions
-- **Getting Started**: See `docs/GETTING_STARTED.md` for setup instructions
-- **AI Assistant**: See `CLAUDE.md` for guidance to Claude Code
 
 ---
 

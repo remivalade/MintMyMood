@@ -24,7 +24,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
             fontWeight: '600',
             color: 'var(--soft-black)'
           }}>
-            About Pensieve
+            About MintMyMood
           </DialogTitle>
         </DialogHeader>
 
@@ -33,7 +33,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
             fontSize: 'var(--text-ui)',
             color: 'var(--medium-gray)'
           }}>
-            Pensieve is a minimalist journaling app built on the tension between the temporary and the eternal. 
+            MintMyMood is a minimalist journaling app built on the tension between the temporary and the eternal. 
             It's a space for capturing fleeting thoughts that, by default, are ephemeral and disappear after a set period.
           </p>
 
@@ -83,7 +83,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
             <p className="text-sm leading-relaxed" style={{ color: 'var(--medium-gray)' }}>
               Not every thought needs to be permanent. Most moments are meant to be experienced and released. 
               But some memories, some insights, some feelings deserve to be preserved forever. 
-              Pensieve helps you distinguish between the two.
+              MintMyMood helps you distinguish between the two.
             </p>
           </div>
         </div>

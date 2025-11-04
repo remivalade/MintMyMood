@@ -14,10 +14,11 @@ app.use(cors({
 
 app.use(express.json());
 
-// Rate limiting: 10 requests per hour per IP
+// Rate limiting: Increased to 100 for development/testing
+// TODO: Reduce to 10 for production
 const limiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10,
+  max: 100, // Temporarily increased for SIWE testing
   message: { error: 'Too many signature requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -107,6 +108,14 @@ app.post('/api/ens-signature', limiter, async (req, res) => {
   }
 });
 
+// =====================================================
+// NOTE: SIWE Authentication is now handled by Supabase
+// =====================================================
+// Sprint 3.3: Migrated to Supabase native Web3 auth
+// - Authentication uses supabase.auth.signInWithWeb3()
+// - This backend now ONLY handles ENS signature verification
+// - See docs/SIWE_IMPLEMENTATION_PLAN.md for details
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -118,7 +127,7 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  MintMyMood - ENS Signature Service');
+  console.log('  MintMyMood - Backend API');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`  Server running on port ${PORT}`);
   console.log(`  Signer address: ${signer.address}`);
@@ -128,5 +137,7 @@ app.listen(PORT, () => {
   console.log('Endpoints:');
   console.log(`  GET  http://localhost:${PORT}/api/health`);
   console.log(`  POST http://localhost:${PORT}/api/ens-signature`);
+  console.log('');
+  console.log('Note: SIWE authentication now handled by Supabase native Web3 auth');
   console.log('');
 });
