@@ -1,7 +1,7 @@
 # Design Alignment Report
 
 ## Overview
-This document summarizes the alignment of the Pensieve app with the design guidelines specified in `/guidelines/Guidelines.md`.
+This document summarizes the alignment of the MintMyMood app with the design guidelines specified in `/guidelines/Guidelines.md`.
 
 ## ✅ Implemented Changes
 

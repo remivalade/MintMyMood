@@ -26,7 +26,7 @@ export function IntroModal({ isOpen, onClose }: IntroModalProps) {
             fontWeight: '600',
             color: 'var(--soft-black)'
           }}>
-            Pensieve
+            MintMyMood
           </DialogTitle>
           
           <DialogDescription id="intro-dialog-description" className="mb-6 leading-relaxed" style={{

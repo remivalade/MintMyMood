@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { dbQuery } from '../lib/supabaseHelper';
 import type { Thought, UserStats } from '../types';
 
 /**
@@ -18,14 +19,14 @@ interface ThoughtStore {
   stats: UserStats | null;
 
   // Actions
-  fetchThoughts: (walletAddress: string) => Promise<void>;
+  fetchThoughts: () => Promise<void>; // RLS filters by auth.uid()
   saveThought: (thought: Partial<Thought>) => Promise<Thought | null>;
   updateThought: (id: string, updates: Partial<Thought>) => Promise<void>;
   deleteThought: (id: string) => Promise<void>;
   setCurrentThought: (thought: Partial<Thought>) => void;
   setSelectedThought: (thought: Thought | null) => void;
   clearCurrentThought: () => void;
-  fetchStats: (walletAddress: string) => Promise<void>;
+  fetchStats: () => Promise<void>; // RLS filters by auth.uid()
 
   // Mint-specific actions
   markAsMinted: (
@@ -54,17 +55,17 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
   error: null,
   stats: null,
 
-  // Fetch all thoughts for a wallet
-  fetchThoughts: async (walletAddress: string) => {
+  // Fetch all thoughts for the authenticated user
+  // RLS automatically filters by auth.uid(), no need to filter by wallet_address
+  fetchThoughts: async () => {
     set({ isLoading: true, error: null });
     try {
-      const { data, error } = await supabase
-        .from('thoughts')
-        .select('*')
-        .eq('wallet_address', walletAddress.toLowerCase())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const { data } = await dbQuery(
+        supabase
+          .from('thoughts')
+          .select('*')
+          .order('created_at', { ascending: false })
+      );
 
       set({ thoughts: data || [], isLoading: false });
     } catch (error: any) {
@@ -87,14 +88,14 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
 
       // If thought has an id, update it; otherwise insert
       if (thought.id) {
-        const { data, error } = await supabase
-          .from('thoughts')
-          .update(thoughtData)
-          .eq('id', thought.id)
-          .select()
-          .single();
-
-        if (error) throw error;
+        const { data } = await dbQuery(
+          supabase
+            .from('thoughts')
+            .update(thoughtData)
+            .eq('id', thought.id)
+            .select()
+            .single()
+        );
 
         // Update in local state
         set(state => ({
@@ -104,13 +105,13 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
 
         return data;
       } else {
-        const { data, error } = await supabase
-          .from('thoughts')
-          .insert(thoughtData)
-          .select()
-          .single();
-
-        if (error) throw error;
+        const { data } = await dbQuery(
+          supabase
+            .from('thoughts')
+            .insert(thoughtData)
+            .select()
+            .single()
+        );
 
         // Add to local state
         set(state => ({
@@ -131,12 +132,12 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
   updateThought: async (id: string, updates: Partial<Thought>) => {
     set({ isLoading: true, error: null });
     try {
-      const { error } = await supabase
-        .from('thoughts')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
+      await dbQuery(
+        supabase
+          .from('thoughts')
+          .update(updates)
+          .eq('id', id)
+      );
 
       // Update local state
       set(state => ({
@@ -153,12 +154,12 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
   deleteThought: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const { error } = await supabase
-        .from('thoughts')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await dbQuery(
+        supabase
+          .from('thoughts')
+          .delete()
+          .eq('id', id)
+      );
 
       // Remove from local state
       set(state => ({
@@ -187,14 +188,19 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
   },
 
   // Fetch user stats
-  fetchStats: async (walletAddress: string) => {
+  // RLS automatically filters by auth.uid()
+  fetchStats: async () => {
     try {
-      const { data, error } = await supabase
-        .rpc('get_user_stats', { user_wallet_address: walletAddress.toLowerCase() });
+      // TODO: Update RPC function to use auth.uid() instead of wallet_address parameter
+      // For now, we can just count thoughts directly
+      const { thoughts } = get();
+      const stats = {
+        totalThoughts: thoughts.length,
+        mintedCount: thoughts.filter(t => t.is_minted).length,
+        ephemeralCount: thoughts.filter(t => !t.is_minted).length,
+      };
 
-      if (error) throw error;
-
-      set({ stats: data });
+      set({ stats });
     } catch (error: any) {
       console.error('Error fetching stats:', error);
     }
@@ -210,16 +216,15 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
   ) => {
     set({ isLoading: true, error: null });
     try {
-      const { error } = await supabase
-        .rpc('update_thought_after_mint', {
+      await dbQuery(
+        supabase.rpc('update_thought_after_mint', {
           thought_id: thoughtId,
           p_origin_chain_id: chainId,
           p_token_id: tokenId,
           p_contract_address: contractAddress,
           p_tx_hash: txHash,
-        });
-
-      if (error) throw error;
+        })
+      );
 
       // Update local state
       set(state => ({
@@ -253,15 +258,14 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
   ) => {
     set({ isLoading: true, error: null });
     try {
-      const { error } = await supabase
-        .rpc('update_thought_after_bridge', {
+      await dbQuery(
+        supabase.rpc('update_thought_after_bridge', {
           thought_id: thoughtId,
           new_chain_id: newChainId,
           new_contract_address: newContractAddress,
           bridge_tx_hash: bridgeTxHash,
-        });
-
-      if (error) throw error;
+        })
+      );
 
       // Update local state
       set(state => ({

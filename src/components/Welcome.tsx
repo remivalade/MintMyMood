@@ -30,7 +30,7 @@ export function Welcome({ onStart }: WelcomeProps) {
           className="text-5xl mb-6"
           style={{ fontFamily: 'Georgia, serif' }}
         >
-          Pensieve
+          MintMyMood
         </motion.h1>
 
         <motion.p

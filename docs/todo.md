@@ -1,6 +1,6 @@
 # MintMyMood - Development TODO
 
-**Current Status**: Sprint 3 Complete ✅ - Production Ready for Beta Testing
+**Current Status**: Sprint 3.3 Complete ✅ - SIWE Native Auth Implemented
 
 ---
 
@@ -169,6 +169,67 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 
 ---
 
+## ✅ Completed: Sprint 3.3 - SIWE Authentication (Supabase Native)
+
+**Status**: ✅ **COMPLETE**
+**Completed**: November 4, 2025
+**Objective**: Migrated to Supabase's native `signInWithWeb3()` authentication while preserving ENS signature service for minting
+
+**Key Benefits:**
+- ✅ ~500 lines of authentication code removed
+- ✅ Production-grade security via Supabase
+- ✅ Automatic token refresh
+- ✅ Simplified codebase
+- ✅ ENS signature service preserved for minting
+
+### Implementation Summary
+
+**See**: `docs/SIWE_IMPLEMENTATION_ACTUAL.md` for complete implementation details.
+
+**Key Implementation Differences from Plan**:
+1. ✅ **Database trigger** auto-creates profile (not manual upsert)
+2. ✅ **Direct REST API** for profile fetch (Supabase client queries not firing)
+3. ✅ **onAuthStateChange only** (getSession() was hanging)
+4. ✅ **Single-call signInWithWeb3()** (Supabase handles everything)
+5. ✅ **Wallet disconnect → sign out** (prevents session mismatch)
+
+### Testing Results
+
+| Test | Result |
+|------|--------|
+| ✅ First-time authentication | PASS |
+| ✅ Session restoration on refresh | PASS |
+| ✅ Sign out functionality | PASS |
+| ✅ Re-authentication | PASS |
+| ✅ Wallet switching | PASS |
+| ✅ RLS isolation (2 wallets) | PASS |
+
+### Files Modified
+
+- `src/lib/supabase.ts` - Added auth config
+- `src/store/useAuthStore.ts` - Complete rewrite (direct REST API)
+- `src/hooks/useAuth.ts` - Simplified to single call
+- `src/components/ConnectButton.tsx` - Added disconnect flow
+- `backend/supabase/migrations/015_auto_create_profile_trigger.sql` - New
+
+---
+
+## 🚧 In Progress: Sprint 3.4 - ENS Profile Enhancement
+
+**Status**: 🚧 **IN PROGRESS**
+**Priority**: 🟡 **MEDIUM** - Nice to have before beta
+**Objective**: Investigate and implement ENS name storage in user profiles
+
+### Tasks
+- [ ] Investigate why ENS is not stored during user creation
+- [ ] Check if Supabase Web3 auth includes ENS in metadata
+- [ ] If not included, implement ENS resolution after auth
+- [ ] Update database trigger to store ENS if available
+- [ ] Test ENS display in profile
+
+
+---
+
 ## 🎯 Next Up: Sprint 4 - User Testing & Beta Launch
 
 ### Beta Testing Program
@@ -229,14 +290,16 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 ## 🐛 Known Issues & Technical Debt
 
 ### High Priority
-1. **Authentication**: Using temporary dev RLS policies
-   - Need to implement proper SIWE (Sign-In with Ethereum)
-   - Location: `backend/supabase/migrations/004_temporary_dev_policies.sql`
-   - TODO: Create migration `005_siwe_authentication.sql`
+1. ~~**Authentication**: Using temporary dev RLS policies~~ ✅ **RESOLVED**
+   - **Status**: Sprint 3.2 complete (Nov 3, 2025)
+   - **Solution**: SIWE (Sign-In with Ethereum) with JWT-based RLS now active
+   - Production RLS policies enforce per-wallet data isolation
+   - All temporary dev policies removed
 
 2. **Draft Expiration**: Currently 10 minutes for testing
    - Need to change to 7 days for production
    - Location: `src/components/WritingInterface.tsx:50`
+   - Can be changed in 1 minute (simple constant update)
 
 ### Medium Priority
 3. **Chain Filter UI**: Infrastructure exists but UI not exposed
@@ -324,35 +387,6 @@ VITE_JOURNAL_PROXY_BOB=
 - [ ] Optimize UX based on real user behavior
 - [ ] Achieve 90%+ task completion rate in user testing
 - [ ] Mobile and cross-browser compatibility verified
-
----
-
-## 🚀 Quick Commands
-
-```bash
-# Frontend
-npm run dev              # Start dev server
-npm run build            # Build for production
-
-# Supabase
-npx tsx backend/supabase/test-connection.ts  # Test DB connection
-
-# Smart Contracts (once Foundry is set up)
-forge build              # Compile contracts
-forge test               # Run tests
-forge test -vvv          # Run tests with verbose output
-anvil                    # Start local blockchain
-```
-
----
-
-## 📞 Getting Help
-
-- **Sprint Plan**: See `docs/sprint_plan.md` for detailed breakdown
-- **Contract Guide**: See `docs/CONTRACT_GUIDE.md` for deployment instructions
-- **Technical Docs**: See `docs/CTO_ASSESSMENT.md` for architecture decisions
-- **Getting Started**: See `docs/GETTING_STARTED.md` for setup instructions
-- **AI Assistant**: See `CLAUDE.md` for guidance to Claude Code
 
 ---
 

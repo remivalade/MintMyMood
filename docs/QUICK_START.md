@@ -66,23 +66,28 @@ VITE_WALLETCONNECT_PROJECT_ID=your-project-id-here
 
 ## Step 3: Run the App (1 min)
 
+### Option A: Run Everything Together (Recommended)
+
 ```bash
-# Start development server
-npm run dev
+# Start both frontend & backend together
+npm run dev:all
 ```
 
-The app will open at **http://localhost:3000**
+This starts:
+- **Frontend** at http://localhost:3000
+- **Backend API** at http://localhost:3001
 
-### Backend API (if testing ENS minting)
+### Option B: Run Services Individually
 
 ```bash
-# In a new terminal
+# Terminal 1 - Frontend only
+npm run dev
+
+# Terminal 2 - Backend API (required for minting)
 cd backend/api
 npm install
 npm start
 ```
-
-Backend runs on **http://localhost:3001**
 
 ---
 

@@ -11,6 +11,7 @@ import { ThoughtDetail } from './components/ThoughtDetail';
 import { MintingModal } from './components/MintingModal';
 import { WalletPromptModal } from './components/WalletPromptModal';
 import { useThoughtStore } from './store/useThoughtStore';
+import { useAuthStore } from './store/useAuthStore';
 import { Thought as ThoughtType } from './types';
 import { toast } from 'sonner';
 import { useMintJournalEntry } from './hooks/useMintJournalEntry';
@@ -35,6 +36,7 @@ export default function App() {
 
   const [showIntroModal, setShowIntroModal] = useState(true);
   const { address, isConnected } = useAccount();
+  const { user } = useAuthStore(); // Get auth.users user_id
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { saveThought, markAsMinted, thoughts } = useThoughtStore();
@@ -49,6 +51,12 @@ export default function App() {
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false);
   const [mintingStatus, setMintingStatus] = useState<'minting' | 'success' | 'error'>('minting');
   const [isWalletPromptOpen, setIsWalletPromptOpen] = useState(false);
+
+  // Initialize auth store on app load (Sprint 3.3: Supabase native Web3 auth)
+  // This restores session from localStorage and sets up auth listener
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+  }, []);
 
   // Show intro modal only on first visit
   useEffect(() => {
@@ -88,10 +96,15 @@ export default function App() {
       // Convert mood name to emoji
       const moodEmoji = currentThought.mood ? moodEmojis[currentThought.mood] || '😌' : '😌';
 
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       // Save thought to database first to get an ID
       const savedThought = await saveThought({
         id: currentThought.draftId,
-        wallet_address: address,
+        user_id: user.id, // Auth user UUID
+        wallet_address: address, // Still included for display
         text: currentThought.content,
         mood: moodEmoji,
         is_minted: false, // Not minted yet

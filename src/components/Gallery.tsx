@@ -78,7 +78,7 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
               fontWeight: '600',
               color: 'var(--soft-black)'
             }}>
-              Pensieve
+              MintMyMood
             </h1>
             <button
               onClick={() => setIsAboutOpen(true)}

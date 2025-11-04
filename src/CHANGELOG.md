@@ -1,4 +1,4 @@
-# Pensieve - Design Updates
+# MintMyMood - Design Updates
 
 ## Latest Changes (October 15, 2025)
 
