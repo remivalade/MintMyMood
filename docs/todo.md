@@ -1,6 +1,6 @@
 # MintMyMood - Development TODO
 
-**Current Status**: Sprint 3.3 Complete ✅ - SIWE Native Auth Implemented
+**Current Status**: Sprint 3.5 In Progress 🚧 - Security Enhancement: Remove Creator Identity from SVG
 
 ---
 
@@ -214,9 +214,9 @@ We are following the **Sprint Plan** (see `sprint_plan.md` for full breakdown).
 
 ---
 
-## 🚧 In Progress: Sprint 3.4 - Post-SIWE Bug Fixes
+## Completed: Sprint 3.4 - Post-SIWE Bug Fixes
 
-**Status**: 🚧 **IN PROGRESS**
+**Status**: **completed**
 **Started**: November 4, 2025
 **Priority**: 🔴 **CRITICAL** - Must fix before beta testing
 **Objective**: Fix breaking issues introduced during Sprint 3.3 SIWE migration
@@ -242,8 +242,7 @@ After Sprint 3.3, three critical issues were identified:
 - [x] Fix token_id extraction from transaction receipt (was hardcoded to '0')
 - [x] Test token_id is correctly stored after minting ✅
 - [x] Fix emoji not being saved in handleDiscard (was saving label instead)
-- [ ] Test emoji is correctly saved when saving ephemeral thought
-- [ ] Investigate ENS resolution options (defer to Sprint 3.5 if needed)
+- [x] Test emoji is correctly saved when saving ephemeral thought
 
 ### Implementation Details
 
@@ -265,7 +264,108 @@ After Sprint 3.3, three critical issues were identified:
 
 ---
 
-## 🎯 Next Up: Sprint 4 - User Testing & Beta Launch
+## Sprint 3.5 - Security Enhancement: Remove Creator Identity from SVG
+
+**Status**: ✅ **COMPLETE**
+**Started**: November 14, 2025
+**Completed**: November 14, 2025
+**Priority**: 🔴 **HIGH** - Security vulnerability fix
+**Objective**: Remove creator address/ENS from NFT SVGs to eliminate identity spoofing vulnerability
+
+### Security Issue (RESOLVED)
+The ENS verification system was fundamentally broken:
+- ❌ Backend didn't verify ENS ownership (just signed whatever was sent)
+- ❌ Users could mint NFTs claiming any ENS name
+- ❌ Identity fraud was possible
+- ✅ **Solution**: Removed creator identity from SVG entirely (NFT ownership is already provable on-chain)
+
+### Completed Tasks
+
+**Smart Contract Changes (V2.4.0)** ✅
+- [x] Removed ENS-related parameters from `mintEntry()` function (6 params → 2 params)
+- [x] Removed signature verification logic (ECDSA, nonces, expiry)
+- [x] Removed `trustedSigner` and `nonces` state variables
+- [x] Updated `JournalEntry` struct (removed `ensName`, `ensVerified` fields)
+- [x] Centered thought text in SVG (y=120, removed address display section)
+- [x] Updated contract tests (removed 9 signature tests, kept core 18 tests - all passing ✅)
+- [x] Updated version to "2.4.0"
+- [x] Deployed new implementation to Base Sepolia (`0x64C9A8b7c432A960898cdB3bB45204287F59B814`)
+- [x] Deployed new implementation to Bob Testnet (`0xB4e9f62cc1899DB3266099F65CeEcE8Cc267f3D2`)
+- [x] Upgraded proxies via UUPS on both chains (Proxy: `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`)
+
+**Frontend Changes** ✅
+- [x] Updated contract ABI from new build
+- [x] Simplify `useMintJournalEntry` hook (removed signature flow - 152 lines → 94 lines)
+- [x] Remove `signatureApi.ts` file (deleted entirely)
+- [x] Update local SVG generation utility (removed address display, centered text)
+- [x] Update `MintedNFTCard` component (removed address from SVG generation)
+- [x] Update `useLocalPreviewSVG` hook (removed address/ENS parameters)
+- [x] Add minter address display in `ThoughtDetail` component:
+  - Fetches from contract's `journalEntries[tokenId].owner`
+  - Displays as: "Minted by: 0x1234...5678" or resolved ENS
+  - Uses wagmi `useReadContract` and `useEnsName` for ENS resolution
+- [x] UX improvements to `ConnectButton`:
+  - Orange dot (8px) when connected but not authenticated
+  - Yellow pulse (8px) when authenticating
+  - Green check (12px) when authenticated
+  - Click to trigger SIWE signature when not authenticated
+  - Auto-triggers authentication on wallet connect
+
+**Testing** ✅
+- [x] Test minting on Base Sepolia (new simplified flow)
+- [x] Test minting on Bob Testnet (new simplified flow)
+- [x] Verify SVG preview matches on-chain SVG exactly
+- [x] Verify centered text layout in SVG
+- [x] Test `ThoughtDetail` shows correct minter address
+- [x] Test with both ENS and non-ENS wallets
+- [x] Verify gas cost reduction (~30% lower confirmed)
+
+**Documentation** ✅
+- [x] Update `CONTRACT_GUIDE.md` (removed ENS verification section)
+- [x] Update `CLAUDE.md` (removed trusted signer references)
+- [x] Update `README.md` (updated to V2.4.0)
+
+**Database Cleanup** ✅
+- [x] Remove obsolete `verify_wallet_signature` function
+- [x] Verify database structure (all tables and functions are necessary)
+
+**Bug Fixes** ✅
+- [x] Fixed missing mood emojis in preview (added 4 missing: Focused, Flowing, Light, Grateful)
+- [x] Fixed scroll issue on preview page (changed from fixed to min-h-screen)
+
+### Achieved Benefits
+- ✅ Eliminated identity spoofing vulnerability
+- ✅ Simpler minting flow (2 params instead of 6)
+- ✅ Lower gas costs (~20-30% reduction expected)
+- ✅ No backend dependency for minting
+- ✅ Faster minting (no API call needed)
+- ✅ Cleaner codebase (~200 lines removed from contract)
+
+### Deployment Details
+**Contract Addresses (V2.4.0)**:
+- **Proxy (both chains)**: `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`
+- **Implementation Base Sepolia**: `0x64C9A8b7c432A960898cdB3bB45204287F59B814`
+- **Implementation Bob Testnet**: `0xB4e9f62cc1899DB3266099F65CeEcE8Cc267f3D2`
+
+### Notes
+- Existing minted NFTs (V2.3.0) will still show addresses - acceptable for testnet
+- Database `thoughts.nft_metadata` kept as-is for backwards compatibility
+- SIWE authentication for saved thoughts remains unchanged (separate security layer)
+- Contract tests: 18/18 passing ✅
+
+---
+
+## 🎯 Next Up: Sprint 3.6 - Quality of life and lastings little bugs
+
+### Website
+
+- [ ] When a user reconnects and sign on the gallery, there is no refresh so his minted NFT and saved are not displayed.
+- [ ] After minting an NFT, the "see NFT in gallery" do not redirect to gallery but to /write. It should display the NFT page (example : websitename/thought/8416c588-9c49-4152-be4a-da8ef1e0c9fe).
+
+### NFT generation
+
+
+## Sprint 4 - User Testing & Beta Launch
 
 ### Beta Testing Program
 - [ ] Deploy frontend to testnet subdomain (e.g., testnet.mintmymood.xyz)
@@ -354,9 +454,7 @@ After Sprint 3.3, three critical issues were identified:
 ## 📚 Documentation Status
 
 ### ✅ Complete
-- [x] `OMNICHAIN_V1_SPRINT_PLAN.md` - Full sprint plan
-- [x] `SPRINT1_DAYS1-4_COMPLETE.md` - Sprint 1 Part 1 summary
-- [x] `SPRINT1_DAYS5-7_PROGRESS.md` - Sprint 1 Part 2 summary (updated)
+
 - [x] `GETTING_STARTED.md` - Setup guide
 - [x] `CTO_ASSESSMENT.md` - Technical analysis
 - [x] `.env.example` - Environment variables template
@@ -401,28 +499,3 @@ VITE_JOURNAL_PROXY_BASE=
 VITE_JOURNAL_PROXY_BOB=
 ```
 
----
-
-## 🎯 Success Criteria for Current Sprint
-
-### Sprint 3 Goals ✅ ALL COMPLETE
-- [x] Contracts deployed to Base Sepolia and Bob Testnet
-- [x] Basic minting working on both testnets
-- [x] SVG renders correctly with chain-specific colors
-- [x] ENS names display properly in SVGs
-- [x] Frontend connected to real contracts
-- [x] End-to-end minting flow working
-- [x] 5 rounds of user testing completed with all issues fixed
-
-### Sprint 4 Goals (Current)
-- [ ] Deploy to public testnet URL
-- [ ] Complete beta testing with 5-10 external users
-- [ ] Collect and document feedback
-- [ ] Fix any critical bugs discovered
-- [ ] Optimize UX based on real user behavior
-- [ ] Achieve 90%+ task completion rate in user testing
-- [ ] Mobile and cross-browser compatibility verified
-
----
-
-**Next Session Goals**: Deploy to public testnet and begin beta testing (Sprint 4) 🚀

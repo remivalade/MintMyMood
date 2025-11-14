@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Web3:** wagmi v2 + viem + RainbowKit
 - **Database:** Supabase (PostgreSQL with Row Level Security)
 - **Blockchain:** Foundry + Solidity (UUPS Upgradeable ERC721)
-- **Backend:** Express.js (ENS signature service)
+- **Backend:** Express.js (SIWE authentication)
 - **Notifications:** Sonner (toast notifications)
 
 ---
@@ -30,7 +30,7 @@ npm install          # Install dependencies
 npm run dev          # Start dev server (http://localhost:3000)
 npm run build        # Build for production
 
-# Backend API (ENS signatures)
+# Backend API (SIWE authentication)
 cd backend/api && npm start  # Port 3001
 
 # Smart Contracts
@@ -48,7 +48,7 @@ src/hooks/              # useMintJournalEntry, useEnsName
 src/store/              # Zustand global state
 src/contracts/          # Contract ABIs & addresses
 contracts/src/          # OnChainJournal.sol
-backend/api/            # Express.js signature service
+backend/api/            # Express.js SIWE authentication
 docs/                   # All documentation
 ```
 
@@ -65,7 +65,7 @@ Mood Selection → User picks emoji
        ↓
 Mint Preview → Shows SVG preview, chain selector
        ↓
-Minting → Gets ENS signature → Calls smart contract
+Minting → Calls smart contract
        ↓
 Gallery → Displays all thoughts (minted + ephemeral)
 ```
@@ -122,7 +122,7 @@ interface Thought {
 
 ---
 
-## Smart Contract (V2.3.0)
+## Smart Contract (V2.4.0)
 
 **Location:** `contracts/src/OnChainJournal.sol`
 
@@ -130,22 +130,18 @@ interface Thought {
 
 **Key Features:**
 - On-chain SVG generation with animations (no IPFS)
-- ENS signature verification (prevents identity fraud)
 - Chain-specific gradients (Base: blue, Bob: orange)
 - Input validation (400 byte text, 64 byte mood)
 - XML escaping for security
-- Nonce-based replay protection
+- Simplified minting (2 parameters vs 6 in V2.3.0)
+- Gas optimized (~170k vs ~240k, ~30% reduction)
 
 **Key Functions:**
 ```solidity
-// Minting (requires backend signature)
+// Minting (simplified)
 function mintEntry(
     string memory _text,
-    string memory _mood,
-    string memory _ensName,
-    bytes memory _signature,
-    uint256 _nonce,
-    uint256 _expiry
+    string memory _mood
 ) public returns (uint256)
 
 // Metadata
@@ -158,30 +154,10 @@ function updateChainName(string memory _newChainName) external
 function upgradeToAndCall(address newImplementation, bytes memory data) external
 ```
 
-**Deployed Contracts (V2.3.0):**
+**Deployed Contracts (V2.4.0):**
 - Proxy (both chains): `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`
-- Implementation Base Sepolia: `0x95a7BbfFBffb2D1e4b73B8F8A9435CE48dE5b47A`
-- Implementation Bob Testnet: `0xfdDDdb3E4ED11e767E6C2e0927bD783Fa0751012`
-- Trusted Signer: `0xEd171c759450B7358e9238567b1e23b4d82f3a64`
-
----
-
-## ENS Verification System
-
-**Problem:** Without verification, users could mint with any ENS name (identity fraud)
-
-**Solution:** Backend signature verification
-
-**Flow:**
-1. Frontend requests signature from `POST /api/ens-signature`
-2. Backend verifies ENS ownership and signs mint request
-3. Smart contract verifies ECDSA signature
-4. NFT displays `✓ ensname.eth` for verified ENS, or `0x1234...5678` for truncated address
-
-**Backend API:** `backend/api/server.js` (Express.js on port 3001)
-- Rate limiting: 10 signatures/hour per IP
-- 5-minute signature expiry
-- Nonce-based replay protection
+- Implementation Base Sepolia: `0x64C9A8b7c432A960898cdB3bB45204287F59B814`
+- Implementation Bob Testnet: `0xB4e9f62cc1899DB3266099F65CeEcE8Cc267f3D2`
 
 ---
 
@@ -210,7 +186,7 @@ function upgradeToAndCall(address newImplementation, bytes memory data) external
 
 ## Current Status
 
-**Sprint 3.2 Complete** ✅ - Production Ready for Beta Testing
+**Sprint 3.4 Complete** ✅ - V2.4.0 Deployed
 
 ### What Works
 
@@ -224,30 +200,30 @@ function upgradeToAndCall(address newImplementation, bytes memory data) external
 - ✅ Gallery with real Supabase data
 - ✅ Filter system (All/Minted/Ephemeral)
 - ✅ Chain badges on minted thoughts
-- ✅ ENS name display and verification
+- ✅ ENS name display (frontend resolution)
 - ✅ React Router navigation
 - ✅ Loading states throughout
 
-*Smart Contracts:*
+*Smart Contracts (V2.4.0):*
 - ✅ UUPS Upgradeable ERC721
 - ✅ On-chain SVG with animations
-- ✅ ENS signature verification
+- ✅ Simplified minting (2 parameters: text, mood)
 - ✅ Chain-specific gradients
+- ✅ Gas optimized (~30% reduction)
 - ✅ 28/28 tests passing
 - ✅ Deployed to Base Sepolia & Bob Testnet
 
 *Backend:*
-- ✅ Express.js API (ENS + SIWE auth)
+- ✅ Express.js API (SIWE auth)
 - ✅ SIWE authentication endpoints (nonce generation, signature verification)
 - ✅ JWT issuance with custom claims
-- ✅ ECDSA signing with rate limiting
 - ✅ Supabase with production RLS policies
 
 *Security:*
 - ✅ Production Row Level Security (RLS) enforcing per-wallet data isolation
 - ✅ No anonymous database access
 - ✅ JWT-based authentication required for all operations
-- ✅ Nonce-based replay protection (5-minute expiry)
+- ✅ Removed signature verification system (security vulnerability fix)
 
 ### Known Issues & TODOs
 
@@ -322,7 +298,6 @@ VITE_ENVIRONMENT=development
 
 ### Backend API (`backend/api/.env`)
 ```bash
-SIGNER_PRIVATE_KEY=0x...
 PORT=3001
 FRONTEND_URL=http://localhost:3000
 JWT_SECRET=<generate-with-openssl-rand-base64-32>

@@ -7,8 +7,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title OnChainJournal
@@ -23,6 +21,7 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
  * - Input validation (400 byte text limit, 64 byte mood limit)
  * - XML escaping for security
  * - UUPS upgradeable for future enhancements
+ * - Simplified minting (no backend signature verification required)
  *
  * Deployment Strategy: One contract instance per chain, each with chain-specific gradient colors.
  *
@@ -39,8 +38,6 @@ contract OnChainJournal is
     UUPSUpgradeable
 {
     using Strings for uint256;
-    using ECDSA for bytes32;
-    using MessageHashUtils for bytes32;
 
     // ============================================
     // STATE VARIABLES
@@ -56,12 +53,6 @@ contract OnChainJournal is
     /// @notice Chain name identifier
     string public chainName;
 
-    /// @notice Trusted signer address for ENS verification
-    address public trustedSigner;
-
-    /// @notice Nonces for signature replay protection
-    mapping(address => uint256) public nonces;
-
     /// @notice Journal entry data structure
     struct JournalEntry {
         string text;
@@ -70,8 +61,6 @@ contract OnChainJournal is
         uint256 blockNumber;    // Block number when NFT was minted
         address owner;
         uint256 originChainId;  // Chain ID where NFT was originally minted
-        string ensName;         // Optional ENS name (empty if not provided)
-        bool ensVerified;       // Whether the ENS name was cryptographically verified
     }
 
     /// @notice Mapping from token ID to journal entry
@@ -95,9 +84,6 @@ contract OnChainJournal is
     error TextTooLong(uint256 length, uint256 maxLength);
     error MoodTooLong(uint256 length, uint256 maxLength);
     error TokenDoesNotExist(uint256 tokenId);
-    error SignatureExpired(uint256 expiry, uint256 currentTime);
-    error InvalidNonce(uint256 provided, uint256 expected);
-    error InvalidSignature();
 
     // ============================================
     // CONSTANTS
@@ -112,19 +98,17 @@ contract OnChainJournal is
     }
 
     /**
-     * @notice Initializes the contract with chain-specific colors and trusted signer
+     * @notice Initializes the contract with chain-specific colors
      * @param _color1 Primary gradient color (hex format with #)
      * @param _color2 Secondary gradient color (hex format with #)
      * @param _chainName Name of the chain (e.g., "Bob", "Base")
      * @param _owner Address of the contract owner
-     * @param _trustedSigner Address of the backend signer for ENS verification
      */
     function initialize(
         string memory _color1,
         string memory _color2,
         string memory _chainName,
-        address _owner,
-        address _trustedSigner
+        address _owner
     ) public initializer {
         __ERC721_init("MintMyMood", "MMM");
         __Ownable_init(_owner);
@@ -132,7 +116,6 @@ contract OnChainJournal is
         color1 = _color1;
         color2 = _color2;
         chainName = _chainName;
-        trustedSigner = _trustedSigner;
     }
 
     // ============================================
@@ -140,21 +123,13 @@ contract OnChainJournal is
     // ============================================
 
     /**
-     * @notice Mints a new journal entry NFT with ENS verification
+     * @notice Mints a new journal entry NFT
      * @param _text The journal entry text (max 400 bytes)
      * @param _mood The mood emoji or text (max 64 bytes)
-     * @param _ensName Optional ENS name (pass empty string if none)
-     * @param _signature Signature from trusted backend verifying ENS name
-     * @param _nonce Current nonce for the minter (prevents replay attacks)
-     * @param _expiry Signature expiry timestamp
      */
     function mintEntry(
         string memory _text,
-        string memory _mood,
-        string memory _ensName,
-        bytes memory _signature,
-        uint256 _nonce,
-        uint256 _expiry
+        string memory _mood
     ) public {
         // Input validation
         uint256 textLength = bytes(_text).length;
@@ -167,36 +142,9 @@ contract OnChainJournal is
             revert MoodTooLong(moodLength, MAX_MOOD_LENGTH);
         }
 
-        // Signature verification
-        if (block.timestamp > _expiry) {
-            revert SignatureExpired(_expiry, block.timestamp);
-        }
-
-        if (_nonce != nonces[msg.sender]) {
-            revert InvalidNonce(_nonce, nonces[msg.sender]);
-        }
-
-        // Recreate the hash that was signed by the backend
-        // MUST match the backend signing logic exactly
-        bytes32 messageHash = keccak256(
-            abi.encode(msg.sender, _ensName, _nonce, _expiry)
-        );
-
-        // Verify the signature
-        address recoveredSigner = messageHash.toEthSignedMessageHash().recover(_signature);
-        if (recoveredSigner != trustedSigner) {
-            revert InvalidSignature();
-        }
-
-        // Increment nonce to prevent replay attacks
-        nonces[msg.sender]++;
-
         // Mint the NFT
         uint256 tokenId = _nextTokenId++;
         _safeMint(msg.sender, tokenId);
-
-        // Determine if ENS is verified (non-empty string means it's verified)
-        bool ensVerified = bytes(_ensName).length > 0;
 
         journalEntries[tokenId] = JournalEntry({
             text: _text,
@@ -204,9 +152,7 @@ contract OnChainJournal is
             timestamp: block.timestamp,
             blockNumber: block.number,
             owner: msg.sender,
-            originChainId: block.chainid,
-            ensName: _ensName,
-            ensVerified: ensVerified
+            originChainId: block.chainid
         });
 
         emit EntryMinted(tokenId, msg.sender, _mood, block.timestamp);
@@ -290,7 +236,6 @@ contract OnChainJournal is
     function generateSVG(JournalEntry memory entry) public view returns (string memory) {
         string memory escapedText = _escapeString(entry.text);
         string memory escapedMood = _escapeString(entry.mood);
-        string memory displayAddress = _formatAddress(entry);
 
         // Generate chain-specific gradient IDs
         string memory gradientId = string(abi.encodePacked("gradient-", chainName));
@@ -300,7 +245,7 @@ contract OnChainJournal is
 
         return string(abi.encodePacked(
             _generateSVGPart1(gradientId, gradientId2, gradientId3, filterId),
-            _generateSVGPart2(escapedMood, entry.blockNumber, escapedText, displayAddress)
+            _generateSVGPart2(escapedMood, entry.blockNumber, escapedText)
         ));
     }
 
@@ -353,8 +298,7 @@ contract OnChainJournal is
     function _generateSVGPart2(
         string memory escapedMood,
         uint256 blockNumber,
-        string memory escapedText,
-        string memory displayAddress
+        string memory escapedText
     ) internal view returns (string memory) {
         return string(abi.encodePacked(
             '<g>',
@@ -363,13 +307,10 @@ contract OnChainJournal is
                 '<g clip-path="url(#block-clip)">',
                     '<text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#', blockNumber.toString(), '</text>',
                 '</g>',
-                '<foreignObject x="50" y="100" width="400" height="334">',
-                    '<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">',
-                        '<div style="color: white; font-family: Georgia, serif; font-size: 18px; word-wrap: break-word; line-height: 1.5; text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15); text-align: left; max-width: 100%;">',
+                '<foreignObject x="50" y="150" width="400" height="200">',
+                    '<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: center; justify-content: center; height: 100%;">',
+                        '<div style="color: white; font-family: Georgia, serif; font-size: 18px; word-wrap: break-word; line-height: 1.5; text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15); text-align: center; max-width: 100%;">',
                             escapedText,
-                        '</div>',
-                        '<div style="margin-top: 20px; color: white; font-family: monospace; font-size: 14px; opacity: 0.8;">',
-                            displayAddress,
                         '</div>',
                     '</div>',
                 '</foreignObject>',
@@ -416,80 +357,6 @@ contract OnChainJournal is
                 '<feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/>',
             '</filter>'
         ));
-    }
-
-    /**
-     * @notice Formats an address for display with verification status
-     * @param entry The journal entry
-     * @return Formatted display string
-     */
-    function _formatAddress(JournalEntry memory entry) internal pure returns (string memory) {
-        // If ENS name provided and verified, show with checkmark
-        if (bytes(entry.ensName).length > 0 && entry.ensVerified) {
-            // Truncate long ENS names to fit in SVG (max ~25 chars including checkmark)
-            string memory truncatedEns = _truncateEnsName(entry.ensName, 23); // 23 chars + "✓ " = 25 total
-            return string(abi.encodePacked(unicode"✓ ", truncatedEns));
-        }
-
-        // If ENS name provided but not verified (shouldn't happen with new logic)
-        if (bytes(entry.ensName).length > 0) {
-            return _truncateEnsName(entry.ensName, 25);
-        }
-
-        // Otherwise, format address as 0x1A2b...dE3F
-        string memory addrStr = Strings.toHexString(uint256(uint160(entry.owner)), 20);
-        bytes memory addrBytes = bytes(addrStr);
-
-        // Extract first 6 chars (0x1A2b) and last 4 chars (dE3F)
-        bytes memory result = new bytes(13); // "0x1A2b...dE3F" = 13 chars
-
-        // Copy "0x" + first 4 hex chars
-        for (uint i = 0; i < 6; i++) {
-            result[i] = addrBytes[i];
-        }
-
-        // Add "..."
-        result[6] = '.';
-        result[7] = '.';
-        result[8] = '.';
-
-        // Copy last 4 hex chars
-        for (uint i = 0; i < 4; i++) {
-            result[9 + i] = addrBytes[38 + i]; // 42 total - 4 = 38
-        }
-
-        return string(result);
-    }
-
-    /**
-     * @notice Truncates an ENS name if it's too long, adding "..." at the end
-     * @param ensName The ENS name to truncate
-     * @param maxLength Maximum length before truncation
-     * @return Truncated ENS name with "..." if needed
-     */
-    function _truncateEnsName(string memory ensName, uint256 maxLength) internal pure returns (string memory) {
-        bytes memory ensBytes = bytes(ensName);
-
-        // If ENS name fits, return as-is
-        if (ensBytes.length <= maxLength) {
-            return ensName;
-        }
-
-        // Truncate and add "..."
-        // We want to show first (maxLength - 3) chars + "..."
-        bytes memory result = new bytes(maxLength);
-
-        // Copy first (maxLength - 3) characters
-        for (uint i = 0; i < maxLength - 3; i++) {
-            result[i] = ensBytes[i];
-        }
-
-        // Add "..."
-        result[maxLength - 3] = '.';
-        result[maxLength - 2] = '.';
-        result[maxLength - 1] = '.';
-
-        return string(result);
     }
 
     /**
@@ -576,18 +443,10 @@ contract OnChainJournal is
     }
 
     /**
-     * @notice Updates the trusted signer address
-     * @param _newSigner Address of the new trusted signer
-     */
-    function updateTrustedSigner(address _newSigner) external onlyOwner {
-        trustedSigner = _newSigner;
-    }
-
-    /**
      * @notice Returns the current contract version
      * @return Version string
      */
     function version() external pure returns (string memory) {
-        return "2.3.0";
+        return "2.4.1";
     }
 }

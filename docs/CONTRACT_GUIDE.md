@@ -21,11 +21,10 @@ This guide covers the deployment, testing, and management of the On-Chain Journa
 
 The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that stores journal entries entirely on-chain as SVG images. Each deployment is chain-specific with hardcoded gradient colors.
 
-### Key Features - V1
+### Key Features - V2.4.0
 
 - **UUPS Upgradeable**: Allows contract logic upgrades while preserving state
 - **On-chain SVG**: Fully on-chain with animations (no IPFS or external storage)
-- **ENS Support**: Optional ENS name display instead of wallet address
 - **Chain-specific gradients**: Each chain deployment has unique colors (Base & Bob)
 - **Advanced SVG Features**:
   - Grain texture with feTurbulence filter
@@ -34,7 +33,7 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
   - ForeignObject for text wrapping
 - **Input validation**: 400 byte text limit, 64 byte mood limit
 - **XML escaping**: Security against injection attacks
-- **Gas efficient**: Optimized for reasonable gas costs (~240k for basic mint)
+- **Gas efficient**: Optimized gas costs (~170k for basic mint, ~30% reduction from V2.3.0)
 
 ### What's NOT in V1
 
@@ -76,14 +75,12 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 - Same token ID across chains
 - Unified cross-chain gallery
 
-### Contract Addresses
-
-Contract addresses will be filled after deployment:
+### Contract Addresses - V2.4.0
 
 | Network | Chain ID | Proxy Address | Implementation |
 |---------|----------|---------------|----------------|
-| Base Sepolia | 84532 | TBD | TBD |
-| Bob Sepolia | 111 | TBD | TBD |
+| Base Sepolia | 84532 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x64C9A8b7c432A960898cdB3bB45204287F59B814 |
+| Bob Testnet | 808813 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0xB4e9f62cc1899DB3266099F65CeEcE8Cc267f3D2 |
 | Base Mainnet | 8453 | TBD | TBD |
 | Bob Mainnet | 60808 | TBD | TBD |
 
@@ -125,14 +122,13 @@ OnChainJournal (UUPS Upgradeable)
 ├── OwnableUpgradeable (Access control)
 ├── UUPSUpgradeable (Upgrade mechanism)
 └── Custom logic
-    ├── mintEntry(text, mood, ensName) - Mint new journal NFT with ENS support
+    ├── mintEntry(text, mood) - Mint new journal NFT (simplified)
     ├── generateSVG(entry) - Create on-chain SVG with animations
     ├── tokenURI(tokenId) - Return base64-encoded metadata JSON
     ├── _generateSVGPart1() - SVG defs, gradients, filters
     ├── _generateSVGPart2() - SVG content layer
     ├── _generateGradients() - Chain-specific gradient definitions
     ├── _generateFilter() - Grain texture filter
-    ├── _formatAddress() - Format address or use ENS name
     └── _escapeString() - XML security
 ```
 
@@ -143,7 +139,7 @@ uint256 private _nextTokenId;           // Token counter
 string public color1;                   // Primary gradient color
 string public color2;                   // Secondary gradient color
 string public chainName;                // Chain identifier
-mapping(uint256 => JournalEntry) journalEntries;  // Entry data
+mapping(uint256 => JournalEntry) private journalEntries;  // Entry data
 ```
 
 ### Data Structure
@@ -154,52 +150,9 @@ struct JournalEntry {
     string mood;            // Mood emoji (max 64 bytes)
     uint256 timestamp;      // Block timestamp when minted
     uint256 blockNumber;    // Block number when minted
-    address owner;          // Original minter address
+    address minter;         // Original minter address
     uint256 originChainId;  // Chain where minted
-    string ensName;         // ENS name (optional, empty string if not provided)
 }
-```
-
----
-
-## ENS Integration
-
-### Overview
-
-The contract supports optional ENS names for displaying user identity in the SVG. ENS resolution happens on the frontend, and the resolved name is passed as a parameter to `mintEntry()`.
-
-### How It Works
-
-1. **Frontend resolves ENS** using wagmi's `useEnsName` hook
-2. **Pass ENS to contract** when minting: `mintEntry(text, mood, ensName)`
-3. **Contract stores ENS** in the `JournalEntry` struct
-4. **SVG displays ENS** if provided, otherwise shows formatted address
-
-### ENS Display
-
-```solidity
-// If ENS provided: "vitalik.eth"
-// If no ENS: "0x1A2b...dE3F"
-
-function _formatAddress(address _address, string memory _ensName) internal pure returns (string memory) {
-    if (bytes(_ensName).length > 0) {
-        return _ensName;
-    }
-    // Format as 0x + first 4 hex + "..." + last 4 hex
-    return formattedAddress;
-}
-```
-
-### Frontend Integration
-
-See `src/hooks/useEnsName.ts` and `src/App.tsx:handleMintClick()` for implementation details.
-
-```typescript
-// Resolve ENS before minting
-const ensName = await getEnsNameForMinting(address, publicClient);
-
-// Pass to contract
-await contract.mintEntry(text, mood, ensName);
 ```
 
 ---
@@ -653,9 +606,8 @@ foundryup
 // Minting
 function mintEntry(
     string memory _text,
-    string memory _mood,
-    string memory _ensName  // Optional ENS name (pass empty string "" if none)
-) public
+    string memory _mood
+) public returns (uint256)
 
 // View functions
 function tokenURI(uint256 tokenId) public view returns (string memory)
@@ -664,6 +616,7 @@ function version() external pure returns (string memory)
 
 // Admin functions (owner only)
 function updateColors(string memory _color1, string memory _color2) external
+function updateChainName(string memory _newChainName) external
 function upgradeToAndCall(address newImplementation, bytes memory data) external
 ```
 
@@ -676,6 +629,6 @@ uint256 public constant MAX_MOOD_LENGTH = 64;
 
 ---
 
-**Last Updated:** October 17, 2025
-**Contract Version:** 1.0.0
+**Last Updated:** November 14, 2025
+**Contract Version:** V2.4.0
 **Foundry Version:** 1.4.1-stable

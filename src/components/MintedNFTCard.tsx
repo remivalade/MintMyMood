@@ -14,7 +14,7 @@ interface MintedNFTCardProps {
 
 /**
  * Card component for displaying minted NFT thoughts
- * Shows the actual on-chain SVG
+ * Shows the actual on-chain SVG (V2.4.0 - no address display)
  */
 export function MintedNFTCard({
   content,
@@ -29,9 +29,7 @@ export function MintedNFTCard({
     text: content,
     mood,
     chainId,
-    walletAddress,
     blockNumber,
-    ensName,
   });
 
   const chainMetadata = CHAIN_METADATA[chainId];
