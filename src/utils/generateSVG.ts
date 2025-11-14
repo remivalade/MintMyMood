@@ -1,8 +1,13 @@
 /**
- * Local SVG Generation
+ * Local SVG Generation (V2.4.0)
  *
  * Generates NFT preview SVG client-side to match the on-chain contract output
  * This is more robust than calling the contract for previews
+ *
+ * V2.4.0 Changes:
+ * - Removed address/ENS display (security fix)
+ * - Centered text vertically
+ * - Simplified interface (removed walletAddress, ensName, ensVerified)
  */
 
 import { getChainMetadata } from '../config/chains';
@@ -11,9 +16,6 @@ interface SVGParams {
   text: string;
   mood: string;
   chainId: number;
-  walletAddress?: string;
-  ensName?: string;
-  ensVerified?: boolean;
   blockNumber?: string;
 }
 
@@ -69,58 +71,18 @@ function escapeXml(text: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/**
- * Truncate ENS name if too long (matches contract logic)
- */
-function truncateEnsName(ensName: string, maxLength: number): string {
-  if (ensName.length <= maxLength) {
-    return ensName;
-  }
-  // Take first (maxLength - 3) chars and add "..."
-  return ensName.slice(0, maxLength - 3) + '...';
-}
 
 /**
- * Format display address with ENS verification (matches contract _formatAddress)
- */
-function formatDisplayAddress(
-  walletAddress: string,
-  ensName?: string,
-  ensVerified?: boolean
-): string {
-  // If ENS name provided and verified, show with checkmark
-  if (ensName && ensName.length > 0 && ensVerified) {
-    const truncated = truncateEnsName(ensName, 23); // 23 chars + "✓ " = 25 total
-    return `✓ ${truncated}`;
-  }
-
-  // If ENS name provided but not verified
-  if (ensName && ensName.length > 0) {
-    return truncateEnsName(ensName, 25);
-  }
-
-  // Otherwise, format address as 0x1A2b...dE3F (matches contract logic)
-  if (walletAddress.length < 42) return walletAddress;
-
-  // Extract first 6 chars (0x1A2b) and last 4 chars (dE3F)
-  return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
-}
-
-/**
- * Generate the complete SVG
+ * Generate the complete SVG (matches contract V2.4.0)
  */
 export function generateSVG({
   text,
   mood,
   chainId,
-  walletAddress = '0x0000000000000000000000000000000000000000',
-  ensName,
-  ensVerified = false,
   blockNumber = '000000',
 }: SVGParams): string {
   const { chainName, primaryColor, gradientColor } = getChainStyles(chainId);
   const escapedText = escapeXml(text);
-  const displayName = formatDisplayAddress(walletAddress, ensName, ensVerified);
   const chainPrefix = chainName.toLowerCase().replace(/\s+/g, '-');
 
   return `
@@ -184,13 +146,10 @@ export function generateSVG({
             <g clip-path="url(#block-clip)">
                 <text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#${blockNumber}</text>
             </g>
-            <foreignObject x="50" y="100" width="400" height="334">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-                    <div style="color: white; font-family: Georgia, serif; font-size: 18px; word-wrap: break-word; line-height: 1.5; text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15); text-align: left; max-width: 100%;">
+            <foreignObject x="50" y="120" width="400" height="314">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                    <div style="color: white; font-family: Georgia, serif; font-size: 18px; word-wrap: break-word; line-height: 1.5; text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15); text-align: center; max-width: 100%;">
                         ${escapedText}
-                    </div>
-                    <div style="margin-top: 20px; color: white; font-family: monospace; font-size: 14px; opacity: 0.8;">
-                        ${displayName}
                     </div>
                 </div>
             </foreignObject>

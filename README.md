@@ -55,7 +55,7 @@ cd contracts && forge test
 **React 18** + **TypeScript** + **Vite** | **Tailwind CSS** + **Radix UI** | **wagmi v2** + **viem** + **RainbowKit**
 
 ### Backend
-**Supabase** (PostgreSQL) | **Express.js** (ENS signature service)
+**Supabase** (PostgreSQL) | **Express.js** (SIWE authentication)
 
 ### Blockchain
 **Foundry** + **Solidity 0.8.20** | **UUPS Upgradeable ERC721** | **Base & Bob** (testnet & mainnet)
@@ -72,24 +72,24 @@ cd contracts && forge test
 - ✅ Complete UI flow (writing → mood → mint preview → gallery)
 - ✅ Auto-save to Supabase (3-second debounce)
 - ✅ Real wallet connection (RainbowKit)
-- ✅ ENS name display and verification
+- ✅ ENS name display (frontend resolution)
 - ✅ Multi-chain support (Base & Bob)
 - ✅ React Router navigation
 
 **Smart Contracts**:
-- ✅ UUPS Upgradeable ERC721 (V2.3.0)
+- ✅ UUPS Upgradeable ERC721 (V2.4.0)
 - ✅ On-chain SVG generation with animations
-- ✅ ENS signature verification (prevents fraud)
+- ✅ Simplified minting (2 parameters: text, mood)
 - ✅ Chain-specific gradients (Base: blue, Bob: orange)
+- ✅ Gas optimized (~30% reduction)
 - ✅ 28/28 tests passing
 - ✅ Deployed to Base Sepolia & Bob Testnet
 
 **Backend**:
-- ✅ Express.js ENS signature service
-- ✅ Rate limiting (10 signatures/hour)
+- ✅ Express.js SIWE authentication service
 - ✅ Supabase database with Row Level Security
 
-### Deployed Contract Addresses (V2.3.0)
+### Deployed Contract Addresses (V2.4.0)
 
 | Network | Proxy Address | Explorer |
 |---------|---------------|----------|
@@ -146,7 +146,7 @@ See [SVG design specs](docs/svg/README.md) for complete visual reference.
 
 1. **Ephemeral Thoughts** - Auto-delete after 7 days unless minted
 2. **On-Chain NFTs** - Permanent SVG NFTs with animations
-3. **ENS Verification** - Verified ENS names with signature system
+3. **ENS Display** - Shows ENS names for verified addresses
 4. **Multi-Chain** - Deploy on Base & Bob (mainnet ready)
 5. **Auto-Save** - Save drafts to Supabase after 3 seconds
 6. **Gallery** - View all thoughts (minted & ephemeral)

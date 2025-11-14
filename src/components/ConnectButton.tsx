@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
-import { Wallet, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Wallet, Check } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -9,7 +9,8 @@ import { useAuthStore } from '../store/useAuthStore';
  * Custom styled wrapper around RainbowKit's ConnectButton
  * Maintains our design system while using real wallet connection
  *
- * Sprint 3.3: Integrates Supabase native SIWE authentication after wallet connection
+ * Sprint 3.3: Integrates Supabase native SIWE authentication
+ * Sprint 3.5: Improved UX - orange dot for unauthenticated, green check for authenticated
  */
 export function ConnectButton() {
   const { authenticate, signOut, isAuthenticating } = useAuth();
@@ -22,6 +23,7 @@ export function ConnectButton() {
   const hasTriggeredAuth = useRef(false);
   const lastAttemptedAddress = useRef<string | null>(null);
   const wasConnected = useRef(false);
+  const rejectedAuth = useRef(false); // Track if user rejected authentication
 
   // Handle wallet disconnect → sign out from Supabase
   useEffect(() => {
@@ -31,7 +33,7 @@ export function ConnectButton() {
     wasConnected.current = isConnected;
   }, [isConnected, isAuthenticated, signOut]);
 
-  // Auto-trigger SIWE authentication when wallet connects
+  // Auto-trigger SIWE authentication when wallet connects (if not already authenticated)
   useEffect(() => {
     if (isLoading) return; // Wait for session restoration
 
@@ -40,14 +42,19 @@ export function ConnectButton() {
 
       // Check if this wallet address is already authenticated
       if (!authWalletAddress || authWalletAddress.toLowerCase() !== addressLower) {
-        // Prevent duplicate auth calls
-        if (hasTriggeredAuth.current && lastAttemptedAddress.current === addressLower) {
+        // Prevent duplicate auth calls or re-triggering after rejection
+        if ((hasTriggeredAuth.current && lastAttemptedAddress.current === addressLower) || rejectedAuth.current) {
           return;
         }
 
         hasTriggeredAuth.current = true;
         lastAttemptedAddress.current = addressLower;
-        authenticate(addressLower);
+        authenticate(addressLower).then((success) => {
+          if (!success) {
+            // User rejected - don't auto-trigger again
+            rejectedAuth.current = true;
+          }
+        });
       }
     }
 
@@ -55,6 +62,7 @@ export function ConnectButton() {
     if (!isConnected || !address) {
       hasTriggeredAuth.current = false;
       lastAttemptedAddress.current = null;
+      rejectedAuth.current = false;
     }
   }, [isConnected, address, isAuthenticated, isAuthenticating, authWalletAddress, isLoading, authenticate]);
 
@@ -70,6 +78,17 @@ export function ConnectButton() {
       }) => {
         const ready = mounted;
         const connected = ready && account && chain;
+
+        // Debug logging
+        if (connected) {
+          console.log('ConnectButton state:', {
+            isAuthenticated,
+            isAuthenticating,
+            isLoading,
+            address: account?.address,
+            authWalletAddress
+          });
+        }
 
         // Check if wallet matches authenticated wallet
         const walletMismatch = connected && isAuthenticated &&
@@ -144,43 +163,30 @@ export function ConnectButton() {
                     )}
                   </button>
 
-                  {/* Authentication Status Indicator */}
-                  {isAuthenticating ? (
-                    <div
-                      className="px-3 py-2 rounded-lg bg-yellow-100 backdrop-blur-sm flex items-center gap-2"
-                      title="Authenticating..."
-                    >
-                      <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse" />
-                      <span className="text-xs text-yellow-700 font-mono">Signing...</span>
-                    </div>
-                  ) : walletMismatch ? (
-                    <button
-                      onClick={() => authenticate(account.address.toLowerCase())}
-                      type="button"
-                      className="px-3 py-2 hover:bg-red-200 rounded-lg transition-all hover:shadow-sm bg-red-100 backdrop-blur-sm flex items-center gap-2"
-                      title="Re-authenticate with this wallet"
-                    >
-                      <ShieldAlert className="w-3 h-3 text-red-700" />
-                      <span className="text-xs text-red-700 font-mono">Auth mismatch</span>
-                    </button>
-                  ) : isAuthenticated ? (
-                    <div
-                      className="px-3 py-2 rounded-lg bg-green-100 backdrop-blur-sm flex items-center gap-2"
-                      title="Authenticated"
-                    >
-                      <ShieldCheck className="w-3 h-3 text-green-700" />
-                      <span className="text-xs text-green-700 font-mono">Authenticated</span>
-                    </div>
-                  ) : null}
-
-                  {/* Account Button */}
+                  {/* Account Button with Authentication Status */}
                   <button
-                    onClick={openAccountModal}
+                    onClick={() => {
+                      // If not authenticated, trigger authentication
+                      if (!isAuthenticated && !isAuthenticating && account?.address) {
+                        authenticate(account.address.toLowerCase());
+                      } else {
+                        // If authenticated, open account modal
+                        openAccountModal();
+                      }
+                    }}
                     type="button"
                     className="px-3 py-2 hover:bg-white/80 rounded-lg transition-all hover:shadow-sm bg-white/40 backdrop-blur-sm flex items-center gap-2"
-                    title="Account"
+                    title={isAuthenticating ? "Authenticating..." : isAuthenticated ? "Authenticated - Click for account details" : "Click to sign in with Ethereum"}
                   >
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                    {/* Status indicator */}
+                    {isAuthenticating ? (
+                      <div className="rounded-full animate-pulse" style={{ backgroundColor: '#eab308', width: '8px', height: '8px' }} />
+                    ) : isAuthenticated ? (
+                      <Check className="w-3 h-3" style={{ color: '#22c55e', strokeWidth: 2.5 }} />
+                    ) : (
+                      <div className="rounded-full" style={{ backgroundColor: '#fb923c', width: '8px', height: '8px' }} />
+                    )}
+
                     <span className="text-xs text-gray-700 font-mono">
                       {account.displayName}
                     </span>

@@ -7,34 +7,28 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
  * @title UpgradeToV2
- * @notice Upgrade script for On-Chain Journal V1 → V2
- * @dev V2 adds ENS signature verification with ECDSA
+ * @notice Upgrade script for On-Chain Journal V2.3 → V2.4
+ * @dev V2.4 removes ENS signature verification (security fix)
  *
  * Usage:
  *   forge script script/UpgradeToV2.s.sol:UpgradeToV2 --rpc-url base_sepolia --broadcast --verify
  *
- * V2 Changes:
- * - Added trustedSigner for ENS verification
- * - Added nonces mapping for replay protection
- * - Updated mintEntry to require signature
- * - Added ensVerified field to JournalEntry
- * - Version bumped to 2.0.0
- *
- * IMPORTANT: Set TRUSTED_SIGNER in .env before running
+ * V2.4 Changes:
+ * - Removed trustedSigner and nonces (no longer needed)
+ * - Simplified mintEntry to only require text and mood
+ * - Removed ENS/address display from SVG (security fix)
+ * - Centered text in SVG
+ * - Version bumped to 2.4.0
  */
 contract UpgradeToV2 is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
-        // Get trusted signer address from environment
-        address trustedSigner = vm.envAddress("TRUSTED_SIGNER");
-
         console.log("========================================");
-        console.log("Upgrading On-Chain Journal to V2.0.0");
+        console.log("Upgrading On-Chain Journal to V2.4.0");
         console.log("========================================");
         console.log("Deployer:", deployer);
-        console.log("Trusted Signer:", trustedSigner);
         console.log("Chain ID:", block.chainid);
 
         // Get proxy address based on chain
@@ -64,33 +58,24 @@ contract UpgradeToV2 is Script {
         journal.upgradeToAndCall(address(newImplementation), "");
         console.log("Proxy upgraded successfully!");
 
-        // 3. Set the trusted signer
-        console.log("\n3. Setting trusted signer...");
-        journal.updateTrustedSigner(trustedSigner);
-        console.log("Trusted signer set to:", trustedSigner);
-
         vm.stopBroadcast();
 
-        // 4. Verify upgrade
+        // 3. Verify upgrade
         console.log("\n=== Upgrade Verification ===");
         console.log("Proxy:", proxyAddress);
         console.log("New Implementation:", address(newImplementation));
         console.log("Version:", journal.version());
-        console.log("Trusted Signer:", journal.trustedSigner());
         console.log("Owner:", journal.owner());
         console.log("Chain Name:", journal.chainName());
         console.log("Color 1:", journal.color1());
         console.log("Color 2:", journal.color2());
         console.log("============================\n");
 
-        // Verify version is 2.0.0
+        // Verify version is 2.4.0
         require(
-            keccak256(bytes(journal.version())) == keccak256(bytes("2.0.0")),
+            keccak256(bytes(journal.version())) == keccak256(bytes("2.4.0")),
             "Version check failed"
         );
-
-        // Verify trusted signer is set
-        require(journal.trustedSigner() == trustedSigner, "Trusted signer not set correctly");
 
         console.log("[SUCCESS] Upgrade completed successfully!");
         console.log("\nIMPORTANT: Update .env file with new implementation address:");

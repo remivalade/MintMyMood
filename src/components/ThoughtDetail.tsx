@@ -6,6 +6,8 @@ import { generateSVG } from '../utils/generateSVG';
 import { generateEphemeralSVG } from '../utils/generateEphemeralSVG';
 import { CHAIN_METADATA } from '../config/chains';
 import { useEnsName } from '../hooks/useEnsName';
+import { useReadContract } from 'wagmi';
+import { getContractAddress, OnChainJournalABI } from '../contracts/config';
 
 interface ThoughtDetailProps {
   content: string;
@@ -32,15 +34,31 @@ export function ThoughtDetail({
   onClose,
   onMint
 }: ThoughtDetailProps) {
-  const { displayName, isEns } = useEnsName(walletAddress as `0x${string}` | undefined);
+  // For minted NFTs, fetch the original minter from the contract
+  // This ensures we always show the correct creator, even if the NFT was transferred
+  const contractAddress = chainId ? getContractAddress(chainId) : undefined;
+
+  const { data: journalEntry } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: OnChainJournalABI,
+    functionName: 'journalEntries',
+    args: tokenId ? [BigInt(tokenId)] : undefined,
+    query: {
+      enabled: !!(isMinted && tokenId && contractAddress),
+    },
+  });
+
+  // Use contract owner if available, otherwise fall back to database walletAddress
+  const minterAddress = (journalEntry as any)?.owner || walletAddress;
+
+  const { displayName, isEns } = useEnsName(minterAddress as `0x${string}` | undefined);
 
   // Generate SVG based on minted status
-  const svg = isMinted && walletAddress && chainId
+  const svg = isMinted && chainId
     ? generateSVG({
         text: content,
         mood,
         chainId,
-        walletAddress,
         blockNumber: tokenId || '0',
       })
     : generateEphemeralSVG({
@@ -127,15 +145,8 @@ export function ThoughtDetail({
               {/* Minted by */}
               <div>
                 <div className="text-xs text-gray-500 mb-1">Minted by</div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm text-gray-900">
-                    {displayName}
-                  </span>
-                  {isEns && (
-                    <span className="text-xs text-green-600" title="ENS name verified">
-                      ✓
-                    </span>
-                  )}
+                <div className="font-mono text-sm text-gray-900">
+                  {displayName}
                 </div>
               </div>
 

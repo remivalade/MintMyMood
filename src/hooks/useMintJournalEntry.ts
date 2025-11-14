@@ -1,40 +1,26 @@
-import { useWriteContract, useWaitForTransactionReceipt, useChainId, useAccount, useReadContract } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi';
 import { getContractAddress, OnChainJournalABI } from '../contracts/config';
 import { useThoughtStore } from '../store/useThoughtStore';
-import { useEnsName } from './useEnsName';
-import { getENSSignature } from '../lib/signatureApi';
-import { useState } from 'react';
 
 /**
- * Hook for minting journal entries as NFTs with ENS signature verification
+ * Hook for minting journal entries as NFTs
+ *
+ * V2.4.0 Changes:
+ * - Removed ENS signature verification (security fix)
+ * - Simplified to only require text and mood
+ * - No backend API dependency
+ * - Faster and cheaper minting
  *
  * Handles:
- * - ENS resolution
- * - Backend signature request
  * - Contract interaction via wagmi
  * - Transaction tracking
  * - Database updates after minting
  */
 export function useMintJournalEntry() {
   const chainId = useChainId();
-  const { address } = useAccount();
-  const { ensName } = useEnsName(address);
   const { markAsMinted } = useThoughtStore();
-  const [isGettingSignature, setIsGettingSignature] = useState(false);
-  const [signatureError, setSignatureError] = useState<Error | null>(null);
 
   const contractAddress = getContractAddress(chainId);
-
-  // Read current nonce for the user
-  const { data: nonce } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: OnChainJournalABI,
-    functionName: 'nonces',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address && !!contractAddress,
-    },
-  });
 
   const {
     writeContract,
@@ -53,63 +39,23 @@ export function useMintJournalEntry() {
   });
 
   /**
-   * Mint a journal entry with signature verification
+   * Mint a journal entry (simplified - no signature needed)
    */
   const mint = async (thoughtId: string, text: string, mood: string) => {
-    setSignatureError(null);
-
     if (!contractAddress) {
       throw new Error(`No contract deployed on chain ${chainId}`);
     }
 
-    if (!address) {
-      throw new Error('Wallet not connected');
-    }
+    console.log('Minting journal entry:', { text: text.substring(0, 50), mood, chainId });
 
-    if (nonce === undefined) {
-      throw new Error('Unable to fetch nonce');
-    }
-
-    try {
-      // Step 1: Get signature from backend
-      setIsGettingSignature(true);
-      console.log('Requesting signature for:', { address, ensName, nonce });
-
-      const signatureData = await getENSSignature(
-        address,
-        ensName || '',
-        Number(nonce)
-      );
-
-      console.log('Signature received:', {
-        expiry: signatureData.expiry,
-        ensName: signatureData.ensName,
-        signerAddress: signatureData.signerAddress,
-      });
-
-      setIsGettingSignature(false);
-
-      // Step 2: Call the contract with signature
-      writeContract({
-        address: contractAddress as `0x${string}`,
-        abi: OnChainJournalABI,
-        functionName: 'mintEntry',
-        args: [
-          text,
-          mood,
-          signatureData.ensName,
-          signatureData.signature as `0x${string}`,
-          BigInt(nonce),
-          BigInt(signatureData.expiry),
-        ],
-        gas: 600000n, // Increased gas limit for signature verification
-      });
-    } catch (error) {
-      setIsGettingSignature(false);
-      setSignatureError(error as Error);
-      console.error('Minting error:', error);
-      throw error;
-    }
+    // Call the contract directly (no signature needed!)
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: OnChainJournalABI,
+      functionName: 'mintEntry',
+      args: [text, mood],
+      gas: 400000n, // Reduced gas limit (no signature verification)
+    });
   };
 
   /**
@@ -134,8 +80,6 @@ export function useMintJournalEntry() {
    */
   const resetMint = () => {
     reset();
-    setSignatureError(null);
-    setIsGettingSignature(false);
   };
 
   return {
@@ -143,10 +87,8 @@ export function useMintJournalEntry() {
     updateDatabase,
     resetMint,
     hash,
-    isLoading: isWritePending || isConfirming || isGettingSignature,
-    isGettingSignature,
+    isLoading: isWritePending || isConfirming,
     isSuccess: isConfirmed,
-    error: signatureError || writeError || confirmError,
-    nonce: nonce ? Number(nonce) : undefined,
+    error: writeError || confirmError,
   };
 }

@@ -20,14 +20,18 @@ const moodEmojis: Record<string, string> = {
   'Growing': '🌱',
   'Dreamy': '💫',
   'Energized': '⚡',
+  'Focused': '🎯',
+  'Flowing': '🌊',
+  'Light': '🍃',
+  'Grateful': '🌟',
 };
 
 export function MintPreview({ content, mood, onMint, onDiscard }: MintPreviewProps) {
   const { address } = useAccount();
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center p-6 md:p-12" style={{ backgroundColor: 'var(--paper-cream)' }}>
-      <div className="max-w-4xl w-full">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 md:p-12" style={{ backgroundColor: 'var(--paper-cream)' }}>
+      <div className="max-w-4xl w-full my-auto">
         <div className="text-center mb-8">
           <h2 className="mb-2" style={{
             fontFamily: 'var(--font-serif)',

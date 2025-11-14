@@ -6,24 +6,24 @@ import "../src/OnChainJournal.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
- * @title UpgradeToV2_2
- * @notice Upgrade script for On-Chain Journal V2.1 → V2.2
- * @dev V2.2 adds updateChainName admin function
+ * @title UpgradeToV2_1
+ * @notice Upgrade script for On-Chain Journal V2.0 → V2.1
+ * @dev V2.1 fixes Unicode checkmark display in SVG
  *
  * Usage:
- *   forge script script/UpgradeToV2_2.s.sol:UpgradeToV2_2 --rpc-url base_sepolia --broadcast --verify
+ *   forge script script/UpgradeToV2_1.s.sol:UpgradeToV2_1 --rpc-url base_sepolia --broadcast --verify
  *
- * V2.2 Changes:
- * - Added updateChainName() admin function to fix "Unknown-808813" on Bob
- * - Version bumped to 2.2.0
+ * V2.1 Changes:
+ * - Fixed checkmark display: Changed from "\\u2713" to unicode"✓"
+ * - Version bumped to 2.1.0
  */
-contract UpgradeToV2_2 is Script {
+contract UpgradeToV2_1 is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
         console.log("========================================");
-        console.log("Upgrading On-Chain Journal to V2.2.0");
+        console.log("Upgrading On-Chain Journal to V2.1.0");
         console.log("========================================");
         console.log("Deployer:", deployer);
         console.log("Chain ID:", block.chainid);
@@ -46,7 +46,7 @@ contract UpgradeToV2_2 is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Deploy new implementation
-        console.log("\n1. Deploying new implementation (V2.2)...");
+        console.log("\n1. Deploying new implementation (V2.1)...");
         OnChainJournal newImplementation = new OnChainJournal();
         console.log("New Implementation deployed at:", address(newImplementation));
 
@@ -55,29 +55,23 @@ contract UpgradeToV2_2 is Script {
         journal.upgradeToAndCall(address(newImplementation), "");
         console.log("Proxy upgraded successfully!");
 
-        // 3. Fix Bob chain name if on Bob testnet
-        if (block.chainid == 808813 || block.chainid == 111) {
-            console.log("\n3. Fixing Bob chain name...");
-            journal.updateChainName("Bob");
-            console.log("Chain name updated to: Bob");
-        }
-
         vm.stopBroadcast();
 
-        // 4. Verify upgrade
+        // 3. Verify upgrade
         console.log("\n=== Upgrade Verification ===");
         console.log("Proxy:", proxyAddress);
         console.log("New Implementation:", address(newImplementation));
         console.log("Version:", journal.version());
+        console.log("Trusted Signer:", journal.trustedSigner());
         console.log("Owner:", journal.owner());
         console.log("Chain Name:", journal.chainName());
         console.log("Color 1:", journal.color1());
         console.log("Color 2:", journal.color2());
         console.log("============================\n");
 
-        // Verify version is 2.2.0
+        // Verify version is 2.1.0
         require(
-            keccak256(bytes(journal.version())) == keccak256(bytes("2.2.0")),
+            keccak256(bytes(journal.version())) == keccak256(bytes("2.1.0")),
             "Version check failed"
         );
 

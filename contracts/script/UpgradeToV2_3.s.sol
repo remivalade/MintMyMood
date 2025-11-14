@@ -64,7 +64,6 @@ contract UpgradeToV2_3 is Script {
         console.log("Proxy:", proxyAddress);
         console.log("New Implementation:", address(newImplementation));
         console.log("Version:", journal.version());
-        console.log("Trusted Signer:", journal.trustedSigner());
         console.log("Owner:", journal.owner());
         console.log("Chain Name:", journal.chainName());
         console.log("Color 1:", journal.color1());

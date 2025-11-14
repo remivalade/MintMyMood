@@ -157,16 +157,6 @@
             "name": "originChainId",
             "type": "uint256",
             "internalType": "uint256"
-          },
-          {
-            "name": "ensName",
-            "type": "string",
-            "internalType": "string"
-          },
-          {
-            "name": "ensVerified",
-            "type": "bool",
-            "internalType": "bool"
           }
         ]
       }
@@ -220,11 +210,6 @@
       },
       {
         "name": "_owner",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_trustedSigner",
         "type": "address",
         "internalType": "address"
       }
@@ -296,16 +281,6 @@
         "name": "originChainId",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "ensName",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "ensVerified",
-        "type": "bool",
-        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -323,26 +298,6 @@
         "name": "_mood",
         "type": "string",
         "internalType": "string"
-      },
-      {
-        "name": "_ensName",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "_nonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_expiry",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -357,25 +312,6 @@
         "name": "",
         "type": "string",
         "internalType": "string"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "nonces",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -590,19 +526,6 @@
   },
   {
     "type": "function",
-    "name": "trustedSigner",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "updateChainName",
     "inputs": [
       {
@@ -627,19 +550,6 @@
         "name": "_color2",
         "type": "string",
         "internalType": "string"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "updateTrustedSigner",
-    "inputs": [
-      {
-        "name": "_newSigner",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -840,33 +750,6 @@
   },
   {
     "type": "error",
-    "name": "ECDSAInvalidSignature",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ECDSAInvalidSignatureLength",
-    "inputs": [
-      {
-        "name": "length",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "ECDSAInvalidSignatureS",
-    "inputs": [
-      {
-        "name": "s",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
-  },
-  {
-    "type": "error",
     "name": "ERC1967InvalidImplementation",
     "inputs": [
       {
@@ -996,27 +879,6 @@
   },
   {
     "type": "error",
-    "name": "InvalidNonce",
-    "inputs": [
-      {
-        "name": "provided",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "expected",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "InvalidSignature",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "MoodTooLong",
     "inputs": [
       {
@@ -1055,38 +917,6 @@
         "name": "account",
         "type": "address",
         "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "SignatureExpired",
-    "inputs": [
-      {
-        "name": "expiry",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "currentTime",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "StringsInsufficientHexLength",
-    "inputs": [
-      {
-        "name": "value",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "length",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ]
   },
