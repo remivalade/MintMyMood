@@ -4,6 +4,7 @@ import { useAccount } from 'wagmi';
 import { Button } from './ui/button';
 import { ConnectButton } from './ConnectButton';
 import { useThoughtStore } from '../store/useThoughtStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { toast } from 'sonner';
 
 interface WritingInterfaceProps {
@@ -22,11 +23,18 @@ export function WritingInterface({
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [logoOpacity, setLogoOpacity] = useState(0.2);
+
   const { address, isConnected } = useAccount();
+  const { isAuthenticated, walletAddress: authWalletAddress } = useAuthStore();
   const { saveThought } = useThoughtStore();
 
   const characterCount = content.length;
   const isOverLimit = characterCount > MAX_CHARACTERS;
+
+  // Detect wallet mismatch (security check)
+  const walletMismatch = isConnected && isAuthenticated && address &&
+    address.toLowerCase() !== authWalletAddress?.toLowerCase();
 
   // Auto-save effect with debouncing
   useEffect(() => {
@@ -39,7 +47,8 @@ export function WritingInterface({
     // - Content is empty or just whitespace
     // - Wallet not connected
     // - Character limit exceeded
-    if (!content.trim() || !isConnected || !address || isOverLimit) {
+    // - Wallet mismatch (security)
+    if (!content.trim() || !isConnected || !address || isOverLimit || walletMismatch) {
       return;
     }
 
@@ -74,7 +83,7 @@ export function WritingInterface({
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [content, isConnected, address, isOverLimit, currentDraftId, saveThought]);
+  }, [content, isConnected, address, isOverLimit, walletMismatch, currentDraftId, saveThought]);
 
   const handleSave = () => {
     if (content.trim() && !isOverLimit) {
@@ -83,60 +92,83 @@ export function WritingInterface({
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: 'var(--paper-cream)' }}>
-      {/* Minimal floating nav */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-        <button
-          onClick={onOpenGallery}
-          className="p-2 hover:bg-white/80 rounded-lg transition-all hover:shadow-sm bg-white/40 backdrop-blur-sm"
-          title="View Gallery"
-        >
-          <Grid3x3 className="w-4 h-4 text-gray-600" />
-        </button>
-
-        <ConnectButton />
-      </div>
-
-      {/* Writing Area */}
-      <div className="flex-1 overflow-auto">
-        <div className="mx-auto px-8 py-16 md:py-24" style={{ maxWidth: 'var(--content-max-width)' }}>
-          <div className="text-caption text-medium-gray mb-8 text-center" style={{ 
-            fontSize: 'var(--text-caption)',
-            color: 'var(--medium-gray)'
-          }}>
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </div>
-          <textarea
-            autoFocus
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="What's on your mind?"
-            maxLength={MAX_CHARACTERS}
-            className="w-full min-h-[60vh] bg-transparent border-none outline-none resize-none journal-text placeholder:opacity-50"
-            style={{ 
-              fontFamily: 'var(--font-serif)',
-              fontSize: 'var(--text-body)',
-              lineHeight: '1.6',
-              color: 'var(--soft-black)'
-            }}
-          />
-          
-          {/* Character Counter */}
-          <div className="text-right mt-4">
-            <span 
-              className="text-xs transition-colors"
-              style={{ 
-                color: isOverLimit ? 'var(--error-red)' : 'var(--medium-gray)',
-                opacity: characterCount > 0 ? 1 : 0.3
+    <div className="min-h-screen p-6 md:p-12 flex flex-col" style={{ backgroundColor: 'var(--paper-cream)' }}>
+      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+        {/* Header - matching Gallery header exactly */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <h1
+              className="transition-opacity duration-300 cursor-default"
+              onMouseEnter={() => setLogoOpacity(1)}
+              onMouseLeave={() => setLogoOpacity(0.2)}
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'var(--text-h1)',
+                fontWeight: '600',
+                color: 'var(--soft-black)',
+                opacity: logoOpacity,
               }}
             >
-              {characterCount} / {MAX_CHARACTERS}
-            </span>
+              MintMyMood
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenGallery}
+              className="p-2 hover:bg-white/80 rounded-lg transition-all hover:shadow-sm bg-white/40 backdrop-blur-sm"
+              title="View Gallery"
+            >
+              <Grid3x3 className="w-4 h-4 text-gray-600" />
+            </button>
+
+            <ConnectButton />
+          </div>
+        </div>
+
+        {/* Writing Area */}
+        <div className="flex-1 flex flex-col items-center justify-start pt-12 md:pt-20">
+          <div className="w-full max-w-2xl">
+            <div className="text-caption text-medium-gray mb-8 text-center" style={{
+              fontSize: 'var(--text-caption)',
+              color: 'var(--medium-gray)'
+            }}>
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </div>
+            <textarea
+              autoFocus
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What's on your mind?"
+              maxLength={MAX_CHARACTERS}
+              rows={15}
+              className="w-full bg-transparent border-none outline-none resize-none journal-text placeholder:opacity-50"
+              style={{
+                height: '60vh',
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'var(--text-body)',
+                lineHeight: '1.6',
+                color: 'var(--soft-black)'
+              }}
+            />
+
+            {/* Character Counter */}
+            <div className="text-right mt-2">
+              <span
+                className="text-xs transition-colors"
+                style={{
+                  color: isOverLimit ? 'var(--error-red)' : 'var(--medium-gray)',
+                  opacity: characterCount > 0 ? 1 : 0.3
+                }}
+              >
+                {characterCount} / {MAX_CHARACTERS}
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -73,17 +73,18 @@ cd contracts && forge test
 - ✅ Auto-save to Supabase (3-second debounce)
 - ✅ Real wallet connection (RainbowKit)
 - ✅ ENS name display (frontend resolution)
-- ✅ Multi-chain support (Base & Bob)
+- ✅ Multi-chain support (Base, Bob, & Ink)
+- ✅ MegaETH & HyperLiquid support (Coming Soon)
 - ✅ React Router navigation
 
 **Smart Contracts**:
 - ✅ UUPS Upgradeable ERC721 (V2.4.0)
 - ✅ On-chain SVG generation with animations
 - ✅ Simplified minting (2 parameters: text, mood)
-- ✅ Chain-specific gradients (Base: blue, Bob: orange)
+- ✅ Chain-specific gradients (Base: blue, Bob: orange, Ink: purple)
 - ✅ Gas optimized (~30% reduction)
 - ✅ 28/28 tests passing
-- ✅ Deployed to Base Sepolia & Bob Testnet
+- ✅ Deployed to Base Sepolia, Bob Testnet & Ink Sepolia
 
 **Backend**:
 - ✅ Express.js SIWE authentication service
@@ -95,6 +96,7 @@ cd contracts && forge test
 |---------|---------------|----------|
 | Base Sepolia | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Basescan](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
 | Bob Testnet | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
+| Ink Sepolia | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Ink Explorer](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
 
 ### Next Up: Sprint 4 - Beta Testing
 
@@ -147,7 +149,7 @@ See [SVG design specs](docs/svg/README.md) for complete visual reference.
 1. **Ephemeral Thoughts** - Auto-delete after 7 days unless minted
 2. **On-Chain NFTs** - Permanent SVG NFTs with animations
 3. **ENS Display** - Shows ENS names for verified addresses
-4. **Multi-Chain** - Deploy on Base & Bob (mainnet ready)
+4. **Multi-Chain** - Deploy on Base, Bob, & Ink (mainnet ready)
 5. **Auto-Save** - Save drafts to Supabase after 3 seconds
 6. **Gallery** - View all thoughts (minted & ephemeral)
 
@@ -185,6 +187,7 @@ TBD
 
 - **Base Sepolia**: [Contract on Basescan](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
 - **Bob Testnet**: [Contract on Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
+- **Ink Sepolia**: [Contract on Ink Explorer](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
 
 ---
 

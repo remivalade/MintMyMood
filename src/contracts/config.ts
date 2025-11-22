@@ -21,6 +21,9 @@ const CONTRACTS = {
   [bob.id]: {
     address: import.meta.env.VITE_JOURNAL_PROXY_BOB as `0x${string}`,
   },
+  [763373]: {
+    address: import.meta.env.VITE_JOURNAL_PROXY_INK_SEPOLIA as `0x${string}`,
+  },
 } as const;
 
 /**

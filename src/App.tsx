@@ -15,19 +15,9 @@ import { useAuthStore } from './store/useAuthStore';
 import { Thought as ThoughtType } from './types';
 import { toast } from 'sonner';
 import { useMintJournalEntry } from './hooks/useMintJournalEntry';
-import { baseSepolia, bobSepolia } from './config/chains';
+import { baseSepolia, bobSepolia, inkSepolia, megaethSepolia, hyperliquidSepolia } from './config/chains';
 import { getContractAddress } from './contracts/config';
-
-const moodEmojis: Record<string, string> = {
-  'Peaceful': '😌',
-  'Reflective': '💭',
-  'Inspired': '✨',
-  'Melancholic': '🌙',
-  'Passionate': '🔥',
-  'Growing': '🌱',
-  'Dreamy': '💫',
-  'Energized': '⚡',
-};
+import { moodEmojis } from './types';
 
 export default function App() {
   const navigate = useNavigate();
@@ -47,7 +37,7 @@ export default function App() {
     mood?: string;
     draftId?: string;
   }>({ content: '' });
-  
+
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false);
   const [mintingStatus, setMintingStatus] = useState<'minting' | 'success' | 'error'>('minting');
   const [isWalletPromptOpen, setIsWalletPromptOpen] = useState(false);
@@ -170,11 +160,18 @@ export default function App() {
         }
 
         // Generate explorer link based on chain
+        // Generate explorer link based on chain
         const getExplorerUrl = (chainId: number, txHash: string) => {
           if (chainId === baseSepolia.id) {
             return `https://sepolia.basescan.org/tx/${txHash}`;
           } else if (chainId === bobSepolia.id) {
             return `https://bob-sepolia.explorer.gobob.xyz/tx/${txHash}`;
+          } else if (chainId === inkSepolia.id) {
+            return `https://explorer-sepolia.inkonchain.com/tx/${txHash}`;
+          } else if (chainId === megaethSepolia.id) {
+            return `https://explorer-sepolia.megaeth.com/tx/${txHash}`;
+          } else if (chainId === hyperliquidSepolia.id) {
+            return `https://explorer-sepolia.hyperliquid.xyz/tx/${txHash}`;
           }
           return null;
         };
@@ -253,6 +250,12 @@ export default function App() {
     navigate('/write');
   };
 
+  const handleViewGallery = () => {
+    setIsMintingModalOpen(false);
+    setCurrentThought({ content: '' });
+    navigate('/gallery');
+  };
+
   const handleThoughtClick = (thought: ThoughtType) => {
     navigate(`/thought/${thought.id}`, { state: { thought } });
   };
@@ -309,6 +312,7 @@ export default function App() {
         <MoodSelection
           onSelectMood={handleMoodSelected}
           onBack={() => navigate('/write')}
+          onConnectWallet={() => setIsWalletPromptOpen(true)}
         />
       )}
 
@@ -318,6 +322,7 @@ export default function App() {
           mood={currentThought.mood || 'Peaceful'}
           onMint={handleMintClick}
           onDiscard={handleDiscard}
+          onConnectWallet={() => setIsWalletPromptOpen(true)}
         />
       )}
 
@@ -340,7 +345,7 @@ export default function App() {
         isOpen={isMintingModalOpen}
         status={mintingStatus}
         onClose={handleMintingModalClose}
-        onViewGallery={handleMintingModalClose}
+        onViewGallery={handleViewGallery}
       />
 
       <WalletPromptModal

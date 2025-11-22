@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
-import { Wallet, Check } from 'lucide-react';
+import { Wallet, Check, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -166,21 +166,37 @@ export function ConnectButton() {
                   {/* Account Button with Authentication Status */}
                   <button
                     onClick={() => {
+                      // If wallet mismatch, trigger re-authentication with current wallet
+                      if (walletMismatch && account?.address) {
+                        authenticate(account.address.toLowerCase());
+                      }
                       // If not authenticated, trigger authentication
-                      if (!isAuthenticated && !isAuthenticating && account?.address) {
+                      else if (!isAuthenticated && !isAuthenticating && account?.address) {
                         authenticate(account.address.toLowerCase());
                       } else {
-                        // If authenticated, open account modal
+                        // If authenticated and wallet matches, open account modal
                         openAccountModal();
                       }
                     }}
                     type="button"
-                    className="px-3 py-2 hover:bg-white/80 rounded-lg transition-all hover:shadow-sm bg-white/40 backdrop-blur-sm flex items-center gap-2"
-                    title={isAuthenticating ? "Authenticating..." : isAuthenticated ? "Authenticated - Click for account details" : "Click to sign in with Ethereum"}
+                    className={`px-3 py-2 hover:bg-white/80 rounded-lg transition-all hover:shadow-sm ${
+                      walletMismatch ? 'bg-red-50' : 'bg-white/40'
+                    } backdrop-blur-sm flex items-center gap-2`}
+                    title={
+                      isAuthenticating
+                        ? "Authenticating..."
+                        : walletMismatch
+                        ? `Wallet mismatch! Authenticated: ${authWalletAddress?.slice(0, 6)}...${authWalletAddress?.slice(-4)} - Click to re-authenticate`
+                        : isAuthenticated
+                        ? "Authenticated - Click for account details"
+                        : "Click to sign in with Ethereum"
+                    }
                   >
                     {/* Status indicator */}
                     {isAuthenticating ? (
                       <div className="rounded-full animate-pulse" style={{ backgroundColor: '#eab308', width: '8px', height: '8px' }} />
+                    ) : walletMismatch ? (
+                      <X className="w-3 h-3" style={{ color: '#ef4444', strokeWidth: 2.5 }} />
                     ) : isAuthenticated ? (
                       <Check className="w-3 h-3" style={{ color: '#22c55e', strokeWidth: 2.5 }} />
                     ) : (

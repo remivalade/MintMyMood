@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
 import { useEnsName as useWagmiEnsName } from 'wagmi';
-import { normalize } from 'viem/ens';
 import { mainnet } from 'wagmi/chains';
 
 /**
@@ -8,31 +6,19 @@ import { mainnet } from 'wagmi/chains';
  * Falls back to formatted address if no ENS name found
  */
 export function useEnsName(address: `0x${string}` | undefined) {
-  const [displayName, setDisplayName] = useState<string>('');
-
   // Use wagmi's useEnsName hook to resolve ENS
-  const { data: ensName } = useWagmiEnsName({
+  const { data: ensName, isLoading } = useWagmiEnsName({
     address: address,
     chainId: mainnet.id,
   });
 
-  useEffect(() => {
-    if (address) {
-      if (ensName) {
-        setDisplayName(ensName);
-      } else {
-        // Format address as 0x1A2b...dE3F
-        setDisplayName(`${address.slice(0, 6)}...${address.slice(-4)}`);
-      }
-    } else {
-      setDisplayName('');
-    }
-  }, [address, ensName]);
+  const displayName = ensName || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '');
 
   return {
     displayName,
     ensName,
     isEns: !!ensName,
+    isLoading,
   };
 }
 

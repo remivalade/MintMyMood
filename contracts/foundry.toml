@@ -25,6 +25,9 @@ base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 bob_sepolia = "${BOB_SEPOLIA_RPC_URL}"
 base = "${BASE_MAINNET_RPC_URL}"
 bob = "${BOB_MAINNET_RPC_URL}"
+ink_sepolia = "${INK_SEPOLIA_RPC_URL}"
+megaeth_testnet = "${MEGAETH_TESTNET_RPC_URL}"
+hyperliquid_testnet = "${HYPERLIQUID_TESTNET_RPC_URL}"
 anvil = "http://127.0.0.1:8545"
 
 # Etherscan API keys for verification

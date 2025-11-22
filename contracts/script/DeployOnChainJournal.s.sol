@@ -119,6 +119,24 @@ contract DeployOnChainJournal is Script {
             config.color2 = "#F7931E";
             config.name = "Bob";
         }
+        // Ink Sepolia (763373)
+        else if (chainId == 763373) {
+            config.color1 = "#5848d5";
+            config.color2 = "#0d0c52";
+            config.name = "Ink";
+        }
+        // MegaETH Testnet (6342)
+        else if (chainId == 6342) {
+            config.color1 = "#111";
+            config.color2 = "#AAA";
+            config.name = "MegaETH";
+        }
+        // HyperLiquid Testnet (998)
+        else if (chainId == 998) {
+            config.color1 = "#0F2925";
+            config.color2 = "#8DFADF";
+            config.name = "HyperLiquid";
+        }
         // Anvil (local)
         else if (chainId == 31337) {
             config.color1 = "#FF6B35";

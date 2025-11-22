@@ -15,6 +15,7 @@ export function useLocalPreviewSVG(text: string, mood: string) {
 
   const svg = useMemo(() => {
     if (!text) return null;
+    if (!currentChainId) return null;
 
     return generateSVG({
       text,

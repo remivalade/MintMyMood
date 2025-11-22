@@ -14,16 +14,7 @@ interface ThoughtCardProps {
   onDelete?: () => void;
 }
 
-const moodEmojis: Record<string, string> = {
-  'Peaceful': '😌',
-  'Reflective': '💭',
-  'Inspired': '✨',
-  'Melancholic': '🌙',
-  'Passionate': '🔥',
-  'Growing': '🌱',
-  'Dreamy': '💫',
-  'Energized': '⚡',
-};
+import { moodEmojis } from '../types';
 
 export function ThoughtCard({ content, mood, date, isMinted, expiresAt, chainId, onClick, onDelete }: ThoughtCardProps) {
   const [isHovered, setIsHovered] = useState(false);

@@ -21,7 +21,7 @@ Complete guide for deploying MintMyMood to testnet and mainnet.
 
 MintMyMood consists of three deployment components:
 
-1. **Smart Contracts** - Deployed to Base & Bob (testnet → mainnet)
+1. **Smart Contracts** - Deployed to Base, Bob, & Ink (testnet → mainnet)
 2. **Frontend** - React app deployed to Vercel/Netlify
 3. **Backend API** - Express.js signature service (OVH or similar)
 
@@ -31,7 +31,7 @@ MintMyMood consists of three deployment components:
 
 ### Prerequisites
 
-- **Testnet ETH** on Base Sepolia and Bob Testnet (~0.1 ETH each)
+- **Testnet ETH** on Base Sepolia, Bob Testnet, and Ink Sepolia (~0.1 ETH each)
 - **Foundry** installed (`foundryup`)
 - **RPC URLs** (Alchemy, Infura, or public)
 - **Etherscan API keys** (for contract verification)
@@ -51,6 +51,7 @@ Edit `contracts/.env`:
 # RPC URLs
 BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
 BOB_TESTNET_RPC_URL=https://testnet.rpc.gobob.xyz
+INK_SEPOLIA_RPC_URL=https://rpc-gel-sepolia.inkonchain.com
 
 # Deployer wallet private key
 DEPLOYER_PRIVATE_KEY=0x...  # Your testnet wallet
@@ -107,7 +108,16 @@ forge script script/Deploy.s.sol \
 # Contract will still work, just won't be verified on explorer
 ```
 
-### Step 5: Verify Deployment
+### Step 5: Deploy to Ink Sepolia
+
+```bash
+forge script script/Deploy.s.sol \
+  --rpc-url $INK_SEPOLIA_RPC_URL \
+  --broadcast \
+  --constructor-args "#7A20DB" "#9D4DFA" "0xEd171c759450B7358e9238567b1e23b4d82f3a64"
+```
+
+### Step 6: Verify Deployment
 
 ```bash
 # Test minting via cast
@@ -122,7 +132,7 @@ cast call <PROXY_ADDRESS> "tokenURI(uint256)" 1 \
   --rpc-url $BASE_SEPOLIA_RPC_URL
 ```
 
-### Step 6: Update Frontend Configuration
+### Step 7: Update Frontend Configuration
 
 Edit `src/contracts/config.ts`:
 
@@ -130,10 +140,11 @@ Edit `src/contracts/config.ts`:
 export const CONTRACT_ADDRESSES = {
   84532: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',  // Base Sepolia
   808813: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',  // Bob Testnet
+  763373: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',  // Ink Sepolia
 };
 ```
 
-### Step 7: Deploy Backend API
+### Step 8: Deploy Backend API
 
 See [Backend API Deployment](#backend-api-deployment) section below.
 
@@ -210,10 +221,12 @@ export const CONTRACT_ADDRESSES = {
   // Testnet
   84532: '0x...',   // Base Sepolia
   808813: '0x...',  // Bob Testnet
+  763373: '0x...',  // Ink Sepolia
 
   // Mainnet
   8453: '0x...',    // Base Mainnet
   60808: '0x...',   // Bob Mainnet
+  TBD: '0x...',     // Ink Mainnet
 };
 ```
 
@@ -227,8 +240,10 @@ export const CONTRACT_ADDRESSES = {
 |---------|----------|---------------|----------------|----------|
 | **Base Sepolia** | 84532 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | `0x95a7BbfFBffb2D1e4b73B8F8A9435CE48dE5b47A` | [Basescan](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
 | **Bob Testnet** | 808813 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | `0xfdDDdb3E4ED11e767E6C2e0927bD783Fa0751012` | [Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
+| **Ink Sepolia** | 763373 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | TBD | [Ink Explorer](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
 | **Base Mainnet** | 8453 | TBD | TBD | - |
 | **Bob Mainnet** | 60808 | TBD | TBD | - |
+| **Ink Mainnet** | TBD | TBD | TBD | - |
 
 **Trusted Signer (Testnet)**: `0xEd171c759450B7358e9238567b1e23b4d82f3a64`
 
@@ -451,13 +466,13 @@ app.use(cors({
 
 ## Gas Costs (Estimated)
 
-| Operation | Base Sepolia | Bob Testnet | Notes |
-|-----------|--------------|-------------|-------|
-| Deploy implementation | ~2,500,000 gas | ~2,500,000 gas | One-time |
-| Deploy proxy | ~500,000 gas | ~500,000 gas | One-time |
-| Mint (no ENS) | ~220,000 gas | ~220,000 gas | Per mint |
-| Mint (with ENS) | ~240,000 gas | ~240,000 gas | +20k for signature |
-| Upgrade implementation | ~50,000 gas | ~50,000 gas | Rare |
+| Operation | Base Sepolia | Bob Testnet | Ink Sepolia | Notes |
+|-----------|--------------|-------------|-------------|-------|
+| Deploy implementation | ~2,500,000 gas | ~2,500,000 gas | ~2,500,000 gas | One-time |
+| Deploy proxy | ~500,000 gas | ~500,000 gas | ~500,000 gas | One-time |
+| Mint (no ENS) | ~220,000 gas | ~220,000 gas | ~220,000 gas | Per mint |
+| Mint (with ENS) | ~240,000 gas | ~240,000 gas | ~240,000 gas | +20k for signature |
+| Upgrade implementation | ~50,000 gas | ~50,000 gas | ~50,000 gas | Rare |
 
 **Total deployment cost** (testnet): Free (testnet ETH)
 **Total deployment cost** (mainnet): ~$50-150 (depends on gas prices)

@@ -56,7 +56,16 @@ export const MOOD_OPTIONS: MoodOption[] = [
   { label: 'Growing', emoji: '🌱', value: 'growing' },
   { label: 'Dreamy', emoji: '💫', value: 'dreamy' },
   { label: 'Energized', emoji: '⚡', value: 'energized' },
+  { label: 'Focused', emoji: '🎯', value: 'focused' },
+  { label: 'Flowing', emoji: '🌊', value: 'flowing' },
+  { label: 'Light', emoji: '🍃', value: 'light' },
+  { label: 'Grateful', emoji: '🌟', value: 'grateful' },
 ];
+
+export const moodEmojis: Record<string, string> = MOOD_OPTIONS.reduce((acc, mood) => {
+  acc[mood.label] = mood.emoji;
+  return acc;
+}, {} as Record<string, string>);
 
 export function getMoodEmoji(moodValue: string): string {
   return MOOD_OPTIONS.find(m => m.value === moodValue)?.emoji ?? '💭';

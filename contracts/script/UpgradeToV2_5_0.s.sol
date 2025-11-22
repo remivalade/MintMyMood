@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import "../src/OnChainJournal.sol";
 
-contract UpgradeToV2_4_1 is Script {
+contract UpgradeToV2_5_0 is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address proxyAddress = vm.envAddress("PROXY_ADDRESS");
@@ -19,16 +19,7 @@ contract UpgradeToV2_4_1 is Script {
         // 2. Upgrade proxy to new implementation
         OnChainJournal journal = OnChainJournal(proxyAddress);
         journal.upgradeToAndCall(address(newImplementation), "");
-        console.log("Proxy upgraded to new implementation");
-        
-        // 3. Set mint price (0.00002 ether)
-        uint256 mintPrice = 0.00002 ether;
-        journal.setMintPrice(mintPrice);
-        console.log("Mint price set to:", mintPrice);
-        
-        // 4. Ensure minting is active
-        journal.setMintActive(true);
-        console.log("Minting activated");
+        console.log("Proxy upgraded to new implementation (V2.5.0)");
         
         vm.stopBroadcast();
     }

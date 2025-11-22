@@ -26,6 +26,12 @@ export const TESTNET_CONTRACTS: Record<number, ContractConfig> = {
     address: import.meta.env.VITE_JOURNAL_PROXY_BOB_SEPOLIA as `0x${string}`,
     abi: [], // Will add ABI after contract is compiled
   },
+
+  // Ink Sepolia (763373)
+  763373: {
+    address: import.meta.env.VITE_JOURNAL_PROXY_INK_SEPOLIA as `0x${string}`,
+    abi: [], // Will add ABI after contract is compiled
+  },
 };
 
 // Mainnet addresses (Base, Bob)

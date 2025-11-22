@@ -15,18 +15,20 @@ export function PreviewChainProvider({ children }: { children: ReactNode }) {
   const connectedChainId = useChainId();
   const supportedChains = getSupportedChains();
 
-  // Local state for preview when not connected
-  const [previewChainId, setPreviewChainId] = useState(supportedChains[0].id);
+  // Initialize with connected chain if available, otherwise first supported chain
+  const [previewChainId, setPreviewChainId] = useState(() => {
+    return connectedChainId || supportedChains[0]?.id || 84532; // Default to Base Sepolia
+  });
 
-  // Sync preview chain with connected chain when wallet connects
+  // Sync preview chain when wallet first connects
   useEffect(() => {
     if (isConnected && connectedChainId) {
       setPreviewChainId(connectedChainId);
     }
   }, [isConnected, connectedChainId]);
 
-  // Use connected chain if wallet is connected, otherwise use local preview state
-  const currentChainId = isConnected ? connectedChainId : previewChainId;
+  // Always use preview chain ID for the preview (user can manually select different chains)
+  const currentChainId = previewChainId;
 
   return (
     <PreviewChainContext.Provider value={{ previewChainId, setPreviewChainId, currentChainId }}>

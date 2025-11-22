@@ -320,6 +320,22 @@ User → Proxy (0xC2De...) → Implementation (0x95a7...)
 **Chain-Specific Gradients**:
 - Base: Blue `#0052FF` → `#3c8aff`
 - Bob: Orange `#FF6B35` → `#F7931E`
+- Bob: Orange `#FF6B35` → `#F7931E`
+- Ink: Purple `#7A20DB` → `#9D4DFA`
+
+### SVG Preview Generation
+
+**File**: `src/utils/generateSVG.ts`
+
+The frontend generates a pixel-perfect preview of the NFT before minting. This is done client-side to avoid making RPC calls for every keystroke.
+
+> [!IMPORTANT]
+> **Synchronization is Critical**: The logic in `generateSVG.ts` MUST match the Solidity contract logic exactly. If you update the contract's SVG generation (e.g., changing font size, wrapping logic, or colors), you MUST update `generateSVG.ts` to match.
+
+**Key Logic**:
+- `getChainStyles(chainId)`: Returns colors and fonts based on the selected chain.
+- `wrapText(text)`: Breaks text into lines (approx 45 chars) to match contract's wrapping.
+- `generateSVG(...)`: Assembles the SVG string with the same structure as the contract.
 
 ---
 
@@ -498,6 +514,7 @@ SIGNER_PRIVATE_KEY=0x...
 # RPC URLs
 BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
 BOB_TESTNET_RPC_URL=https://testnet.rpc.gobob.xyz
+INK_SEPOLIA_RPC_URL=https://rpc-gel-sepolia.inkonchain.com
 
 # Deployer wallet
 DEPLOYER_PRIVATE_KEY=0x...
@@ -509,6 +526,7 @@ BOBSCAN_API_KEY=your-key
 # Contract addresses (filled after deployment)
 JOURNAL_PROXY_BASE_SEPOLIA=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
 JOURNAL_PROXY_BOB_TESTNET=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
+JOURNAL_PROXY_INK_SEPOLIA=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
 ```
 
 ---
@@ -774,6 +792,7 @@ await supabase.from('users').upsert({
 - **OpenZeppelin**: UUPS upgradeable contracts
 - **Base Sepolia**: Testnet deployment
 - **Bob Testnet**: Testnet deployment
+- **Ink Sepolia**: Testnet deployment
 
 ---
 

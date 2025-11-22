@@ -1,0 +1,37 @@
+
+<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <style>
+            @keyframes type { 0%, 100% { width: 0; } 50%, 80% { width: 80px; } }
+            .cursor { animation: type 4s steps(8) infinite; }
+            .shadow { filter: drop-shadow(4px 4px 5px rgba(0,0,0,0.4)); }
+            text { font-family: Arial, sans-serif; }
+        </style>
+        
+        <clipPath id="clip"><rect x="8" y="8" width="484" height="484" rx="15"></rect></clipPath>
+        <clipPath id="bClip"><rect class="cursor" x="35" y="50" height="20" width="80"></rect></clipPath>
+    </defs>
+    
+    <rect x="8" y="8" width="484" height="484" rx="15" fill="none" class="shadow"></rect>
+
+    <g clip-path="url(#clip)">
+        <rect x="8" y="8" width="484" height="484" rx="15" fill="#0F2925"></rect>
+        
+        
+        <!-- Metadata -->
+        <text x="450" y="90" font-size="70" text-anchor="end" fill="white">😄</text>
+        <text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text>
+        <g clip-path="url(#bClip)">
+            <text x="35" y="65" font-family="monospace" font-size="16" fill="#8DFADF" fill-opacity="0.8">#914724</text>
+        </g>
+
+        <!-- Main Text (Native SVG) -->
+        <text x="250" y="181" font-size="18" fill="white" text-anchor="middle" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5))">
+            <tspan x="250" dy="0">This text is now rendered using native</tspan><tspan x="250" dy="26">SVG elements. It will calculate line</tspan><tspan x="250" dy="26">wrapping automatically without using</tspan><tspan x="250" dy="26">HTML divs. This ensures your NFT</tspan><tspan x="250" dy="26">renders correctly on OpenSea, Blur,</tspan><tspan x="250" dy="26">and mobile Wallets.</tspan>
+        </text>
+
+        <!-- Footer -->
+        <text x="35" y="475" font-family="monospace" font-size="16" fill="#8DFADF" fill-opacity="0.7">HYPERLIQUID</text>
+        <text x="465" y="475" font-family="monospace" font-size="16" fill="#f9f7f1" fill-opacity="0.7" text-anchor="end">MintMyMood</text>
+    </g>
+</svg>

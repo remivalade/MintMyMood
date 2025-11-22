@@ -40,17 +40,7 @@ export function MintedNFTCard({
       onClick={onClick}
       className="relative w-full group"
     >
-      {/* Chain badge */}
-      {chainMetadata && (
-        <div
-          className="absolute top-4 right-4 z-10 px-3 py-1 rounded-full text-xs uppercase tracking-wide text-white font-medium shadow-lg"
-          style={{
-            background: `linear-gradient(135deg, ${chainMetadata.colors.from}, ${chainMetadata.colors.to})`
-          }}
-        >
-          {chainMetadata.shortName}
-        </div>
-      )}
+
 
       {/* SVG Container */}
       <div

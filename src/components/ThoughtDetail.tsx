@@ -5,8 +5,7 @@ import { Info } from 'lucide-react';
 import { generateSVG } from '../utils/generateSVG';
 import { generateEphemeralSVG } from '../utils/generateEphemeralSVG';
 import { CHAIN_METADATA } from '../config/chains';
-import { useEnsName } from '../hooks/useEnsName';
-import { useReadContract } from 'wagmi';
+import { useReadContract, useTransaction } from 'wagmi';
 import { getContractAddress, OnChainJournalABI } from '../contracts/config';
 
 interface ThoughtDetailProps {
@@ -34,52 +33,33 @@ export function ThoughtDetail({
   onClose,
   onMint
 }: ThoughtDetailProps) {
-  // For minted NFTs, fetch the original minter from the contract
-  // This ensures we always show the correct creator, even if the NFT was transferred
   const contractAddress = chainId ? getContractAddress(chainId) : undefined;
 
-  const { data: journalEntry } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: OnChainJournalABI,
-    functionName: 'journalEntries',
-    args: tokenId ? [BigInt(tokenId)] : undefined,
+  // Fetch transaction to get block number
+  const { data: transaction } = useTransaction({
+    hash: txHash as `0x${string}`,
     query: {
-      enabled: !!(isMinted && tokenId && contractAddress),
+      enabled: !!txHash,
     },
   });
 
-  // Use contract owner if available, otherwise fall back to database walletAddress
-  const minterAddress = (journalEntry as any)?.owner || walletAddress;
-
-  const { displayName, isEns } = useEnsName(minterAddress as `0x${string}` | undefined);
+  const blockNumber = transaction?.blockNumber ? transaction.blockNumber.toString() : '000000';
 
   // Generate SVG based on minted status
   const svg = isMinted && chainId
     ? generateSVG({
-        text: content,
-        mood,
-        chainId,
-        blockNumber: tokenId || '0',
-      })
+      text: content,
+      mood,
+      chainId,
+      blockNumber: blockNumber,
+    })
     : generateEphemeralSVG({
-        text: content,
-        mood,
-        walletAddress: walletAddress || '0x0000000000000000000000000000000000000000',
-      });
+      text: content,
+      mood,
+      walletAddress: walletAddress || '0x0000000000000000000000000000000000000000',
+    });
 
   const chainMetadata = chainId ? CHAIN_METADATA[chainId] : null;
-
-  // Get explorer URL for transaction
-  const getExplorerUrl = (chainId: number, txHash: string) => {
-    if (chainId === 84532) { // Base Sepolia
-      return `https://sepolia.basescan.org/tx/${txHash}`;
-    } else if (chainId === 808813) { // Bob Testnet
-      return `https://bob-sepolia.explorer.gobob.xyz/tx/${txHash}`;
-    }
-    return null;
-  };
-
-  const explorerUrl = txHash && chainId ? getExplorerUrl(chainId, txHash) : null;
 
   return (
     <div className="min-h-screen p-6 md:p-12" style={{ backgroundColor: 'var(--paper-cream)' }}>
@@ -113,113 +93,109 @@ export function ThoughtDetail({
 
         {/* Content */}
         <div className="max-w-2xl mx-auto">
-        <div className="space-y-6">
-          {/* SVG Preview */}
-          <div className="sticky top-8">
-            <div
-              className="w-full aspect-square rounded-2xl overflow-hidden shadow-2xl border border-black/10"
-              dangerouslySetInnerHTML={{ __html: svg }}
-            />
-            {/* Chain badge (minted only) */}
-            {isMinted && chainMetadata && (
-              <div className="mt-4 flex items-center justify-center">
-                <div
-                  className="px-4 py-2 rounded-full text-sm uppercase tracking-wide text-white font-medium"
-                  style={{
-                    background: `linear-gradient(135deg, ${chainMetadata.colors.from}, ${chainMetadata.colors.to})`
-                  }}
-                >
-                  {chainMetadata.name}
+          <div className="space-y-6">
+            {/* SVG Preview */}
+            <div className="sticky top-8">
+              <div
+                className="w-full aspect-square rounded-2xl overflow-hidden shadow-2xl border border-black/10"
+                dangerouslySetInnerHTML={{ __html: svg }}
+              />
+
+            </div>
+
+            {/* Metadata */}
+            {isMinted && walletAddress ? (
+              <div className="bg-white/60 rounded-2xl p-6 border border-black/10 space-y-4">
+                <h3 className="text-sm uppercase tracking-wide text-gray-500 font-semibold mb-4">
+                  Information
+                </h3>
+
+                {/* First minted on */}
+                {chainMetadata && (
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">First minted on</div>
+                    <div className="text-sm text-gray-900 font-medium">
+                      {chainMetadata.name}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mint date */}
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Mint date</div>
+                  <div className="text-sm text-gray-900">
+                    {date.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
                 </div>
+
+                {/* Minted by */}
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Minted by</div>
+                  <div className="text-sm text-gray-900 font-mono break-all">
+                    {walletAddress}
+                  </div>
+                </div>
+
+                {/* Transaction */}
+                {txHash && chainMetadata && (
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Transaction</div>
+                    <a
+                      href={`${chainMetadata.blockExplorers.default.url}/tx/${txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      View on Explorer
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+
+                {/* Token ID */}
+                {tokenId && (
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Token ID</div>
+                    <div className="text-sm text-gray-900 font-mono">
+                      #{tokenId}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Ephemeral state */
+              <div className="bg-white/60 rounded-2xl p-6 border border-black/10">
+                <div className="flex items-start gap-3 mb-4">
+                  <Info className="w-5 h-5 text-orange-500 mt-0.5" />
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900 mb-1">
+                      Ephemeral Thought
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      This thought will automatically disappear in a few days unless you mint it as an NFT.
+                    </p>
+                  </div>
+                </div>
+                {onMint && (
+                  <Button
+                    onClick={onMint}
+                    className="w-full text-white shadow-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: 'var(--leather-brown)' }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Make it permanent
+                  </Button>
+                )}
               </div>
             )}
           </div>
-
-          {/* Metadata */}
-          {isMinted && walletAddress ? (
-            <div className="bg-white/60 rounded-2xl p-6 border border-black/10 space-y-4">
-              <h3 className="text-sm uppercase tracking-wide text-gray-500 font-semibold mb-4">
-                NFT Information
-              </h3>
-
-              {/* Minted by */}
-              <div>
-                <div className="text-xs text-gray-500 mb-1">Minted by</div>
-                <div className="font-mono text-sm text-gray-900">
-                  {displayName}
-                </div>
-              </div>
-
-              {/* Mint date */}
-              <div>
-                <div className="text-xs text-gray-500 mb-1">Mint date</div>
-                <div className="text-sm text-gray-900">
-                  {date.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </div>
-              </div>
-
-              {/* Transaction hash */}
-              {txHash && explorerUrl && (
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Transaction</div>
-                  <a
-                    href={explorerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors group"
-                  >
-                    <span className="font-mono">
-                      {txHash.slice(0, 10)}...{txHash.slice(-8)}
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </a>
-                </div>
-              )}
-
-              {/* Token ID */}
-              {tokenId && (
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Token ID</div>
-                  <div className="text-sm text-gray-900 font-mono">
-                    #{tokenId}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Ephemeral state */
-            <div className="bg-white/60 rounded-2xl p-6 border border-black/10">
-              <div className="flex items-start gap-3 mb-4">
-                <Info className="w-5 h-5 text-orange-500 mt-0.5" />
-                <div>
-                  <div className="text-sm font-semibold text-gray-900 mb-1">
-                    Ephemeral Thought
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    This thought will automatically disappear in a few days unless you mint it as an NFT.
-                  </p>
-                </div>
-              </div>
-              {onMint && (
-                <Button
-                  onClick={onMint}
-                  className="w-full text-white shadow-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
-                  style={{ backgroundColor: 'var(--leather-brown)' }}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Make it permanent
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
         </div>
       </div>
     </div>

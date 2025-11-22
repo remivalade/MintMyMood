@@ -24,11 +24,11 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 ### Key Features - V2.4.0
 
 - **UUPS Upgradeable**: Allows contract logic upgrades while preserving state
-- **On-chain SVG**: Fully on-chain with animations (no IPFS or external storage)
-- **Chain-specific gradients**: Each chain deployment has unique colors (Base & Bob)
+- **On-chain SVG**: Fully on-chain (no IPFS or external storage)
+- **Chain-specific gradients**: Each chain deployment has unique colors (Base, Bob, & Ink)
 - **Advanced SVG Features**:
   - Grain texture with feTurbulence filter
-  - CSS keyframe animations (typewriter effect for block number)
+
   - Drop shadows and blend modes
   - ForeignObject for text wrapping
 - **Input validation**: 400 byte text limit, 64 byte mood limit
@@ -38,7 +38,7 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 ### What's NOT in V1
 
 - ❌ Cross-chain NFT transfers (LayerZero ONFT)
-- ❌ NFT bridging between Base and Bob
+- ❌ NFT bridging between Base, Bob, and Ink
 - ✅ These features planned for V2 via UUPS upgrade
 
 ---
@@ -52,6 +52,7 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 - ✅ On-chain SVG generation
 - ✅ Mint on Base (independent)
 - ✅ Mint on Bob (independent)
+- ✅ Mint on Ink (independent)
 - ✅ Chain-specific colors
 - ✅ Full metadata on-chain
 - ❌ No cross-chain transfers yet
@@ -66,7 +67,7 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 
 - ✅ Everything from V1
 - ✅ LayerZero V2 ONFT integration
-- ✅ Bridge NFTs between Base ↔ Bob
+- ✅ Bridge NFTs between Base ↔ Bob ↔ Ink
 - ✅ Preserve metadata cross-chain
 - ✅ UUPS upgrade (no redeployment needed!)
 
@@ -81,8 +82,10 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 |---------|----------|---------------|----------------|
 | Base Sepolia | 84532 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x64C9A8b7c432A960898cdB3bB45204287F59B814 |
 | Bob Testnet | 808813 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0xB4e9f62cc1899DB3266099F65CeEcE8Cc267f3D2 |
+| Ink Sepolia | 763373 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | TBD |
 | Base Mainnet | 8453 | TBD | TBD |
 | Bob Mainnet | 60808 | TBD | TBD |
+| Ink Mainnet | TBD | TBD | TBD |
 
 ---
 
@@ -123,7 +126,7 @@ OnChainJournal (UUPS Upgradeable)
 ├── UUPSUpgradeable (Upgrade mechanism)
 └── Custom logic
     ├── mintEntry(text, mood) - Mint new journal NFT (simplified)
-    ├── generateSVG(entry) - Create on-chain SVG with animations
+    ├── generateSVG(entry) - Create on-chain SVG
     ├── tokenURI(tokenId) - Return base64-encoded metadata JSON
     ├── _generateSVGPart1() - SVG defs, gradients, filters
     ├── _generateSVGPart2() - SVG content layer
@@ -154,6 +157,29 @@ struct JournalEntry {
     uint256 originChainId;  // Chain where minted
 }
 ```
+
+### SVG Architecture
+
+The contract generates SVGs entirely on-chain using string concatenation. This ensures the artwork is permanent and doesn't rely on external servers (IPFS/Arweave).
+
+**Key Components:**
+1.  **Backgrounds**:
+    - **Base/Bob**: CSS radial gradients with a grain filter (`feTurbulence`) for texture.
+    - **Ink**: SVG path-based wave pattern.
+2.  **Typography**:
+    - **Base/Bob**: Serif font (`Georgia`) for a classic journal feel.
+    - **Ink**: Sans-serif font (`Arial`) for a modern look.
+
+4.  **Text Wrapping**:
+    - Native SVG `<tspan>` elements with calculated `dy` offsets (no `foreignObject` for better compatibility).
+
+### Chain Styles
+
+| Chain | Theme | Background | Font |
+|-------|-------|------------|------|
+| **Base** | Blue | Gradient + Grain | Serif |
+| **Bob** | Orange | Gradient + Grain | Serif |
+| **Ink** | Purple | Wave Pattern | Sans-serif |
 
 ---
 
@@ -191,6 +217,7 @@ struct JournalEntry {
    # RPC endpoints
    BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
    BOB_SEPOLIA_RPC_URL=https://testnet.rpc.gobob.xyz
+   INK_SEPOLIA_RPC_URL=https://rpc-gel-sepolia.inkonchain.com
 
    # API keys for verification
    BASESCAN_API_KEY=your_basescan_api_key
@@ -353,6 +380,14 @@ forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal \
   --broadcast
 ```
 
+### Deploy to Ink Sepolia
+
+```bash
+forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal \
+  --rpc-url ink_sepolia \
+  --broadcast
+```
+
 ### Deploy to Mainnet
 
 ⚠️ **PRODUCTION DEPLOYMENT - PROCEED WITH CAUTION**
@@ -425,29 +460,52 @@ forge verify-contract <PROXY_ADDRESS> \
 
 3. **Create upgrade script**
    ```solidity
-   // script/UpgradeOnChainJournal.s.sol
-   contract UpgradeOnChainJournal is Script {
+   // script/UpgradeToV2_5_0.s.sol
+   contract UpgradeToV2_5_0 is Script {
        function run() external {
            address proxy = vm.envAddress("PROXY_ADDRESS");
-           address newImpl = address(new OnChainJournalV2());
+           // Deploy new implementation (compiled from updated source)
+           OnChainJournal newImplementation = new OnChainJournal();
 
            vm.broadcast();
-           OnChainJournal(proxy).upgradeToAndCall(newImpl, "");
+           OnChainJournal(proxy).upgradeToAndCall(address(newImplementation), "");
        }
    }
    ```
 
 4. **Execute upgrade**
+
+   **Prerequisites:**
+   - Ensure your `.env` file has `PRIVATE_KEY` and the relevant RPC URLs set.
+   - Ensure you have the correct `PROXY_ADDRESS` for the chain you are upgrading.
+
+   **Base Sepolia:**
    ```bash
-   forge script script/UpgradeOnChainJournal.s.sol \
+   PROXY_ADDRESS=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 \
+   forge script script/UpgradeToV2_5_0.s.sol:UpgradeToV2_5_0 \
      --rpc-url base_sepolia \
+     --broadcast
+   ```
+
+   **Bob Testnet:**
+   ```bash
+   PROXY_ADDRESS=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 \
+   forge script script/UpgradeToV2_5_0.s.sol:UpgradeToV2_5_0 \
+     --rpc-url bob_sepolia \
+     --broadcast
+   ```
+
+   **Ink Sepolia:**
+   ```bash
+   PROXY_ADDRESS=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 \
+   forge script script/UpgradeToV2_5_0.s.sol:UpgradeToV2_5_0 \
+     --rpc-url ink_sepolia \
      --broadcast
    ```
 
 5. **Verify state persisted**
    ```bash
    cast call <PROXY_ADDRESS> "version()(string)" --rpc-url base_sepolia
-   cast call <PROXY_ADDRESS> "color1()(string)" --rpc-url base_sepolia
    ```
 
 ### Upgrade Safety Checks
@@ -630,5 +688,5 @@ uint256 public constant MAX_MOOD_LENGTH = 64;
 ---
 
 **Last Updated:** November 14, 2025
-**Contract Version:** V2.4.0
+**Contract Version:** V2.5.0
 **Foundry Version:** 1.4.1-stable

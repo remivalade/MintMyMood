@@ -66,6 +66,84 @@ export const bobSepolia = defineChain({
   testnet: true,
 });
 
+export const inkSepolia = defineChain({
+  id: 763373, // Ink Sepolia chain ID
+  name: 'Ink Sepolia',
+  network: 'ink-sepolia',
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://rpc-gel-sepolia.inkonchain.com'],
+    },
+    public: {
+      http: ['https://rpc-gel-sepolia.inkonchain.com'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Ink Explorer',
+      url: 'https://explorer-sepolia.inkonchain.com',
+    },
+  },
+  testnet: true,
+});
+
+export const megaethSepolia = defineChain({
+  id: 6342, // MegaETH Sepolia chain ID
+  name: 'MegaETH Sepolia',
+  network: 'megaeth-sepolia',
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://carrot.megaeth.com/rpc'],
+    },
+    public: {
+      http: ['https://carrot.megaeth.com/rpc'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'MegaETH Explorer',
+      url: 'https://explorer-sepolia.megaeth.com', // Placeholder
+    },
+  },
+  testnet: true,
+});
+
+export const hyperliquidSepolia = defineChain({
+  id: 998, // HyperLiquid Sepolia chain ID
+  name: 'HyperLiquid Sepolia',
+  network: 'hyperliquid-sepolia',
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://api.hyperliquid-testnet.xyz/evm'],
+    },
+    public: {
+      http: ['https://api.hyperliquid-testnet.xyz/evm'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'HyperLiquid Explorer',
+      url: 'https://explorer-sepolia.hyperliquid.xyz', // Placeholder
+    },
+  },
+  testnet: true,
+});
+
 // =====================================================
 // MAINNET CHAINS
 // =====================================================
@@ -137,9 +215,46 @@ export interface ChainMetadata {
     to: string;
   };
   icon?: string;
+  // Style properties for SVG generation
+  chainColor: string;
+  hoverColor?: string;
+  background: string;
+  textColor: string;
+  secondaryColor: string;
+  fontFamily: string;
+  blockExplorers: {
+    default: {
+      name: string;
+      url: string;
+    };
+  };
 }
 
 export const CHAIN_METADATA: Record<number, ChainMetadata> = {
+  // Classic (chainId 0 = neutral/default style)
+  0: {
+    chainId: 0,
+    name: 'Classic',
+    shortName: 'Classic',
+    isTestnet: true,
+    layerZeroEndpointId: 0,
+    colors: {
+      from: '#8B7355',
+      to: '#6B5943',
+    },
+    chainColor: '#8B7355',
+    background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 50%, #e8e8e8 100%)',
+    textColor: '#2D2D2D',
+    secondaryColor: '#5A5A5A',
+    fontFamily: 'var(--font-serif)',
+    blockExplorers: {
+      default: {
+        name: 'Etherscan',
+        url: 'https://etherscan.io',
+      },
+    },
+  },
+
   // Base Sepolia
   [baseSepolia.id]: {
     chainId: baseSepolia.id,
@@ -150,6 +265,17 @@ export const CHAIN_METADATA: Record<number, ChainMetadata> = {
     colors: {
       from: '#0052FF',
       to: '#1E3A8A',
+    },
+    chainColor: '#0000ff',
+    background: 'linear-gradient(135deg, #e6f0ff 0%, #cce0ff 50%, #99c2ff 100%)',
+    textColor: '#001a4d',
+    secondaryColor: '#0000ff',
+    fontFamily: 'var(--font-sans)',
+    blockExplorers: {
+      default: {
+        name: 'BaseScan',
+        url: 'https://sepolia.basescan.org',
+      },
     },
   },
 
@@ -164,6 +290,90 @@ export const CHAIN_METADATA: Record<number, ChainMetadata> = {
       from: '#FF6B35',
       to: '#F7931E',
     },
+    chainColor: '#f25d00',
+    background: 'linear-gradient(135deg, #fff4ed 0%, #ffe0cc 50%, #ffc299 100%)',
+    textColor: '#4d1f00',
+    secondaryColor: '#f25d00',
+    fontFamily: 'var(--font-sans)',
+    blockExplorers: {
+      default: {
+        name: 'Bob Explorer',
+        url: 'https://bob-sepolia.explorer.gobob.xyz',
+      },
+    },
+  },
+
+  // Ink Sepolia
+  [inkSepolia.id]: {
+    chainId: inkSepolia.id,
+    name: 'Ink Sepolia',
+    shortName: 'Ink',
+    isTestnet: true,
+    layerZeroEndpointId: 0, // TODO: Update with actual LZ endpoint
+    colors: {
+      from: '#5848d5',
+      to: '#3d2fb3',
+    },
+    chainColor: '#5848d5',
+    background: 'linear-gradient(135deg, #f0edff 0%, #ddd6ff 50%, #bfb3ff 100%)',
+    textColor: '#1a0f4d',
+    secondaryColor: '#5848d5',
+    fontFamily: 'var(--font-serif)',
+    blockExplorers: {
+      default: {
+        name: 'Ink Explorer',
+        url: 'https://explorer-sepolia.inkonchain.com',
+      },
+    },
+  },
+
+  // MegaETH Sepolia
+  [megaethSepolia.id]: {
+    chainId: megaethSepolia.id,
+    name: 'MegaETH Sepolia',
+    shortName: 'MegaETH',
+    isTestnet: true,
+    layerZeroEndpointId: 0, // TODO: Update with actual LZ endpoint
+    colors: {
+      from: '#19191A',
+      to: '#8A8484',
+    },
+    chainColor: '#19191A',
+    hoverColor: '#DFD9D9',
+    background: 'linear-gradient(135deg, #ffffff 0%, #DFD9D9 50%, #c9c3c3 100%)',
+    textColor: '#2D2D2D',
+    secondaryColor: '#8A8484',
+    fontFamily: 'var(--font-sans)',
+    blockExplorers: {
+      default: {
+        name: 'MegaETH Explorer',
+        url: 'https://explorer-sepolia.megaeth.com',
+      },
+    },
+  },
+
+  // HyperLiquid Sepolia
+  [hyperliquidSepolia.id]: {
+    chainId: hyperliquidSepolia.id,
+    name: 'HyperLiquid Sepolia',
+    shortName: 'HyperLiquid',
+    isTestnet: true,
+    layerZeroEndpointId: 0, // TODO: Update with actual LZ endpoint
+    colors: {
+      from: '#97fce4',
+      to: '#00a88f',
+    },
+    chainColor: '#97fce4',
+    background: 'linear-gradient(135deg, #f0fffe 0%, #d9fef7 50%, #97fce4 100%)',
+    textColor: '#003d35',
+    secondaryColor: '#00a88f',
+    fontFamily: 'var(--font-serif)',
+    blockExplorers: {
+      default: {
+        name: 'HyperLiquid Explorer',
+        url: 'https://explorer-sepolia.hyperliquid.xyz',
+      },
+    },
   },
 
   // Base Mainnet
@@ -177,6 +387,17 @@ export const CHAIN_METADATA: Record<number, ChainMetadata> = {
       from: '#0052FF',
       to: '#1E3A8A',
     },
+    chainColor: '#0000ff',
+    background: 'linear-gradient(135deg, #e6f0ff 0%, #cce0ff 50%, #99c2ff 100%)',
+    textColor: '#001a4d',
+    secondaryColor: '#0000ff',
+    fontFamily: 'var(--font-sans)',
+    blockExplorers: {
+      default: {
+        name: 'BaseScan',
+        url: 'https://basescan.org',
+      },
+    },
   },
 
   // Bob Mainnet
@@ -189,6 +410,17 @@ export const CHAIN_METADATA: Record<number, ChainMetadata> = {
     colors: {
       from: '#FF6B35',
       to: '#F7931E',
+    },
+    chainColor: '#f25d00',
+    background: 'linear-gradient(135deg, #fff4ed 0%, #ffe0cc 50%, #ffc299 100%)',
+    textColor: '#4d1f00',
+    secondaryColor: '#f25d00',
+    fontFamily: 'var(--font-sans)',
+    blockExplorers: {
+      default: {
+        name: 'Bob Explorer',
+        url: 'https://explorer.gobob.xyz',
+      },
     },
   },
 };
@@ -218,7 +450,7 @@ export function getLayerZeroEndpointId(chainId: number): number | undefined {
 // =====================================================
 
 // Export testnet chains for development
-export const TESTNET_CHAINS = [baseSepolia, bobSepolia] as const;
+export const TESTNET_CHAINS = [baseSepolia, bobSepolia, inkSepolia, megaethSepolia, hyperliquidSepolia] as const;
 
 // Export mainnet chains for production
 export const MAINNET_CHAINS = [base, bob] as const;

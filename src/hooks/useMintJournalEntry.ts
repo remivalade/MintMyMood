@@ -54,6 +54,7 @@ export function useMintJournalEntry() {
       abi: OnChainJournalABI,
       functionName: 'mintEntry',
       args: [text, mood],
+      value: 20000000000000n, // 0.00002 ETH
       gas: 400000n, // Reduced gas limit (no signature verification)
     });
   };

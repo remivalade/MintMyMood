@@ -4,8 +4,9 @@ import { ThoughtCard } from './ThoughtCard';
 import { MintedNFTCard } from './MintedNFTCard';
 import { AboutModal } from './AboutModal';
 import { ConnectButton } from './ConnectButton';
-import { PenLine, Info, Filter } from 'lucide-react';
+import { PenLine, Info, Filter, AlertTriangle } from 'lucide-react';
 import { useThoughtStore } from '../store/useThoughtStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { Thought } from '../types';
 import { toast } from 'sonner';
 
@@ -25,15 +26,20 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
   const [isLoading, setIsLoading] = useState(false);
 
   const { address, isConnected } = useAccount();
+  const { isAuthenticated, walletAddress: authWalletAddress } = useAuthStore();
   const { thoughts, fetchThoughts, deleteThought } = useThoughtStore();
 
-  // Fetch thoughts when wallet connects
+  // Detect wallet mismatch (security check)
+  const walletMismatch = isConnected && isAuthenticated && address &&
+    address.toLowerCase() !== authWalletAddress?.toLowerCase();
+
+  // Fetch thoughts when wallet connects (only if no mismatch)
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && !walletMismatch) {
       setIsLoading(true);
       fetchThoughts(address).finally(() => setIsLoading(false));
     }
-  }, [isConnected, address, fetchThoughts]);
+  }, [isConnected, address, walletMismatch, fetchThoughts]);
 
   // Filter thoughts
   const filteredThoughts = thoughts.filter(thought => {
@@ -111,6 +117,33 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
             </p>
             <ConnectButton />
           </div>
+        ) : walletMismatch ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="mb-6">
+              <AlertTriangle className="w-16 h-16 text-red-500 mx-auto" />
+            </div>
+            <h2 className="mb-3" style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 'var(--text-h2)',
+              color: 'var(--soft-black)'
+            }}>
+              Wallet Mismatch
+            </h2>
+            <p className="mb-4 max-w-md" style={{
+              fontSize: 'var(--text-ui)',
+              color: 'var(--medium-gray)'
+            }}>
+              You're viewing wallet <span className="font-mono font-semibold text-gray-700">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+              <br />
+              but authenticated as <span className="font-mono font-semibold text-gray-700">{authWalletAddress?.slice(0, 6)}...{authWalletAddress?.slice(-4)}</span>
+            </p>
+            <p className="mb-8 max-w-md text-sm" style={{
+              fontSize: 'var(--text-ui)',
+              color: 'var(--medium-gray)'
+            }}>
+              For security, your data is hidden. Please click the connect button in the top right to re-authenticate with the current wallet.
+            </p>
+          </div>
         ) : isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-7xl mb-6 animate-pulse">💭</div>
@@ -129,31 +162,28 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
                 <div className="flex items-center gap-2 bg-white/40 backdrop-blur-sm rounded-lg p-1">
                   <button
                     onClick={() => setFilterType('all')}
-                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
-                      filterType === 'all'
-                        ? 'bg-white shadow-sm text-gray-900'
-                        : 'text-gray-600 hover:bg-white/50'
-                    }`}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${filterType === 'all'
+                      ? 'bg-white shadow-sm text-gray-900'
+                      : 'text-gray-600 hover:bg-white/50'
+                      }`}
                   >
                     All ({thoughts.length})
                   </button>
                   <button
                     onClick={() => setFilterType('minted')}
-                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
-                      filterType === 'minted'
-                        ? 'bg-white shadow-sm text-gray-900'
-                        : 'text-gray-600 hover:bg-white/50'
-                    }`}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${filterType === 'minted'
+                      ? 'bg-white shadow-sm text-gray-900'
+                      : 'text-gray-600 hover:bg-white/50'
+                      }`}
                   >
                     Minted ({mintedCount})
                   </button>
                   <button
                     onClick={() => setFilterType('ephemeral')}
-                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
-                      filterType === 'ephemeral'
-                        ? 'bg-white shadow-sm text-gray-900'
-                        : 'text-gray-600 hover:bg-white/50'
-                    }`}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${filterType === 'ephemeral'
+                      ? 'bg-white shadow-sm text-gray-900'
+                      : 'text-gray-600 hover:bg-white/50'
+                      }`}
                   >
                     Ephemeral ({ephemeralCount})
                   </button>
@@ -222,8 +252,8 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
         {/* Floating Action Button */}
         <button
           onClick={onNewThought}
-          className="fixed bottom-8 right-8 w-14 h-14 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 hover:opacity-90"
-          style={{ 
+          className="fixed bottom-8 right-8 w-14 h-14 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 hover:opacity-90 pulse-animation"
+          style={{
             backgroundColor: 'var(--leather-brown)',
             borderRadius: '50%'
           }}
