@@ -9,7 +9,7 @@ import { generateSVG } from '../utils/generateSVG';
  *
  * V2.4.0: Removed address/ENS display
  */
-export function useLocalPreviewSVG(text: string, mood: string) {
+export function useLocalPreviewSVG(text: string, mood: string, styleId: number = 0) {
   const { currentChainId } = usePreviewChain();
   const { data: blockNumber } = useBlockNumber({ chainId: currentChainId });
 
@@ -22,8 +22,9 @@ export function useLocalPreviewSVG(text: string, mood: string) {
       mood,
       chainId: currentChainId,
       blockNumber: blockNumber?.toString() || '000000',
+      styleId,
     });
-  }, [text, mood, currentChainId, blockNumber]);
+  }, [text, mood, currentChainId, blockNumber, styleId]);
 
   return {
     svg,

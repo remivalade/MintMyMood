@@ -41,19 +41,19 @@ export function useMintJournalEntry() {
   /**
    * Mint a journal entry (simplified - no signature needed)
    */
-  const mint = async (thoughtId: string, text: string, mood: string) => {
+  const mint = async (thoughtId: string, text: string, mood: string, styleId: number = 0) => {
     if (!contractAddress) {
       throw new Error(`No contract deployed on chain ${chainId}`);
     }
 
-    console.log('Minting journal entry:', { text: text.substring(0, 50), mood, chainId });
+    console.log('Minting journal entry:', { text: text.substring(0, 50), mood, chainId, styleId });
 
     // Call the contract directly (no signature needed!)
     writeContract({
       address: contractAddress as `0x${string}`,
       abi: OnChainJournalABI,
       functionName: 'mintEntry',
-      args: [text, mood],
+      args: [text, mood, styleId],
       value: 20000000000000n, // 0.00002 ETH
       gas: 400000n, // Reduced gas limit (no signature verification)
     });

@@ -8,6 +8,7 @@
  * - Replaced foreignObject with native SVG text wrapping
  * - Updated chain-specific styles for Ink, HyperLiquid, and MegaETH
  * - Implemented manual line wrapping logic
+ * - Added Style ID support (Chain Native vs Classic)
  */
 
 import { getChainMetadata } from '../config/chains';
@@ -17,6 +18,7 @@ interface SVGParams {
   mood: string;
   chainId: number;
   blockNumber?: string;
+  styleId?: number; // 0 = Native, 1 = Classic
 }
 
 /**
@@ -32,13 +34,7 @@ function getChainStyles(chainId: number) {
   let footerTextColor: string | undefined;
 
   // Map chain IDs to names and colors (matching contract)
-  if (chainId === 0) {
-    // Classic style (chain-agnostic)
-    chainName = 'CLASSIC';
-    primaryColor = '#F9F7F1';
-    gradientColor = '#F9F7F1';
-    accentColor = '#8B7355';
-  } else if (chainId === 84532) {
+  if (chainId === 84532) {
     // Base Sepolia
     chainName = 'BASE';
     primaryColor = '#0052FF';
@@ -121,11 +117,13 @@ function wrapText(text: string, maxChars: number = 40): string[] {
 /**
  * Generate chain-specific background
  */
-function getChainBackground(chainId: number, chainPrefix: string): string {
-  if (chainId === 0) {
-    // Classic - Simple solid cream background
+function getChainBackground(chainId: number, chainPrefix: string, isClassic: boolean): string {
+  if (isClassic) {
     return `<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"></rect>`;
-  } else if (chainId === 763373) {
+  }
+
+  // Chain Native Backgrounds
+  if (chainId === 763373) {
     // Ink - Wave pattern background
     return `<g transform="translate(8, 8) scale(0.968)">
       <rect width="500" height="500" fill="#5848d5"></rect>
@@ -161,27 +159,37 @@ export function generateSVG({
   mood,
   chainId,
   blockNumber = '000000',
+  styleId = 0,
 }: SVGParams): string {
   const { chainName, primaryColor, gradientColor, accentColor, footerTextColor } = getChainStyles(chainId);
   const chainPrefix = chainName.toLowerCase().replace(/\s+/g, '-');
 
   // Classic style uses dark text, all others use white/accent colors
-  const isClassic = chainId === 0;
-  const textAccentColor = accentColor || 'white';
-  const mainTextColor = isClassic ? '#2D2D2D' : 'white';
-  const secondaryTextColor = isClassic ? '#5A5A5A' : 'white';
-  const bottomTextColor = footerTextColor || textAccentColor;
+  const isClassic = styleId === 1;
 
-  // Font selection: Ink and MegaETH use sans-serif for center text
-  const isSansSerif = chainId === 763373 || chainId === 999999999;
+  // Colors match SVG Classic Spec
+  const mainTextColor = isClassic ? '#2D2D2D' : 'white';
+  const moodColor = isClassic ? '#2D2D2D' : 'white'; // Used for mood emoji
+  const secondaryTextColor = isClassic ? '#5A5A5A' : 'white'; // "minted on block"
+
+  // Footer text (chain name at bottom left)
+  const bottomTextColor = isClassic
+    ? '#8B7355'
+    : (footerTextColor || accentColor || 'white');
+
+  // Block number color
+  const blockNumColor = isClassic ? '#8B7355' : 'white';
+
+  // Font selection: Ink and MegaETH use sans-serif for center text, unless Classic which forces Georgia
+  const isSansSerif = !isClassic && (chainId === 763373 || chainId === 999999999);
   const centerTextFont = isSansSerif ? 'Arial, sans-serif' : 'Georgia, serif';
 
   const textShadow = isClassic
     ? '1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9)'
     : '-1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15)';
 
-  // Get chain-specific background
-  const backgroundSVG = getChainBackground(chainId, chainPrefix).replace('{{PRIMARY_COLOR}}', primaryColor);
+  // Get chain-specific background (or Classic background which is constant)
+  const backgroundSVG = getChainBackground(chainId, chainPrefix, isClassic).replace('{{PRIMARY_COLOR}}', primaryColor);
 
   // Wrap text into lines
   const lines = wrapText(text, 45); // Approx 45 chars per line
@@ -248,11 +256,11 @@ export function generateSVG({
 
 
         <g>
-            <text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="${mainTextColor}">${mood}</text>
+            <text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="${moodColor}">${mood}</text>
             
             ${showBlockInfo ? `
             <text x="35" y="45" font-family="monospace" font-size="14" fill="${secondaryTextColor}" fill-opacity="0.7">minted on block</text>
-            <text x="35" y="65" font-family="monospace" font-size="16" fill="${textAccentColor}" fill-opacity="0.8">${blockNumStr}</text>
+            <text x="35" y="65" font-family="monospace" font-size="16" fill="${blockNumColor}" fill-opacity="0.8">${blockNumStr}</text>
             ` : ''}
             
             <!-- NATIVE TEXT WRAPPING -->

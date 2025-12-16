@@ -3,14 +3,15 @@ import { useLocalPreviewSVG } from '../hooks/useLocalPreviewSVG';
 interface OnChainNFTPreviewProps {
   content: string;
   mood: string;
+  styleId?: number; // 0 = Native, 1 = Classic
 }
 
 /**
  * Displays the NFT preview SVG generated locally
  * This ensures the preview matches what will be minted without relying on contract calls
  */
-export function OnChainNFTPreview({ content, mood }: OnChainNFTPreviewProps) {
-  const { svg, isLoading, error } = useLocalPreviewSVG(content, mood);
+export function OnChainNFTPreview({ content, mood, styleId = 0 }: OnChainNFTPreviewProps) {
+  const { svg, isLoading, error } = useLocalPreviewSVG(content, mood, styleId);
 
   if (isLoading) {
     return (

@@ -68,6 +68,7 @@ contract OnChainJournal is
         uint256 blockNumber;    // Block number when NFT was minted
         address owner;
         uint256 originChainId;  // Chain ID where NFT was originally minted
+        uint8 styleId;          // 0 = Chain Native, 1 = Classic
     }
 
     /// @notice Mapping from token ID to journal entry
@@ -81,7 +82,8 @@ contract OnChainJournal is
         uint256 indexed tokenId,
         address indexed owner,
         string mood,
-        uint256 timestamp
+        uint256 timestamp,
+        uint8 styleId
     );
 
     // ============================================
@@ -91,6 +93,7 @@ contract OnChainJournal is
     error TextTooLong(uint256 length, uint256 maxLength);
     error MoodTooLong(uint256 length, uint256 maxLength);
     error TokenDoesNotExist(uint256 tokenId);
+    error InvalidStyle(uint8 styleId);
 
     // ============================================
     // CONSTANTS
@@ -136,13 +139,17 @@ contract OnChainJournal is
      * @notice Mints a new journal entry NFT
      * @param _text The journal entry text (max 400 bytes)
      * @param _mood The mood emoji or text (max 64 bytes)
+     * @param _styleId The style ID (0 = Chain Native, 1 = Classic)
      */
     function mintEntry(
         string memory _text,
-        string memory _mood
+        string memory _mood,
+        uint8 _styleId
     ) public payable {
         if (!mintActive) revert("Minting is paused");
         if (msg.value < mintPrice) revert("Insufficient payment");
+        if (_styleId > 1) revert InvalidStyle(_styleId);
+
         // Input validation
         uint256 textLength = bytes(_text).length;
         if (textLength > MAX_TEXT_LENGTH) {
@@ -164,10 +171,11 @@ contract OnChainJournal is
             timestamp: block.timestamp,
             blockNumber: block.number,
             owner: msg.sender,
-            originChainId: block.chainid
+            originChainId: block.chainid,
+            styleId: _styleId
         });
 
-        emit EntryMinted(tokenId, msg.sender, _mood, block.timestamp);
+        emit EntryMinted(tokenId, msg.sender, _mood, block.timestamp, _styleId);
     }
 
     // ============================================
@@ -228,12 +236,14 @@ contract OnChainJournal is
         JournalEntry memory entry,
         uint256 tokenId
     ) internal view returns (string memory) {
+        string memory styleName = entry.styleId == 1 ? "Classic" : "Chain Native";
         return string(
             abi.encodePacked(
                 '[',
                 '{"trait_type": "Mood", "value": "', _escapeString(entry.mood), '"},',
                 '{"trait_type": "Timestamp", "value": ', entry.timestamp.toString(), '},',
                 '{"trait_type": "Origin Chain", "value": "', chainName, '"},',
+                '{"trait_type": "Style", "value": "', styleName, '"},',
                 '{"trait_type": "Token ID", "value": ', tokenId.toString(), '}',
                 ']'
             )
@@ -255,8 +265,8 @@ contract OnChainJournal is
         string memory filterId = string(abi.encodePacked("filter-", chainName));
 
         return string(abi.encodePacked(
-            _generateSVGPart1(gradientId, gradientId2, gradientId3, filterId),
-            _generateSVGPart2(escapedMood, entry.blockNumber, entry.text)
+            _generateSVGPart1(gradientId, gradientId2, gradientId3, filterId, entry.styleId),
+            _generateSVGPart2(escapedMood, entry.blockNumber, entry.text, entry.styleId)
         ));
     }
 
@@ -268,8 +278,28 @@ contract OnChainJournal is
         string memory gradientId,
         string memory gradientId2,
         string memory gradientId3,
-        string memory filterId
+        string memory filterId,
+        uint8 styleId
     ) internal view returns (string memory) {
+        // Classic Style (ID 1)
+        if (styleId == 1) {
+             return string(abi.encodePacked(
+                '<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">',
+                '<defs>',
+                    '<filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">',
+                        '<feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/>',
+                    '</filter>',
+                    '<clipPath id="card-clip">',
+                        '<rect x="8" y="8" width="484" height="484" rx="15" ry="15"/>',
+                    '</clipPath>',
+                '</defs>',
+                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/>',
+                '<g clip-path="url(#card-clip)">',
+                    '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/>'
+            ));
+        }
+
+        // Chain Native Style (ID 0)
         string memory background;
         
         // Chain-specific background logic
@@ -332,19 +362,33 @@ contract OnChainJournal is
     function _generateSVGPart2(
         string memory escapedMood,
         uint256 blockNumber,
-        string memory rawText
+        string memory rawText,
+        uint8 styleId
     ) internal view returns (string memory) {
-        // Determine font and colors based on chain
+        // Determine font and colors based on chain and style
+        bool isClassic = (styleId == 1);
         string memory fontFamily = "Georgia, serif";
         string memory footerColor = "white";
+        string memory mainTextColor = "white";
+        string memory moodColor = "white";
+        string memory shadowEffect = 'style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"';
         
-        if (keccak256(bytes(chainName)) == keccak256(bytes("INK")) || 
-            keccak256(bytes(chainName)) == keccak256(bytes("MEGAETH"))) {
-            fontFamily = "Arial, sans-serif";
-        }
-        
-        if (keccak256(bytes(chainName)) == keccak256(bytes("MEGAETH"))) {
-            footerColor = "#19191A";
+        if (isClassic) {
+            fontFamily = "Georgia, serif";
+            footerColor = "#8B7355";
+            mainTextColor = "#2D2D2D";
+            moodColor = "#2D2D2D";
+            shadowEffect = 'style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"';
+        } else {
+            // Chain Native Style
+            if (keccak256(bytes(chainName)) == keccak256(bytes("INK")) || 
+                keccak256(bytes(chainName)) == keccak256(bytes("MEGAETH"))) {
+                fontFamily = "Arial, sans-serif";
+            }
+            
+            if (keccak256(bytes(chainName)) == keccak256(bytes("MEGAETH"))) {
+                footerColor = "#19191A";
+            }
         }
 
         // Calculate wrapped text lines
@@ -364,14 +408,26 @@ contract OnChainJournal is
             ));
         }
 
+        string memory blockInfo = "";
+        if (isClassic) {
+             blockInfo = string(abi.encodePacked(
+                 '<text x="35" y="45" font-family="monospace" font-size="14" fill="#5A5A5A" fill-opacity="0.7">minted on block</text>',
+                 '<text x="35" y="65" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.8">#', blockNumber.toString(), '</text>'
+             ));
+        } else {
+             blockInfo = string(abi.encodePacked(
+                 '<text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text>',
+                 '<text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#', blockNumber.toString(), '</text>'
+             ));
+        }
+
         return string(abi.encodePacked(
             '<g>',
-                '<text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">', escapedMood, '</text>',
-                '<text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text>',
-                    '<text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#', blockNumber.toString(), '</text>',
+                '<text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="', moodColor, '">', escapedMood, '</text>',
+                blockInfo,
                 
                 // Native Text Wrapping
-                '<text x="250" y="', startY.toString(), '" font-family="', fontFamily, '" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);">',
+                '<text x="250" y="', startY.toString(), '" font-family="', fontFamily, '" font-size="18" fill="', mainTextColor, '" text-anchor="middle" ', shadowEffect, '>',
                     textContent,
                 '</text>',
 

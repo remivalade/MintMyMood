@@ -73,7 +73,7 @@ export default function App() {
 
   const [currentMintingThoughtId, setCurrentMintingThoughtId] = useState<string | null>(null);
 
-  const handleMintClick = async () => {
+  const handleMintClick = async (styleId: number = 0) => {
     if (!isConnected || !address) {
       setIsWalletPromptOpen(true);
       return;
@@ -83,8 +83,10 @@ export default function App() {
       setIsMintingModalOpen(true);
       setMintingStatus('minting');
 
-      // Convert mood name to emoji
-      const moodEmoji = currentThought.mood ? moodEmojis[currentThought.mood] || '😌' : '😌';
+      // Convert mood name to emoji (or keep if already emoji)
+      const moodEmoji = currentThought.mood
+        ? (moodEmojis[currentThought.mood] || currentThought.mood)
+        : '😌';
 
       if (!user?.id) {
         throw new Error('User not authenticated');
@@ -108,7 +110,7 @@ export default function App() {
       setCurrentMintingThoughtId(savedThought.id);
 
       // Mint the NFT on-chain with emoji
-      await mint(savedThought.id, currentThought.content, moodEmoji);
+      await mint(savedThought.id, currentThought.content, moodEmoji, styleId);
 
       toast.info('Transaction submitted! Waiting for confirmation...');
     } catch (error: any) {
@@ -223,8 +225,10 @@ export default function App() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-      // Convert mood name to emoji (same as minting flow)
-      const moodEmoji = currentThought.mood ? moodEmojis[currentThought.mood] || '😌' : '😌';
+      // Convert mood name to emoji (or keep if already emoji)
+      const moodEmoji = currentThought.mood
+        ? (moodEmojis[currentThought.mood] || currentThought.mood)
+        : '😌';
 
       await saveThought({
         id: currentThought.draftId, // Will update if exists, insert if undefined
