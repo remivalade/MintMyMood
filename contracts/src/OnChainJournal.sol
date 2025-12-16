@@ -103,6 +103,14 @@ contract OnChainJournal is
     uint256 public constant MAX_MOOD_LENGTH = 64;
     uint256 public constant LINE_LENGTH_CHARS = 45;
 
+    // Precomputed chain name hashes for gas optimization
+    bytes32 private constant HASH_INK = keccak256("INK");
+    bytes32 private constant HASH_Ink = keccak256("Ink");
+    bytes32 private constant HASH_MEGAETH = keccak256("MEGAETH");
+    bytes32 private constant HASH_MegaETH = keccak256("MegaETH");
+    bytes32 private constant HASH_HYPERLIQUID = keccak256("HYPERLIQUID");
+    bytes32 private constant HASH_Hyperliquid = keccak256("Hyperliquid");
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -302,19 +310,23 @@ contract OnChainJournal is
         // Chain Native Style (ID 0)
         string memory background;
         
-        // Chain-specific background logic
-        if (keccak256(bytes(chainName)) == keccak256(bytes("INK"))) {
+        // Chain-specific background logic (case-insensitive checks)
+        bytes32 chainHash = keccak256(bytes(chainName));
+        bool isInk = chainHash == HASH_INK || chainHash == HASH_Ink;
+        bool isMegaeth = chainHash == HASH_MEGAETH || chainHash == HASH_MegaETH;
+
+        if (isInk) {
             background = string(abi.encodePacked(
                 '<g transform="translate(8, 8) scale(0.968)">',
                 '<rect width="500" height="500" fill="', color1, '"/>',
                 '<path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/>',
                 '</g>'
             ));
-        } else if (keccak256(bytes(chainName)) == keccak256(bytes("HYPERLIQUID"))) {
+        } else if (chainHash == HASH_HYPERLIQUID || chainHash == HASH_Hyperliquid) {
             background = string(abi.encodePacked(
                 '<rect x="8" y="8" width="484" height="484" rx="15" fill="#0F2925"/>'
             ));
-        } else if (keccak256(bytes(chainName)) == keccak256(bytes("MEGAETH"))) {
+        } else if (isMegaeth) {
             background = string(abi.encodePacked(
                 '<rect x="8" y="8" width="484" height="484" rx="15" fill="#111"/>',
                 '<rect x="8" y="8" width="484" height="484" rx="15" fill="url(#', gradientId3, ')"/>',
@@ -337,9 +349,6 @@ contract OnChainJournal is
         return string(abi.encodePacked(
             '<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">',
                 '<defs>',
-                    '<style>',
-
-                    '</style>',
                     '<filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">',
                         '<feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/>',
                     '</filter>',
@@ -348,7 +357,6 @@ contract OnChainJournal is
                     '<clipPath id="card-clip">',
                         '<rect x="8" y="8" width="484" height="484" rx="15" ry="15"/>',
                     '</clipPath>',
-
                 '</defs>',
                 '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/>',
                 '<g clip-path="url(#card-clip)">',
@@ -380,13 +388,16 @@ contract OnChainJournal is
             moodColor = "#2D2D2D";
             shadowEffect = 'style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"';
         } else {
-            // Chain Native Style
-            if (keccak256(bytes(chainName)) == keccak256(bytes("INK")) || 
-                keccak256(bytes(chainName)) == keccak256(bytes("MEGAETH"))) {
+            // Chain Native Style - use constants for case-insensitive checks
+            bytes32 h = keccak256(bytes(chainName));
+            bool isInkStyle = h == HASH_INK || h == HASH_Ink;
+            bool isMegaethStyle = h == HASH_MEGAETH || h == HASH_MegaETH;
+
+            if (isInkStyle || isMegaethStyle) {
                 fontFamily = "Arial, sans-serif";
             }
-            
-            if (keccak256(bytes(chainName)) == keccak256(bytes("MEGAETH"))) {
+
+            if (isMegaethStyle) {
                 footerColor = "#19191A";
             }
         }
@@ -421,11 +432,19 @@ contract OnChainJournal is
              ));
         }
 
+        // Count open <g> tags: Classic/Bob/Base = 2, INK/MEGAETH = 3
+        bytes32 h2 = keccak256(bytes(chainName));
+        bool isInkOrMegaeth = h2 == HASH_INK || h2 == HASH_Ink || h2 == HASH_MEGAETH || h2 == HASH_MegaETH;
+        bool needsExtraClose = !isClassic && isInkOrMegaeth;
+
+        // closingTags closes: content <g>, clip-path <g>, and optionally background <g>
+        string memory closingTags = needsExtraClose ? '</g></g></svg>' : '</g></svg>';
+
         return string(abi.encodePacked(
             '<g>',
                 '<text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="', moodColor, '">', escapedMood, '</text>',
                 blockInfo,
-                
+
                 // Native Text Wrapping
                 '<text x="250" y="', startY.toString(), '" font-family="', fontFamily, '" font-size="18" fill="', mainTextColor, '" text-anchor="middle" ', shadowEffect, '>',
                     textContent,
@@ -434,9 +453,7 @@ contract OnChainJournal is
                 '<text x="35" y="475" font-family="monospace" font-size="16" fill="', footerColor, '" fill-opacity="0.7" text-anchor="start">', chainName, '</text>',
                 '<text x="465" y="475" font-family="monospace" font-size="16" fill="', footerColor, '" fill-opacity="0.7" text-anchor="end">MintMyMood</text>',
             '</g>',
-            '</g>',
-            '</g>',
-            '</svg>'
+            closingTags
         ));
     }
 
@@ -658,6 +675,6 @@ contract OnChainJournal is
      * @return Version string
      */
     function version() external pure returns (string memory) {
-        return "2.5.0";
+        return "2.5.1";
     }
 }

@@ -426,7 +426,7 @@ contract OnChainJournalTest is Test {
     }
 
     function test_Version() public {
-        assertEq(journal.version(), "2.5.0");
+        assertEq(journal.version(), "2.5.1");
     }
 
     // ============================================
