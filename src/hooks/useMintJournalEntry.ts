@@ -49,13 +49,16 @@ export function useMintJournalEntry() {
     console.log('Minting journal entry:', { text: text.substring(0, 50), mood, chainId, styleId });
 
     // Call the contract directly (no signature needed!)
+    // Ink Sepolia RPC fails gas estimation with 400 Bad Request, so we hardcode a safe limit
+    const txOptions = chainId === 763373 ? { gas: 2000000n } : {};
+
     writeContract({
       address: contractAddress as `0x${string}`,
       abi: OnChainJournalABI,
       functionName: 'mintEntry',
       args: [text, mood, styleId],
-      value: 20000000000000n, // 0.00002 ETH
-      gas: 400000n, // Reduced gas limit (no signature verification)
+      value: 0n, // Free mint
+      ...txOptions,
     });
   };
 

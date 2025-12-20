@@ -9,6 +9,7 @@ interface MintedNFTCardProps {
   walletAddress: string;
   blockNumber?: string;
   ensName?: string;
+  styleId?: number;
   onClick: () => void;
 }
 
@@ -23,6 +24,7 @@ export function MintedNFTCard({
   walletAddress,
   blockNumber = '000000',
   ensName,
+  styleId = 0,
   onClick
 }: MintedNFTCardProps) {
   const svg = generateSVG({
@@ -30,6 +32,7 @@ export function MintedNFTCard({
     mood,
     chainId,
     blockNumber,
+    styleId,
   });
 
   const chainMetadata = CHAIN_METADATA[chainId];

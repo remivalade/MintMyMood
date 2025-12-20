@@ -65,8 +65,6 @@
       },
       "scripts": {
             "dev": "vite",
-            "dev:backend": "cd backend/api && npm start",
-            "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
             "build": "vite build"
       }
 }

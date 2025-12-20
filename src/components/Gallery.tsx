@@ -35,11 +35,11 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
 
   // Fetch thoughts when wallet connects (only if no mismatch)
   useEffect(() => {
-    if (isConnected && address && !walletMismatch) {
+    if (isConnected && address && !walletMismatch && isAuthenticated) {
       setIsLoading(true);
-      fetchThoughts(address).finally(() => setIsLoading(false));
+      fetchThoughts().finally(() => setIsLoading(false));
     }
-  }, [isConnected, address, walletMismatch, fetchThoughts]);
+  }, [isConnected, address, walletMismatch, fetchThoughts, isAuthenticated]);
 
   // Filter thoughts
   const filteredThoughts = thoughts.filter(thought => {
@@ -224,6 +224,7 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
                         mood={thought.mood}
                         chainId={thought.current_chain_id}
                         walletAddress={address}
+                        styleId={thought.nft_metadata?.styleId}
                         onClick={() => onThoughtClick(thought)}
                       />
                     );
@@ -255,7 +256,8 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
           className="fixed bottom-8 right-8 w-14 h-14 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 hover:opacity-90 pulse-animation"
           style={{
             backgroundColor: 'var(--leather-brown)',
-            borderRadius: '50%'
+            borderRadius: '50%',
+            zIndex: 50
           }}
           title="New Thought"
         >

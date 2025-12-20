@@ -17,6 +17,7 @@ interface ThoughtDetailProps {
   chainId?: number | null;
   txHash?: string | null;
   tokenId?: string | null;
+  styleId?: number;
   onClose: () => void;
   onMint?: () => void;
 }
@@ -30,6 +31,7 @@ export function ThoughtDetail({
   chainId,
   txHash,
   tokenId,
+  styleId = 0,
   onClose,
   onMint
 }: ThoughtDetailProps) {
@@ -52,6 +54,7 @@ export function ThoughtDetail({
       mood,
       chainId,
       blockNumber: blockNumber,
+      styleId,
     })
     : generateEphemeralSVG({
       text: content,

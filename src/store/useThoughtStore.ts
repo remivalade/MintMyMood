@@ -214,10 +214,12 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
     chainId: number,
     tokenId: string,
     contractAddress: string,
-    txHash: string
+    txHash: string,
+    styleId: number = 0
   ) => {
     set({ isLoading: true, error: null });
     try {
+      // 1. Mark as minted using RPC
       await dbQuery(
         supabase.rpc('update_thought_after_mint', {
           thought_id: thoughtId,
@@ -226,6 +228,15 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
           p_contract_address: contractAddress,
           p_tx_hash: txHash,
         })
+      );
+
+      // 2. Update style metadata (since RPC doesn't handle it yet)
+      const metadata = { styleId };
+      await dbQuery(
+        supabase
+          .from('thoughts')
+          .update({ nft_metadata: metadata })
+          .eq('id', thoughtId)
       );
 
       // Update local state
@@ -240,6 +251,7 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
                 token_id: tokenId,
                 contract_address: contractAddress,
                 tx_hash: txHash,
+                nft_metadata: metadata,
               }
             : t
         ),

@@ -72,6 +72,7 @@ export default function App() {
   };
 
   const [currentMintingThoughtId, setCurrentMintingThoughtId] = useState<string | null>(null);
+  const [mintingStyleId, setMintingStyleId] = useState<number>(0);
 
   const handleMintClick = async (styleId: number = 0) => {
     if (!isConnected || !address) {
@@ -82,6 +83,7 @@ export default function App() {
     try {
       setIsMintingModalOpen(true);
       setMintingStatus('minting');
+      setMintingStyleId(styleId);
 
       // Convert mood name to emoji (or keep if already emoji)
       const moodEmoji = currentThought.mood
@@ -157,7 +159,8 @@ export default function App() {
             chainId,
             tokenId,
             contractAddress,
-            hash
+            hash,
+            mintingStyleId
           );
         }
 
@@ -198,8 +201,7 @@ export default function App() {
           toast.success('Thought minted successfully!');
         }
 
-        // Clear the minting thought ID
-        setCurrentMintingThoughtId(null);
+        // Do not clear currentMintingThoughtId here - we need it for the "View in Gallery" button
       }
     };
 
@@ -250,14 +252,28 @@ export default function App() {
 
   const handleMintingModalClose = () => {
     setIsMintingModalOpen(false);
+    
+    // If error, just close modal so user can try again (don't clear form or navigate)
+    if (mintingStatus === 'error') {
+      return;
+    }
+
+    // Success or cancelled
     setCurrentThought({ content: '' });
+    setCurrentMintingThoughtId(null);
     navigate('/write');
   };
 
   const handleViewGallery = () => {
     setIsMintingModalOpen(false);
     setCurrentThought({ content: '' });
-    navigate('/gallery');
+    
+    if (currentMintingThoughtId) {
+      navigate(`/thought/${currentMintingThoughtId}`);
+      setCurrentMintingThoughtId(null);
+    } else {
+      navigate('/gallery');
+    }
   };
 
   const handleThoughtClick = (thought: ThoughtType) => {
@@ -284,9 +300,14 @@ export default function App() {
     navigate('/mood');
   };
 
+  // Manual ID extraction because App is not in a Route
+  const thoughtId = location.pathname.startsWith('/thought/') 
+    ? location.pathname.split('/')[2] 
+    : null;
+
   // Get current thought from URL params if on detail page
   const selectedThought = location.pathname.startsWith('/thought/')
-    ? (location.state?.thought as ThoughtType) || thoughts.find(t => t.id === params.id)
+    ? (location.state?.thought as ThoughtType) || thoughts.find(t => t.id === thoughtId)
     : null;
 
   // Get current view from route
@@ -340,6 +361,7 @@ export default function App() {
           chainId={selectedThought.current_chain_id}
           txHash={selectedThought.tx_hash}
           tokenId={selectedThought.token_id}
+          styleId={selectedThought.nft_metadata?.styleId}
           onClose={() => navigate('/gallery')}
           onMint={!selectedThought.is_minted ? handleMintFromDetail : undefined}
         />
@@ -348,6 +370,13 @@ export default function App() {
       <MintingModal
         isOpen={isMintingModalOpen}
         status={mintingStatus}
+        errorMessage={
+          mintError?.message?.includes('User rejected') 
+            ? 'Transaction cancelled' 
+            : mintError?.message?.length && mintError.message.length > 100
+              ? mintError.message.substring(0, 100) + '...'
+              : mintError?.message
+        }
         onClose={handleMintingModalClose}
         onViewGallery={handleViewGallery}
       />

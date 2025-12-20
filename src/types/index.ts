@@ -22,6 +22,10 @@ export interface Thought {
   token_id: string | null;
   contract_address: string | null;
   tx_hash: string | null;
+  nft_metadata?: {
+    styleId?: number;
+    [key: string]: any;
+  };
 
   // Bridge tracking
   last_bridge_tx: string | null;
