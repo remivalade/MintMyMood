@@ -14,9 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Styling:** Tailwind CSS (skeuomorphic minimalism design philosophy)
 - **State Management:** Zustand
 - **Web3:** wagmi v2 + viem + RainbowKit
-- **Database:** Supabase (PostgreSQL with Row Level Security)
+- **Database:** Supabase (PostgreSQL with native Web3 authentication & Row Level Security)
 - **Blockchain:** Foundry + Solidity (UUPS Upgradeable ERC721)
-- **Backend:** Express.js (SIWE authentication)
 - **Notifications:** Sonner (toast notifications)
 
 ---
@@ -30,13 +29,10 @@ npm install          # Install dependencies
 npm run dev          # Start dev server (http://localhost:3000)
 npm run build        # Build for production
 
-# Backend API (SIWE authentication)
-cd backend/api && npm start  # Port 3001
-
 # Smart Contracts
 cd contracts
 forge build          # Compile
-forge test           # Run tests (28/28 passing ✅)
+forge test           # Run tests (18/18 passing ✅)
 forge test -vvv      # Verbose output
 ```
 
@@ -44,11 +40,10 @@ forge test -vvv      # Verbose output
 
 ```
 src/components/          # React UI components
-src/hooks/              # useMintJournalEntry, useEnsName
+src/hooks/              # useMintJournalEntry, useEnsName, useAuth
 src/store/              # Zustand global state
 src/contracts/          # Contract ABIs & addresses
 contracts/src/          # OnChainJournal.sol
-backend/api/            # Express.js SIWE authentication
 docs/                   # All documentation
 ```
 
@@ -116,9 +111,10 @@ interface Thought {
 **Features:**
 - Row Level Security (RLS) policies for wallet-based access
 - Production JWT-based authentication (SIWE / EIP-4361)
+- Supabase native Web3 authentication (signInWithWeb3)
 - Automatic cleanup of expired thoughts via database function
+- Automatic profile creation via database triggers
 - Indexes on wallet_address, is_minted, expires_at
-- `auth_nonces` table for nonce-based replay protection
 
 ---
 
@@ -130,7 +126,7 @@ interface Thought {
 
 **Key Features:**
 - On-chain SVG generation with animations (no IPFS)
-- Chain-specific gradients (Base: blue, Bob: orange)
+- Chain-specific gradients (Base: blue, Bob: orange, Ink: purple)
 - Input validation (400 byte text, 64 byte mood)
 - XML escaping for security
 - Simplified minting (2 parameters vs 6 in V2.3.0)
@@ -155,9 +151,10 @@ function upgradeToAndCall(address newImplementation, bytes memory data) external
 ```
 
 **Deployed Contracts (V2.4.0):**
-- Proxy (both chains): `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`
+- Proxy (all chains): `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8`
 - Implementation Base Sepolia: `0x64C9A8b7c432A960898cdB3bB45204287F59B814`
 - Implementation Bob Testnet: `0xB4e9f62cc1899DB3266099F65CeEcE8Cc267f3D2`
+- Implementation Ink Sepolia: (same proxy address)
 
 ---
 
@@ -186,7 +183,7 @@ function upgradeToAndCall(address newImplementation, bytes memory data) external
 
 ## Current Status
 
-**Sprint 3.4 Complete** ✅ - V2.4.0 Deployed
+**Sprint 3.6 Complete** ✅ - Production Ready for Beta Testing
 
 ### What Works
 
@@ -208,22 +205,22 @@ function upgradeToAndCall(address newImplementation, bytes memory data) external
 - ✅ UUPS Upgradeable ERC721
 - ✅ On-chain SVG with animations
 - ✅ Simplified minting (2 parameters: text, mood)
-- ✅ Chain-specific gradients
-- ✅ Gas optimized (~30% reduction)
-- ✅ 28/28 tests passing
-- ✅ Deployed to Base Sepolia & Bob Testnet
+- ✅ Chain-specific gradients (Base: blue, Bob: orange, Ink: purple)
+- ✅ Gas optimized (~30% reduction vs V2.3.0)
+- ✅ 18/18 tests passing
+- ✅ Deployed to Base Sepolia, Bob Testnet & Ink Sepolia
 
 *Backend:*
-- ✅ Express.js API (SIWE auth)
-- ✅ SIWE authentication endpoints (nonce generation, signature verification)
-- ✅ JWT issuance with custom claims
-- ✅ Supabase with production RLS policies
+- ✅ Supabase native Web3 authentication (SIWE)
+- ✅ JWT-based session management (24-hour expiry)
+- ✅ Production RLS policies enforcing per-wallet data isolation
+- ✅ Automatic profile creation via database triggers
 
 *Security:*
 - ✅ Production Row Level Security (RLS) enforcing per-wallet data isolation
 - ✅ No anonymous database access
 - ✅ JWT-based authentication required for all operations
-- ✅ Removed signature verification system (security vulnerability fix)
+- ✅ Supabase native Web3 authentication (no custom backend needed)
 
 ### Known Issues & TODOs
 
@@ -261,8 +258,9 @@ export default function MyComponent({ title }: MyComponentProps) {
 After deployment, update `src/contracts/config.ts`:
 ```typescript
 export const CONTRACT_ADDRESSES = {
-  84532: '0xNewAddress',  // Base Sepolia
-  808813: '0xNewAddress', // Bob Testnet
+  84532: '0xNewAddress',   // Base Sepolia
+  808813: '0xNewAddress',  // Bob Testnet
+  763373: '0xNewAddress',  // Ink Sepolia
 };
 ```
 
@@ -292,23 +290,14 @@ forge test --gas-report            # Gas usage
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 VITE_WALLETCONNECT_PROJECT_ID=your-project-id
-VITE_BACKEND_URL=http://localhost:3001
 VITE_ENVIRONMENT=development
-```
-
-### Backend API (`backend/api/.env`)
-```bash
-PORT=3001
-FRONTEND_URL=http://localhost:3000
-JWT_SECRET=<generate-with-openssl-rand-base64-32>
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 ### Smart Contracts (`contracts/.env`)
 ```bash
 BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
 BOB_TESTNET_RPC_URL=https://testnet.rpc.gobob.xyz
+INK_SEPOLIA_RPC_URL=https://rpc-gel-sepolia.inkonchain.com
 DEPLOYER_PRIVATE_KEY=0x...
 BASESCAN_API_KEY=your-key
 ```
@@ -340,7 +329,7 @@ BASESCAN_API_KEY=your-key
 
 **Future (V2 - Post-Launch):**
 - LayerZero V2 ONFT721 integration
-- Cross-chain bridging (Base ↔ Bob)
+- Cross-chain bridging (Base ↔ Bob ↔ Ink)
 - Deploy as UUPS upgrade (no redeployment needed)
 
 ---

@@ -21,12 +21,8 @@
 # Install dependencies
 npm install
 
-# Start development (frontend + backend together)
-npm run dev:all
-
-# Or run individually:
+# Start development
 npm run dev              # Frontend only (port 3000)
-npm run dev:backend      # Backend only (port 3001)
 
 # Test smart contracts
 cd contracts && forge test
@@ -55,40 +51,44 @@ cd contracts && forge test
 **React 18** + **TypeScript** + **Vite** | **Tailwind CSS** + **Radix UI** | **wagmi v2** + **viem** + **RainbowKit**
 
 ### Backend
-**Supabase** (PostgreSQL) | **Express.js** (SIWE authentication)
+**Supabase** (PostgreSQL with native Web3 authentication)
 
 ### Blockchain
-**Foundry** + **Solidity 0.8.20** | **UUPS Upgradeable ERC721** | **Base & Bob** (testnet & mainnet)
+**Foundry** + **Solidity 0.8.20** | **UUPS Upgradeable ERC721** | **Base, Bob & Ink** (testnet & mainnet)
 
 ---
 
 ## 🚀 Current Status
 
-**Sprint 3.1 Complete** ✅ - Production Ready for Beta Testing
+**Sprint 3.6 Complete** ✅ - Production Ready for Beta Testing
 
 ### What's Built
 
 **Frontend**:
 - ✅ Complete UI flow (writing → mood → mint preview → gallery)
 - ✅ Auto-save to Supabase (3-second debounce)
-- ✅ Real wallet connection (RainbowKit)
+- ✅ Real wallet connection (RainbowKit with Rabby prioritized)
+- ✅ SIWE authentication (Sign-In with Ethereum / EIP-4361)
+- ✅ JWT-based session management (24-hour expiry)
 - ✅ ENS name display (frontend resolution)
 - ✅ Multi-chain support (Base, Bob, & Ink)
-- ✅ MegaETH & HyperLiquid support (Coming Soon)
 - ✅ React Router navigation
+- ✅ Loading states throughout
 
-**Smart Contracts**:
-- ✅ UUPS Upgradeable ERC721 (V2.4.0)
+**Smart Contracts (V2.4.0)**:
+- ✅ UUPS Upgradeable ERC721
 - ✅ On-chain SVG generation with animations
 - ✅ Simplified minting (2 parameters: text, mood)
 - ✅ Chain-specific gradients (Base: blue, Bob: orange, Ink: purple)
-- ✅ Gas optimized (~30% reduction)
-- ✅ 28/28 tests passing
+- ✅ Gas optimized (~30% reduction vs V2.3.0)
+- ✅ 18/18 tests passing
 - ✅ Deployed to Base Sepolia, Bob Testnet & Ink Sepolia
 
 **Backend**:
-- ✅ Express.js SIWE authentication service
-- ✅ Supabase database with Row Level Security
+- ✅ Supabase native Web3 authentication (SIWE)
+- ✅ Production Row Level Security policies
+- ✅ JWT-based session management
+- ✅ Automatic profile creation via database triggers
 
 ### Deployed Contract Addresses (V2.4.0)
 
@@ -98,14 +98,20 @@ cd contracts && forge test
 | Bob Testnet | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
 | Ink Sepolia | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Ink Explorer](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
 
-### Next Up: Sprint 4 - Beta Testing
+### Next Up: Sprint 4 - Beta Testing & Public Launch
 
+**Beta Testing**:
 - Deploy to public testnet URL
 - Recruit 5-10 beta testers
 - Collect feedback and optimize UX
 - Mobile and cross-browser testing
 
-See [todo.md](docs/todo.md) for detailed task tracking.
+**Monitoring**:
+- Set up analytics (Vercel Analytics)
+- Monitor gas costs and user flows
+- Error tracking (Sentry)
+
+See [docs/todo.md](docs/todo.md) for detailed task tracking.
 
 ---
 
@@ -120,11 +126,8 @@ MintMyMood/
 │   └── contracts/         # Contract ABIs & config
 ├── contracts/             # Solidity smart contracts
 │   ├── src/               # OnChainJournal.sol
-│   ├── test/              # Foundry tests (28/28 ✅)
+│   ├── test/              # Foundry tests (18/18 ✅)
 │   └── script/            # Deploy & upgrade scripts
-├── backend/               # Backend services
-│   ├── api/               # Express.js signature service
-│   └── supabase/          # Database migrations
 └── docs/                  # Documentation
 ```
 
@@ -158,12 +161,8 @@ See [SVG design specs](docs/svg/README.md) for complete visual reference.
 ## 🛠️ Development Commands
 
 ```bash
-# Development (Recommended)
-npm run dev:all          # Start both frontend & backend together
-
-# Individual Services
-npm run dev              # Frontend only (http://localhost:3000)
-npm run dev:backend      # Backend only (http://localhost:3001)
+# Development
+npm run dev              # Start frontend (http://localhost:3000)
 
 # Production
 npm run build            # Build frontend for production
@@ -171,7 +170,7 @@ npm run build            # Build frontend for production
 # Smart Contracts
 cd contracts
 forge build              # Compile contracts
-forge test               # Run tests (28/28 should pass)
+forge test               # Run tests (18/18 should pass)
 forge test -vvv          # Verbose test output
 ```
 
@@ -181,13 +180,6 @@ forge test -vvv          # Verbose test output
 
 TBD
 
----
-
-## 🔗 Links
-
-- **Base Sepolia**: [Contract on Basescan](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
-- **Bob Testnet**: [Contract on Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
-- **Ink Sepolia**: [Contract on Ink Explorer](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8)
 
 ---
 

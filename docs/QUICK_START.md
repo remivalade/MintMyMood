@@ -66,28 +66,13 @@ VITE_WALLETCONNECT_PROJECT_ID=your-project-id-here
 
 ## Step 3: Run the App (1 min)
 
-### Option A: Run Everything Together (Recommended)
-
 ```bash
-# Start both frontend & backend together
-npm run dev:all
+# Start frontend
+npm run dev
 ```
 
 This starts:
 - **Frontend** at http://localhost:3000
-- **Backend API** at http://localhost:3001
-
-### Option B: Run Services Individually
-
-```bash
-# Terminal 1 - Frontend only
-npm run dev
-
-# Terminal 2 - Backend API (required for minting)
-cd backend/api
-npm install
-npm start
-```
 
 ---
 
@@ -96,7 +81,7 @@ npm start
 ```bash
 cd contracts
 forge build    # Compile contracts
-forge test     # Run tests (28/28 should pass)
+forge test     # Run tests (18/18 should pass)
 ```
 
 ---
@@ -106,7 +91,6 @@ forge test     # Run tests (28/28 should pass)
 You should now see:
 
 - ✅ Frontend running at http://localhost:3000
-- ✅ Backend API at http://localhost:3001 (if started)
 - ✅ No console errors
 - ✅ Wallet connection button visible
 - ✅ Writing interface loads
