@@ -7,6 +7,8 @@ import { OnChainNFTPreview } from './OnChainNFTPreview';
 import { usePreviewChain } from '../context/PreviewChainContext';
 import { ConnectButton } from './ConnectButton';
 import { moodEmojis } from '../types';
+import { ChainRibbon } from './ChainRibbon';
+import { motion } from 'motion/react';
 
 interface MintPreviewProps {
   content: string;
@@ -251,10 +253,30 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
             </div>
 
             {/* Actions & Ribbon Wrapper */}
-            <div className="flex flex-col gap-0 items-center w-full max-w-xs mx-auto relative z-10">
+            <div className="flex flex-col items-center w-full max-w-md mx-auto space-y-4">
 
-              {/* Main Action Button - Top Layer */}
-              <div className="relative z-30 w-full">
+              {/* Chain Ribbon - Shows above button when Classic is selected */}
+              {selectedTemplate === 'classic' && (
+                <div className="w-full order-1 relative z-50">
+                  <ChainRibbon
+                    selectedChain={chainConfig.name}
+                    onChainSelect={(key) => {
+                      setSelectedChainKey(key as ChainKey);
+                      if (isConnected) {
+                        switchChain({ chainId: CHAIN_KEY_TO_ID[key as ChainKey] });
+                      }
+                    }}
+                    availableChains={[
+                      { name: CHAIN_METADATA[CHAIN_KEY_TO_ID['base']].name, key: 'base' },
+                      { name: CHAIN_METADATA[CHAIN_KEY_TO_ID['bob']].name, key: 'bob' },
+                      { name: CHAIN_METADATA[CHAIN_KEY_TO_ID['ink']].name, key: 'ink' }
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* Main Action Button */}
+              <div className="relative w-full order-2">
                 <Button
                   onClick={handleMintButtonClick}
                   size="lg"
@@ -290,34 +312,10 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                 </Button>
               </div>
 
-              {/* Ribbon Chain Selector - Slides out from under mint button (Only for Classic) */}
-              <div
-                className="w-full flex justify-center -mt-2.5"
-                style={{
-                  zIndex: 20,
-                  height: selectedTemplate === 'classic' ? 'auto' : '0px',
-                  opacity: selectedTemplate === 'classic' ? 1 : 0,
-                  overflow: selectedTemplate === 'classic' ? 'visible' : 'hidden',
-                  transition: 'opacity 0.2s ease-out',
-                }}
-              >
-                <div style={{ width: '50%', position: 'relative', zIndex: 100 }}>
-                  <RibbonSticker
-                    selectedChainKey={selectedChainKey}
-                    onSelectChain={(key) => {
-                      setSelectedChainKey(key);
-                      if (isConnected) {
-                        switchChain({ chainId: CHAIN_KEY_TO_ID[key] });
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-
               {/* Ephemeral Save Link */}
               <button
                 onClick={onDiscard}
-                className={`transition-opacity underline decoration-1 underline-offset-4 text-xs font-medium tracking-wide relative z-10 ${selectedTemplate === 'classic' ? 'mt-8' : 'mt-6'}`}
+                className="transition-opacity underline decoration-1 underline-offset-4 text-xs font-medium tracking-wide order-3"
                 style={{
                   color: 'var(--medium-gray)',
                 }}
@@ -325,7 +323,7 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                 Save as ephemeral instead
               </button>
 
-              <p className="text-center text-xs text-gray-500 mt-6">
+              <p className="text-center text-xs text-gray-500 order-4">
                 Minted thoughts live on-chain forever · Ephemeral thoughts disappear in 7 days
               </p>
             </div>
@@ -335,103 +333,3 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
     </div>
   );
 }
-
-// Sub-component for the Chain Selector Ribbon
-function RibbonSticker({ selectedChainKey, onSelectChain }: { selectedChainKey: ChainKey, onSelectChain: (key: ChainKey) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const currentConfig = CHAIN_METADATA[CHAIN_KEY_TO_ID[selectedChainKey]];
-
-  return (
-    <div className="relative w-full" style={{ zIndex: isOpen ? 100 : 'auto' }}>
-      {/* Header Tab - Always visible */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 cursor-pointer transition-all duration-200 rounded-b-lg border border-t-0 hover:shadow-md"
-        style={{
-          backgroundColor: 'var(--light-ivory)',
-          borderColor: 'rgba(139, 115, 85, 0.2)',
-          color: 'var(--medium-gray)',
-        }}
-      >
-        <div
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: currentConfig.chainColor }}
-        />
-        <span
-          className="text-xs font-medium"
-          style={{ fontFamily: 'var(--font-serif)' }}
-        >
-          Select network
-        </span>
-        <svg
-          className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          style={{ color: 'var(--leather-brown)' }}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Dropdown - Opens downward with smooth animation */}
-      <div
-        className="absolute top-full mt-0 origin-top"
-        style={{
-          left: 0,
-          right: 0,
-          width: '100%',
-          zIndex: 100,
-          transform: isOpen ? 'scaleY(1)' : 'scaleY(0)',
-          opacity: isOpen ? 1 : 0,
-          transition: 'transform 0.2s ease-out, opacity 0.2s ease-out',
-          pointerEvents: isOpen ? 'auto' : 'none',
-        }}
-      >
-        <div
-          className="rounded-b-lg border border-t-0 shadow-lg overflow-hidden"
-          style={{
-            backgroundColor: 'var(--paper-cream)',
-            borderColor: 'rgba(139, 115, 85, 0.2)',
-            width: '100%',
-          }}
-        >
-          {(Object.keys(CHAIN_KEY_TO_ID) as ChainKey[]).map((key) => {
-            const chainId = CHAIN_KEY_TO_ID[key];
-            const config = CHAIN_METADATA[chainId];
-            const isDisabled = key === 'megaeth' || key === 'hyperliquid';
-            const isSelected = selectedChainKey === key;
-
-            if (isDisabled) return null;
-
-            return (
-              <button
-                key={key}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectChain(key);
-                  setIsOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 transition-colors duration-150 ${
-                  isSelected ? '' : 'hover:bg-black/[0.03]'
-                }`}
-              >
-                <span
-                  className="text-xs transition-colors duration-200"
-                  style={{
-                    color: isSelected ? '#8B7355' : 'var(--medium-gray)',
-                    fontWeight: isSelected ? '700' : '500',
-                  }}
-                >
-                  {config.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
