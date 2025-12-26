@@ -288,7 +288,7 @@ forge test --gas-report            # Gas usage
 ### Frontend (`.env`)
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_ANON_KEY=sb_publishable_your-key-here
 VITE_WALLETCONNECT_PROJECT_ID=your-project-id
 VITE_ENVIRONMENT=development
 ```
@@ -300,6 +300,9 @@ BOB_TESTNET_RPC_URL=https://testnet.rpc.gobob.xyz
 INK_SEPOLIA_RPC_URL=https://rpc-gel-sepolia.inkonchain.com
 DEPLOYER_PRIVATE_KEY=0x...
 BASESCAN_API_KEY=your-key
+
+# For backend scripts (admin operations only)
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_your-key-here
 ```
 
 ---

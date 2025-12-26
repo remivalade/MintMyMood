@@ -219,8 +219,8 @@ Combine Option 1 + Option 2 for best balance:
 ```bash
 # Supabase
 VITE_SUPABASE_URL=✅ Set
-VITE_SUPABASE_ANON_KEY=✅ Set
-SUPABASE_SERVICE_ROLE_KEY=✅ Set
+VITE_SUPABASE_ANON_KEY=✅ Set (sb_publishable_...)
+SUPABASE_SERVICE_ROLE_KEY=✅ Set (sb_secret_...)
 
 # WalletConnect
 VITE_WALLETCONNECT_PROJECT_ID=✅ Set

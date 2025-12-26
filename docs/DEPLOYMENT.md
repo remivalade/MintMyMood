@@ -103,7 +103,7 @@ Users → Vercel (yourdomain.com) → Frontend (React)
 
    ```
    VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key
+   VITE_SUPABASE_ANON_KEY=sb_publishable_your-key-here
    VITE_WALLETCONNECT_PROJECT_ID=your-project-id
    VITE_BACKEND_URL=https://api.yourdomain.com
    VITE_ENVIRONMENT=production
@@ -174,7 +174,7 @@ PORT=3001
 FRONTEND_URL=https://yourdomain.com
 JWT_SECRET=your-secure-jwt-secret-min-32-chars
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_your-key-here
 EOF
 
 # Start with PM2

@@ -45,8 +45,8 @@ MintMyMood uses **Supabase** (PostgreSQL) with:
 
 From your project dashboard:
 - **Project URL**: `https://[project-ref].supabase.co`
-- **Anon Key**: Settings → API → Project API keys → `anon` key
-- **Service Role Key**: Settings → API → Project API keys → `service_role` key (keep secret!)
+- **Publishable Key**: Settings → API → API Keys → Create publishable key (starts with `sb_publishable_`)
+- **Secret Key**: Settings → API → API Keys → Create secret key (starts with `sb_secret_`) - keep secret!
 
 ### Step 3: Run Setup SQL
 

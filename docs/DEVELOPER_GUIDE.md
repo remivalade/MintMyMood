@@ -479,8 +479,9 @@ export const CONTRACT_ADDRESSES = {
 
 ```bash
 # Supabase (required)
+# Get from Settings → API → API Keys
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_ANON_KEY=sb_publishable_your-key-here
 
 # WalletConnect (required)
 VITE_WALLETCONNECT_PROJECT_ID=your-project-id
@@ -498,7 +499,7 @@ VITE_ENVIRONMENT=development
 # SIWE Authentication (Sprint 3.2)
 JWT_SECRET=your-secret-min-32-chars         # MUST match Supabase dashboard JWT secret
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_your-key-here  # For admin operations only
 
 # Server Config
 PORT=3001

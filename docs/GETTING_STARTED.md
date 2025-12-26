@@ -37,9 +37,10 @@ cp .env.example .env
 
 Fill in **only** these required values in `.env`:
 ```bash
-# Get from your Supabase project (Settings → API)
+# Get from your Supabase project (Settings → API → API Keys)
+# Use the "Publishable key" (starts with sb_publishable_)
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
+VITE_SUPABASE_ANON_KEY=sb_publishable_your-key-here
 
 # Get from https://cloud.walletconnect.com (Free)
 VITE_WALLETCONNECT_PROJECT_ID=your-project-id-here
@@ -118,7 +119,9 @@ forge test
 Run `foundryup` and restart your terminal.
 
 ### "Supabase connection error"
-Check your `.env` variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Ensure your Supabase project is active.
+Check your `.env` variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Ensure:
+- Your Supabase project is active
+- You're using the publishable key (starts with `sb_publishable_`), not the secret key
 
 ### "WalletConnect error"
 Ensure you have a valid Project ID from [WalletConnect Cloud](https://cloud.walletconnect.com) in your `.env`.
