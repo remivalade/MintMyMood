@@ -3,14 +3,24 @@
  *
  * Reads styleId from on-chain contracts and updates database
  * Run this AFTER adding the nft_metadata column
+ *
+ * Usage:
+ *   VITE_SUPABASE_URL=<url> SUPABASE_SERVICE_ROLE_KEY=<key> node backfill-nft-metadata.js
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
 
-const SUPABASE_URL = 'https://hkzvnpksjpxfsyiqyhpk.supabase.co';
-const SUPABASE_KEY = '***REMOVED***';
+// SECURITY: Always use environment variables for credentials
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('❌ Error: Missing environment variables');
+  console.error('Usage: VITE_SUPABASE_URL=<url> SUPABASE_SERVICE_ROLE_KEY=<key> node backfill-nft-metadata.js');
+  process.exit(1);
+}
 
 const CONTRACT_ADDRESS = '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8';
 

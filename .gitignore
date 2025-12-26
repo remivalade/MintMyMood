@@ -49,3 +49,6 @@ backend/dist/
 *.db
 *.sqlite
 postgres-data/
+
+# Utility scripts with credentials (use .env instead)
+# Note: backfill-nft-metadata.js is safe to commit, but be careful with local modifications
