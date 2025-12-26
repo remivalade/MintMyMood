@@ -80,9 +80,9 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 
 | Network | Chain ID | Proxy Address | Implementation |
 |---------|----------|---------------|----------------|
-| Base Sepolia | 84532 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x64C9A8b7c432A960898cdB3bB45204287F59B814 |
-| Bob Testnet | 808813 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0xB4e9f62cc1899DB3266099F65CeEcE8Cc267f3D2 |
-| Ink Sepolia | 763373 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | TBD |
+| Base Sepolia | 84532 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0xe6297d7932c11d29c6f07598a33cbedd72714548 |
+| Bob Testnet | 808813 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x4d80dff7c4781d89ac40a0c81928ef3ecc139e65 |
+| Ink Sepolia | 763373 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x7883add112f18fdd7fd02d10c5914368dae7c8ef |
 | Base Mainnet | 8453 | TBD | TBD |
 | Bob Mainnet | 60808 | TBD | TBD |
 | Ink Mainnet | TBD | TBD | TBD |

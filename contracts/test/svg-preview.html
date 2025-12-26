@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Preview - All Chain Styles</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .chain-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .chain-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #e0e0e0;
+        }
+
+        .chain-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .chain-badge {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .badge-base { background: linear-gradient(135deg, #0052FF, #0066FF); }
+        .badge-bob { background: linear-gradient(135deg, #FF6B35, #F7931E); }
+        .badge-ink { background: linear-gradient(135deg, #5D3FD3, #7B68EE); }
+        .badge-classic { background: linear-gradient(135deg, #8B7355, #A0826D); }
+
+        .sample-row {
+            margin-bottom: 30px;
+        }
+
+        .sample-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .svg-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+        }
+
+        .svg-container {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .svg-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .svg-wrapper {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .placeholder {
+            padding: 50px;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .instructions h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .instructions code {
+            background: #f5f5f5;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        .toc {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .toc h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .toc-item {
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .toc-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 SVG Preview - All Chain Styles</h1>
+
+        <div class="instructions">
+            <h2>📋 Quick Start</h2>
+            <ol>
+                <li>Run: <code>./test-svg.sh</code> in the contracts directory</li>
+                <li>Copy each SVG block from the console output</li>
+                <li>Paste into the corresponding placeholder sections below</li>
+                <li>Refresh this page to see the rendered SVGs</li>
+                <li>Make optimizations, re-run, and compare!</li>
+            </ol>
+        </div>
+
+        <div class="toc">
+            <h2>📑 Jump to Section</h2>
+            <div class="toc-grid">
+                <a href="#base" class="toc-item">🔵 Base Chain</a>
+                <a href="#bob" class="toc-item">🟠 Bob Chain</a>
+                <a href="#ink" class="toc-item">🟣 Ink Chain</a>
+                <a href="#classic" class="toc-item">📜 Classic Style</a>
+            </div>
+        </div>
+
+        <!-- BASE CHAIN -->
+        <div id="base" class="chain-section">
+            <div class="chain-header">
+                <div class="chain-title">Base Chain</div>
+                <div class="chain-badge badge-base">Blue Gradient</div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📝 Short Text</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Base_short CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Base"><stop stop-color="#0066FF" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Base"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Base" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#0052FF"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient3-Base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient2-Base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#filter-Base)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🚀</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Just shipped a new feature! Feeling</tspan><tspan x="250" dy="24">accomplished.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Base_short OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-base" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-base"><stop stop-color="#0066FF" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-base"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-base" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-base"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-base)"/><g clip-path="url(#c-base)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#0052FF"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g2-base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g1-base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#f-base)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🚀</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Just shipped a new feature! Feeling</tspan><tspan x="250" dy="24">accomplished.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📖 Medium Text (with wrapping)</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Base_medium CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Base"><stop stop-color="#0066FF" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Base"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Base" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#0052FF"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient3-Base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient2-Base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#filter-Base)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">📚</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="237" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Today I learned about UUPS proxies and how</tspan><tspan x="250" dy="24">they enable upgradeable smart contracts. The</tspan><tspan x="250" dy="24">pattern is elegant but requires careful</tspan><tspan x="250" dy="24">implementation to avoid security issues.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Base_medium OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-base" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-base"><stop stop-color="#0066FF" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-base"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-base" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-base"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-base)"/><g clip-path="url(#c-base)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#0052FF"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g2-base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g1-base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#f-base)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">📚</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="237" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Today I learned about UUPS proxies and how</tspan><tspan x="250" dy="24">they enable upgradeable smart contracts. The</tspan><tspan x="250" dy="24">pattern is elegant but requires careful</tspan><tspan x="250" dy="24">implementation to avoid security issues.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">🧪 Special Characters</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Base_special CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Base"><stop stop-color="#0066FF" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Base"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Base" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#0052FF"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient3-Base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient2-Base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#filter-Base)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🧪</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Testing special chars: &lt;hello&gt; &amp; &quot;world&quot; &amp;</tspan><tspan x="250" dy="24">&apos;quotes&apos; &amp; symbols!</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Base_special OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-base" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-base"><stop stop-color="#0066FF" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-base"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-base" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-base"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-base)"/><g clip-path="url(#c-base)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#0052FF"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g2-base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g1-base)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#f-base)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🧪</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Testing special chars: &lt;hello&gt; &amp; &quot;world&quot; &amp;</tspan><tspan x="250" dy="24">&apos;quotes&apos; &amp; symbols!</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOB CHAIN -->
+        <div id="bob" class="chain-section">
+            <div class="chain-header">
+                <div class="chain-title">Bob Chain</div>
+                <div class="chain-badge badge-bob">Orange Gradient</div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📝 Short Text</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Bob_short CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Bob"><stop stop-color="#F7931E" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Bob"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Bob" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#FF6B35"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient3-Bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient2-Bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#filter-Bob)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🚀</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Just shipped a new feature! Feeling</tspan><tspan x="250" dy="24">accomplished.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Bob</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Bob_short OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-bob" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-bob"><stop stop-color="#F7931E" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-bob"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-bob" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-bob"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-bob)"/><g clip-path="url(#c-bob)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#FF6B35"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g2-bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g1-bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#f-bob)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🚀</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Just shipped a new feature! Feeling</tspan><tspan x="250" dy="24">accomplished.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Bob</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📖 Medium Text (with wrapping)</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Bob_medium CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Bob"><stop stop-color="#F7931E" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Bob"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Bob" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#FF6B35"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient3-Bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient2-Bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#filter-Bob)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">📚</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="237" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Today I learned about UUPS proxies and how</tspan><tspan x="250" dy="24">they enable upgradeable smart contracts. The</tspan><tspan x="250" dy="24">pattern is elegant but requires careful</tspan><tspan x="250" dy="24">implementation to avoid security issues.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Bob</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Bob_medium OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-bob" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-bob"><stop stop-color="#F7931E" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-bob"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-bob" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-bob"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-bob)"/><g clip-path="url(#c-bob)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#FF6B35"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g2-bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g1-bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#f-bob)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">📚</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="237" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Today I learned about UUPS proxies and how</tspan><tspan x="250" dy="24">they enable upgradeable smart contracts. The</tspan><tspan x="250" dy="24">pattern is elegant but requires careful</tspan><tspan x="250" dy="24">implementation to avoid security issues.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Bob</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">🧪 Special Characters</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Bob_special CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Bob"><stop stop-color="#F7931E" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Bob"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Bob" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#FF6B35"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient3-Bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#gradient2-Bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#filter-Bob)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🧪</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Testing special chars: &lt;hello&gt; &amp; &quot;world&quot; &amp;</tspan><tspan x="250" dy="24">&apos;quotes&apos; &amp; symbols!</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Bob</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Bob_special OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-bob" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-bob"><stop stop-color="#F7931E" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-bob"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-bob" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-bob"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-bob)"/><g clip-path="url(#c-bob)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#FF6B35"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g2-bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g1-bob)"/><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#f-bob)" opacity="0.66" style="mix-blend-mode: soft-light"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🧪</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Testing special chars: &lt;hello&gt; &amp; &quot;world&quot; &amp;</tspan><tspan x="250" dy="24">&apos;quotes&apos; &amp; symbols!</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Bob</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INK CHAIN -->
+        <div id="ink" class="chain-section">
+            <div class="chain-header">
+                <div class="chain-title">Ink Chain</div>
+                <div class="chain-badge badge-ink">Purple + Wave Pattern</div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📝 Short Text</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Ink_short CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Ink"><stop stop-color="#5D3FD3" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Ink"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Ink" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><g transform="translate(8, 8) scale(0.968)"><rect width="500" height="500" fill="#5D3FD3"/><path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/></g><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🚀</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Just shipped a new feature! Feeling</tspan><tspan x="250" dy="24">accomplished.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Ink</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Ink_short OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-ink" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-ink"><stop stop-color="#5D3FD3" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-ink"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-ink" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-ink"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-ink)"/><g clip-path="url(#c-ink)"><g transform="translate(8, 8) scale(0.968)"><rect width="500" height="500" fill="#5D3FD3"/><path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/></g><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🚀</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Just shipped a new feature! Feeling</tspan><tspan x="250" dy="24">accomplished.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Ink</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📖 Medium Text (with wrapping)</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Ink_medium CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Ink"><stop stop-color="#5D3FD3" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Ink"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Ink" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><g transform="translate(8, 8) scale(0.968)"><rect width="500" height="500" fill="#5D3FD3"/><path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/></g><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">📚</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="237" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Today I learned about UUPS proxies and how</tspan><tspan x="250" dy="24">they enable upgradeable smart contracts. The</tspan><tspan x="250" dy="24">pattern is elegant but requires careful</tspan><tspan x="250" dy="24">implementation to avoid security issues.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Ink</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Ink_medium OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-ink" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-ink"><stop stop-color="#5D3FD3" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-ink"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-ink" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-ink"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-ink)"/><g clip-path="url(#c-ink)"><g transform="translate(8, 8) scale(0.968)"><rect width="500" height="500" fill="#5D3FD3"/><path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/></g><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">📚</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="237" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Today I learned about UUPS proxies and how</tspan><tspan x="250" dy="24">they enable upgradeable smart contracts. The</tspan><tspan x="250" dy="24">pattern is elegant but requires careful</tspan><tspan x="250" dy="24">implementation to avoid security issues.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Ink</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">🧪 Special Characters</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Ink_special CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient2-Ink"><stop stop-color="#5D3FD3" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="gradient3-Ink"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="filter-Ink" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><g transform="translate(8, 8) scale(0.968)"><rect width="500" height="500" fill="#5D3FD3"/><path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/></g><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🧪</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Testing special chars: &lt;hello&gt; &amp; &quot;world&quot; &amp;</tspan><tspan x="250" dy="24">&apos;quotes&apos; &amp; symbols!</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Ink</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Ink_special OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-ink" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-ink"><stop stop-color="#5D3FD3" stop-opacity="1" offset="-0%"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/></linearGradient><linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-ink"><stop stop-color="#f9f7f1ff" stop-opacity="1"/><stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/></linearGradient><filter id="f-ink" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/><feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/><feComponentTransfer in="colormatrix" result="componentTransfer"><feFuncR type="linear" slope="3"/><feFuncG type="linear" slope="3"/><feFuncB type="linear" slope="3"/></feComponentTransfer><feColorMatrix in="componentTransfer" result="colormatrix2" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -12"/></filter><clipPath id="c-ink"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-ink)"/><g clip-path="url(#c-ink)"><g transform="translate(8, 8) scale(0.968)"><rect width="500" height="500" fill="#5D3FD3"/><path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/></g><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="white">🧪</text><text x="35" y="45" font-family="monospace" font-size="14" fill="white" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="white" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" style="text-shadow: -1px -1px 1px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.15);"><tspan x="250" dy="0">Testing special chars: &lt;hello&gt; &amp; &quot;world&quot; &amp;</tspan><tspan x="250" dy="24">&apos;quotes&apos; &amp; symbols!</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="start">Ink</text><text x="465" y="475" font-family="monospace" font-size="16" fill="white" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLASSIC STYLE -->
+        <div id="classic" class="chain-section">
+            <div class="chain-header">
+                <div class="chain-title">Classic Style</div>
+                <div class="chain-badge badge-classic">Paper Texture</div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📝 Short Text</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Classic_short CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="#2D2D2D">❤️</text><text x="35" y="45" font-family="monospace" font-size="14" fill="#5A5A5A" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="#2D2D2D" text-anchor="middle" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"><tspan x="250" dy="0">Grateful for the support from the community</tspan><tspan x="250" dy="24">today.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Classic_short OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-base" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><clipPath id="c-base"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-base)"/><g clip-path="url(#c-base)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="#2D2D2D">❤️</text><text x="35" y="45" font-family="monospace" font-size="14" fill="#5A5A5A" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.8">#1</text><text x="250" y="261" font-family="Georgia, serif" font-size="18" fill="#2D2D2D" text-anchor="middle" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"><tspan x="250" dy="0">Grateful for the support from the community</tspan><tspan x="250" dy="24">today.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📖 Medium Text (with wrapping)</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Classic_medium CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="#2D2D2D">🌟</text><text x="35" y="45" font-family="monospace" font-size="14" fill="#5A5A5A" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.8">#1</text><text x="250" y="249" font-family="Georgia, serif" font-size="18" fill="#2D2D2D" text-anchor="middle" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"><tspan x="250" dy="0">Reflecting on the journey so far. Each</tspan><tspan x="250" dy="24">challenge has been a learning opportunity,</tspan><tspan x="250" dy="24">and I&apos;m excited about what&apos;s ahead.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Classic_medium OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-base" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><clipPath id="c-base"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-base)"/><g clip-path="url(#c-base)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="#2D2D2D">🌟</text><text x="35" y="45" font-family="monospace" font-size="14" fill="#5A5A5A" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.8">#1</text><text x="250" y="249" font-family="Georgia, serif" font-size="18" fill="#2D2D2D" text-anchor="middle" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"><tspan x="250" dy="0">Reflecting on the journey so far. Each</tspan><tspan x="250" dy="24">challenge has been a learning opportunity,</tspan><tspan x="250" dy="24">and I&apos;m excited about what&apos;s ahead.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sample-row">
+                <div class="sample-title">📚 Long Text (near max)</div>
+                <div class="svg-grid">
+                    <div class="svg-container">
+                        <div class="svg-label">📦 Current Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Classic_long CURRENT VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><clipPath id="card-clip"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/><g clip-path="url(#card-clip)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="#2D2D2D">⚡</text><text x="35" y="45" font-family="monospace" font-size="14" fill="#5A5A5A" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.8">#1</text><text x="250" y="177" font-family="Georgia, serif" font-size="18" fill="#2D2D2D" text-anchor="middle" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"><tspan x="250" dy="0">The morning started with a deep dive into</tspan><tspan x="250" dy="24">Solidity gas optimization techniques. I</tspan><tspan x="250" dy="24">discovered that using constants instead of</tspan><tspan x="250" dy="24">state variables can save significant gas, and</tspan><tspan x="250" dy="24">that abi.encodePacked is more efficient than</tspan><tspan x="250" dy="24">string concatenation. Later, I worked on</tspan><tspan x="250" dy="24">refactoring the SVG generation to reduce</tspan><tspan x="250" dy="24">on-chain storage costs while maintaining</tspan><tspan x="250" dy="24">visual quality.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                    <div class="svg-container">
+                        <div class="svg-label">✨ Optimized Version</div>
+                        <div class="svg-wrapper">
+                            <!-- PASTE Classic_long OPTIMIZED VERSION HERE -->
+                            <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"><defs><filter id="d-base" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter><clipPath id="c-base"><rect x="8" y="8" width="484" height="484" rx="15" ry="15"/></clipPath></defs><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-base)"/><g clip-path="url(#c-base)"><rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/><g><text x="450" y="90" font-family="sans-serif" font-size="70" text-anchor="end" fill="#2D2D2D">⚡</text><text x="35" y="45" font-family="monospace" font-size="14" fill="#5A5A5A" fill-opacity="0.7">minted on block</text><text x="35" y="65" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.8">#1</text><text x="250" y="177" font-family="Georgia, serif" font-size="18" fill="#2D2D2D" text-anchor="middle" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9);"><tspan x="250" dy="0">The morning started with a deep dive into</tspan><tspan x="250" dy="24">Solidity gas optimization techniques. I</tspan><tspan x="250" dy="24">discovered that using constants instead of</tspan><tspan x="250" dy="24">state variables can save significant gas, and</tspan><tspan x="250" dy="24">that abi.encodePacked is more efficient than</tspan><tspan x="250" dy="24">string concatenation. Later, I worked on</tspan><tspan x="250" dy="24">refactoring the SVG generation to reduce</tspan><tspan x="250" dy="24">on-chain storage costs while maintaining</tspan><tspan x="250" dy="24">visual quality.</tspan></text><text x="35" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="start">Base</text><text x="465" y="475" font-family="monospace" font-size="16" fill="#8B7355" fill-opacity="0.7" text-anchor="end">MintMyMood</text></g></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 25px; margin-top: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <p style="color: #666; font-size: 0.9rem;">
+                Generated using OnChainJournal contract v2.5.1 • Total samples: 12 (3 per chain style)
+            </p>
+        </div>
+    </div>
+</body>
+</html>

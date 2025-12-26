@@ -171,7 +171,7 @@ contract OnChainJournalTest is Test {
 
         vm.deal(user1, 1 ether);
         vm.prank(user1);
-        vm.expectRevert("Insufficient payment");
+        vm.expectRevert(abi.encodeWithSignature("InsufficientPayment()"));
         journal.mintEntry{value: price - 1}("Cheap entry", unicode"💸", 0);
     }
 
@@ -180,7 +180,7 @@ contract OnChainJournalTest is Test {
         journal.setMintActive(false);
 
         vm.prank(user1);
-        vm.expectRevert("Minting is paused");
+        vm.expectRevert(abi.encodeWithSignature("MintingPaused()"));
         journal.mintEntry("Paused entry", unicode"🛑", 0);
     }
     
@@ -426,7 +426,7 @@ contract OnChainJournalTest is Test {
     }
 
     function test_Version() public {
-        assertEq(journal.version(), "2.5.1");
+        assertEq(journal.version(), "2.5.2");
     }
 
     // ============================================

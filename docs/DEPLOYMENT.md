@@ -8,13 +8,14 @@ Complete guide for deploying MintMyMood to production.
 
 1. [Overview](#overview)
 2. [Hosting Stack](#hosting-stack)
-3. [Frontend Deployment (Vercel)](#frontend-deployment-vercel)
-4. [Backend Deployment (Hostinger VPS)](#backend-deployment-hostinger-vps)
-5. [Smart Contract Deployment](#smart-contract-deployment)
-6. [Contract Addresses](#contract-addresses)
-7. [Post-Deployment Checklist](#post-deployment-checklist)
-8. [Upgrading Contracts](#upgrading-contracts)
-9. [Troubleshooting](#troubleshooting)
+3. [Database Setup (Supabase)](#database-setup-supabase)
+4. [Frontend Deployment (Vercel)](#frontend-deployment-vercel)
+5. [Backend Deployment (Hostinger VPS)](#backend-deployment-hostinger-vps)
+6. [Smart Contract Deployment](#smart-contract-deployment)
+7. [Contract Addresses](#contract-addresses)
+8. [Post-Deployment Checklist](#post-deployment-checklist)
+9. [Upgrading Contracts](#upgrading-contracts)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -50,6 +51,39 @@ Users → Vercel (yourdomain.com) → Frontend (React)
                 ↓
         Base/Bob/Ink → Smart Contracts (ERC721)
 ```
+
+---
+
+## Database Setup (Supabase)
+
+**CRITICAL**: Set up your database BEFORE deploying the frontend.
+
+### Quick Setup
+
+1. **Create Supabase Project**
+   - Go to [app.supabase.com](https://app.supabase.com)
+   - Create new project
+   - Save your Project URL and API keys
+
+2. **Run Database Setup**
+   - Go to SQL Editor in your Supabase dashboard
+   - Copy contents of `database-setup.sql` (in project root)
+   - Paste and run the entire SQL script
+
+3. **Enable Web3 Authentication**
+   - Go to Authentication → Providers
+   - Enable **Web3** provider
+   - No additional configuration needed!
+
+4. **Verify Setup**
+   ```sql
+   -- Run in SQL Editor
+   SELECT table_name FROM information_schema.tables
+   WHERE table_schema = 'public';
+   -- Should show: users, thoughts, bridge_transactions
+   ```
+
+**Detailed Guide**: See [DATABASE_SETUP.md](DATABASE_SETUP.md) for complete documentation.
 
 ---
 
@@ -344,6 +378,16 @@ export const CONTRACT_ADDRESSES = {
 
 ## Post-Deployment Checklist
 
+### Database (Supabase)
+- [ ] Supabase project created
+- [ ] `database-setup.sql` executed successfully
+- [ ] Web3 authentication enabled
+- [ ] Tables created (users, thoughts, bridge_transactions)
+- [ ] RLS policies active
+- [ ] Database functions created
+- [ ] Indexes created
+- [ ] Test query works
+
 ### Frontend (Vercel)
 - [ ] Environment variables set
 - [ ] Custom domain configured
@@ -365,6 +409,9 @@ export const CONTRACT_ADDRESSES = {
 
 ### End-to-End
 - [ ] Full flow works: connect → write → mint → gallery
+- [ ] Thoughts save to database
+- [ ] Minting updates database correctly
+- [ ] Gallery displays both styles (Chain Native & Classic)
 - [ ] Test on Chrome, Firefox, Safari
 - [ ] Test on mobile
 - [ ] Test with MetaMask, Rabby, Coinbase Wallet

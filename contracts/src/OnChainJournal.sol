@@ -94,6 +94,9 @@ contract OnChainJournal is
     error MoodTooLong(uint256 length, uint256 maxLength);
     error TokenDoesNotExist(uint256 tokenId);
     error InvalidStyle(uint8 styleId);
+    error MintingPaused();
+    error InsufficientPayment();
+    error TransferFailed();
 
     // ============================================
     // CONSTANTS
@@ -106,10 +109,6 @@ contract OnChainJournal is
     // Precomputed chain name hashes for gas optimization
     bytes32 private constant HASH_INK = keccak256("INK");
     bytes32 private constant HASH_Ink = keccak256("Ink");
-    bytes32 private constant HASH_MEGAETH = keccak256("MEGAETH");
-    bytes32 private constant HASH_MegaETH = keccak256("MegaETH");
-    bytes32 private constant HASH_HYPERLIQUID = keccak256("HYPERLIQUID");
-    bytes32 private constant HASH_Hyperliquid = keccak256("Hyperliquid");
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -154,8 +153,8 @@ contract OnChainJournal is
         string memory _mood,
         uint8 _styleId
     ) public payable {
-        if (!mintActive) revert("Minting is paused");
-        if (msg.value < mintPrice) revert("Insufficient payment");
+        if (!mintActive) revert MintingPaused();
+        if (msg.value < mintPrice) revert InsufficientPayment();
         if (_styleId > 1) revert InvalidStyle(_styleId);
 
         // Input validation
@@ -266,14 +265,11 @@ contract OnChainJournal is
     function generateSVG(JournalEntry memory entry) public view returns (string memory) {
         string memory escapedMood = _escapeString(entry.mood);
 
-        // Generate chain-specific gradient IDs
-        string memory gradientId = string(abi.encodePacked("gradient-", chainName));
-        string memory gradientId2 = string(abi.encodePacked("gradient2-", chainName));
-        string memory gradientId3 = string(abi.encodePacked("gradient3-", chainName));
-        string memory filterId = string(abi.encodePacked("filter-", chainName));
+        // Create short chain-specific ID suffix (lowercase chain name)
+        string memory chainId = _toLowercase(chainName);
 
         return string(abi.encodePacked(
-            _generateSVGPart1(gradientId, gradientId2, gradientId3, filterId, entry.styleId),
+            _generateSVGPart1(entry.styleId, chainId),
             _generateSVGPart2(escapedMood, entry.blockNumber, entry.text, entry.styleId)
         ));
     }
@@ -281,28 +277,26 @@ contract OnChainJournal is
     /**
      * @notice Generates the first part of the SVG (defs and background)
      * @dev Split into multiple functions due to stack depth limitations
+     * @dev Uses short chain-specific IDs (e.g., d-base, g1-bob) to prevent conflicts
      */
     function _generateSVGPart1(
-        string memory gradientId,
-        string memory gradientId2,
-        string memory gradientId3,
-        string memory filterId,
-        uint8 styleId
+        uint8 styleId,
+        string memory chainId
     ) internal view returns (string memory) {
         // Classic Style (ID 1)
         if (styleId == 1) {
              return string(abi.encodePacked(
                 '<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">',
                 '<defs>',
-                    '<filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">',
+                    '<filter id="d-', chainId, '" x="-20%" y="-20%" width="140%" height="140%">',
                         '<feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/>',
                     '</filter>',
-                    '<clipPath id="card-clip">',
+                    '<clipPath id="c-', chainId, '">',
                         '<rect x="8" y="8" width="484" height="484" rx="15" ry="15"/>',
                     '</clipPath>',
                 '</defs>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/>',
-                '<g clip-path="url(#card-clip)">',
+                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-', chainId, ')"/>',
+                '<g clip-path="url(#c-', chainId, ')">',
                     '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"/>'
             ));
         }
@@ -313,7 +307,6 @@ contract OnChainJournal is
         // Chain-specific background logic (case-insensitive checks)
         bytes32 chainHash = keccak256(bytes(chainName));
         bool isInk = chainHash == HASH_INK || chainHash == HASH_Ink;
-        bool isMegaeth = chainHash == HASH_MEGAETH || chainHash == HASH_MegaETH;
 
         if (isInk) {
             background = string(abi.encodePacked(
@@ -322,44 +315,30 @@ contract OnChainJournal is
                 '<path d="M0,0L500,0v100.43c0-48.29-60.95-41.79-60.95,0v234.04c0,65.01-83.58,65.94-84.51,0v-255.4c0-36.68-54.79-34.51-54.79,0v112.38c0,58.55-79.87,58.55-79.87,0v-91.01c0-37.15-73.67-37.15-73.67,0v162.53c0,66.87-97.83,66.87-97.83,0v-162.53c0-35.22-48.37-35.22-48.37,0" fill="#0d0c52"/>',
                 '</g>'
             ));
-        } else if (chainHash == HASH_HYPERLIQUID || chainHash == HASH_Hyperliquid) {
-            background = string(abi.encodePacked(
-                '<rect x="8" y="8" width="484" height="484" rx="15" fill="#0F2925"/>'
-            ));
-        } else if (isMegaeth) {
-            background = string(abi.encodePacked(
-                '<rect x="8" y="8" width="484" height="484" rx="15" fill="#111"/>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" fill="url(#', gradientId3, ')"/>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" fill="url(#', gradientId2, ')"/>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" fill="transparent" filter="url(#', filterId, ')" opacity="0.66" style="mix-blend-mode:soft-light"/>',
-                '<g transform="translate(-194.6, -213.5) scale(0.9)" fill="#AAA" fill-opacity="0.25" style="pointer-events:none">',
-                '<path d="M639 775c-11.7 0-22.8 0-34 0-4.7 0-8.7-1.1-12-4.9-16.5-18.8-32-38.4-47.8-57.7-1.9-2.3-1.2-4.6-.6-7 3.9-17.2 3.3-34-3.9-50.4-10.9-24.8-35.8-41.4-61.4-40.6-7 .2-14 2-17.3 4.7 6.7 1 13.2 1.3 19.4 2.8 27.5 6.9 47 22.7 53.1 51.5 4.5 21.4-2.4 40.1-16.5 56.3-2.8 3.2-6.3 5.7-9.5 8.5.3.6.6 1.2 1 1.8 5.8 0 11.5-.2 17.3 0 19.7.6 34.1 10.9 40.6 28.6.6 1.6 1.2 3.1 1 5-1.8 1.8-4.2 1.4-6.5 1.4-37.2 0-74.3 0-111.5 0-14.7 0-29.2-1.2-42.2-9.5-14.9-9.4-24.6-22.9-30.3-39.2-13.4-37.9-8.1-74.2 11.1-108.7 18-32.5 45.5-55.3 77.2-73.6 10.8-6.3 22.2-11.4 33.7-16.2 1.4-.6 2.7-1.4 5-.8 2.5 8.4 6.1 16.7 11.3 24.3 16.1 23.5 38.9 35.6 66.6 39.6 7.5 1.1 15 1.4 22.5.9 4.4-.3 5.9 1.5 6.1 5.6 1.3 24.1-2.7 47.1-16 67.4-5.3 8-5.7 15.4-3.6 23.8 4.1 16.4 10.4 32 18.9 46.6 2.2 3.7 5 5.2 9.2 5.6 16.8 1.6 29.8 12.6 34.9 28.7 1.3 4.2 0 5.5-4 5.5-3.6-.1-7.3 0-11.5 0zM614 453c16 7.2 28.1 18.3 37.5 32.5 8.4 12.7 15.7 25.9 21.1 40.2 1.6 4.1 1.5 7.9 0 12-7.1 19.3-19.2 32.9-40.1 38.2-28.3 7.2-55.8 7.2-81.9-7.4-22.2-12.4-35.2-31.3-36.4-57.1-.6-13 2.1-25.9 6.4-38.2 1.6-4.7.7-7.6-2.9-10.8-17.1-15-32.7-31.3-46.5-49.4-17.6-23.2-27.9-49.4-32.6-78-3.5-21-3.7-42-1-63.1.3-2.3.5-4.6 2.1-6.7 4 .6 6.9 3.2 10 5.3 28.7 18.9 53.4 41.9 72.5 70.7 14.4 21.7 22.3 46 28.9 70.9 2.5 9.5 4.6 19.1 6.5 28.7.8 4.1 2.3 5.5 6.6 5 17.1-2.1 33.5.4 49.7 7.2zm-10 62c1.4-.8 3-1.5 4.3-2.5 5.6-4.4 7.4-12.8 4.2-19.4-2.9-6.1-10.1-9.5-16.6-8-9.4 2.2-14.4 9.9-12.4 18.9 1.8 8.1 10.6 13.1 20.5 11zm-8.8-161c5.5 26.2 6.2 52.2 3.9 78.4-.3 3.8-1.7 5.9-6.1 4.5-6.7-2.2-13.8-1.8-20.7-2.2-4.2-.2-5.7-1.9-6.5-5.7-3.7-17.2-8.2-34.3-14-51-5.3-15.5-12.4-30.2-21.4-43.9-3.2-5-4.9-9.9-4.9-15.8 0-19 .5-37.9 5.4-56.4.5-1.7 1.1-3.4 1.6-5.1 17.6 3.1 54.3 59.8 62.7 97.2zM366.5 727.6c4.8 13.5 11.9 25.2 21.2 36.5-8.2 3.8-16.2 5.2-24.2 4.6-29.9-2.3-49.3-28.5-38.6-61.4 1-3 2.8-5.1 5.9-6.2 8.4-3.1 16.9-3.3 25.5-1 3.1.8 4.8 2.5 5.1 5.8.6 7.3 2.8 14.3 5.1 21.7z"/>',
-                '</g>'
-            ));
         } else {
             // Standard gradient background (Base, Bob, etc)
             background = string(abi.encodePacked(
                 '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="', color1, '"/>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#', gradientId3, ')"/>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#', gradientId2, ')"/>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#', filterId, ')" opacity="0.66" style="mix-blend-mode: soft-light"/>'
+                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g2-', chainId, ')"/>',
+                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="url(#g1-', chainId, ')"/>',
+                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#f-', chainId, ')" opacity="0.66" style="mix-blend-mode: soft-light"/>'
             ));
         }
 
         return string(abi.encodePacked(
             '<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">',
                 '<defs>',
-                    '<filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">',
+                    '<filter id="d-', chainId, '" x="-20%" y="-20%" width="140%" height="140%">',
                         '<feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/>',
                     '</filter>',
-                    _generateGradients(gradientId2, gradientId3),
-                    _generateFilter(filterId),
-                    '<clipPath id="card-clip">',
+                    _generateGradients(chainId),
+                    _generateFilter(chainId),
+                    '<clipPath id="c-', chainId, '">',
                         '<rect x="8" y="8" width="484" height="484" rx="15" ry="15"/>',
                     '</clipPath>',
                 '</defs>',
-                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow)"/>',
-                '<g clip-path="url(#card-clip)">',
+                '<rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#d-', chainId, ')"/>',
+                '<g clip-path="url(#c-', chainId, ')">',
                     background
         ));
     }
@@ -391,14 +370,9 @@ contract OnChainJournal is
             // Chain Native Style - use constants for case-insensitive checks
             bytes32 h = keccak256(bytes(chainName));
             bool isInkStyle = h == HASH_INK || h == HASH_Ink;
-            bool isMegaethStyle = h == HASH_MEGAETH || h == HASH_MegaETH;
 
-            if (isInkStyle || isMegaethStyle) {
+            if (isInkStyle) {
                 fontFamily = "Arial, sans-serif";
-            }
-
-            if (isMegaethStyle) {
-                footerColor = "#19191A";
             }
         }
 
@@ -432,10 +406,10 @@ contract OnChainJournal is
              ));
         }
 
-        // Count open <g> tags: Classic/Bob/Base = 2, INK/MEGAETH = 3
+        // Count open <g> tags: Classic/Bob/Base = 2, INK = 3
         bytes32 h2 = keccak256(bytes(chainName));
-        bool isInkOrMegaeth = h2 == HASH_INK || h2 == HASH_Ink || h2 == HASH_MEGAETH || h2 == HASH_MegaETH;
-        bool needsExtraClose = !isClassic && isInkOrMegaeth;
+        bool isInkChain = h2 == HASH_INK || h2 == HASH_Ink;
+        bool needsExtraClose = !isClassic && isInkChain;
 
         // closingTags closes: content <g>, clip-path <g>, and optionally background <g>
         string memory closingTags = needsExtraClose ? '</g></g></svg>' : '</g></svg>';
@@ -527,18 +501,15 @@ contract OnChainJournal is
     }
 
     /**
-     * @notice Generates the gradient definitions for the SVG
+     * @notice Generates the gradient definitions for the SVG with short chain-specific IDs
      */
-    function _generateGradients(
-        string memory gradientId2,
-        string memory gradientId3
-    ) internal view returns (string memory) {
+    function _generateGradients(string memory chainId) internal view returns (string memory) {
         return string(abi.encodePacked(
-            '<linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="', gradientId2, '">',
+            '<linearGradient gradientTransform="rotate(-202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g1-', chainId, '">',
                 '<stop stop-color="', color2, '" stop-opacity="1" offset="-0%"/>',
                 '<stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="100%"/>',
             '</linearGradient>',
-            '<linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="', gradientId3, '">',
+            '<linearGradient gradientTransform="rotate(202, 0.5, 0.5)" x1="50%" y1="0%" x2="50%" y2="100%" id="g2-', chainId, '">',
                 '<stop stop-color="#f9f7f1ff" stop-opacity="1"/>',
                 '<stop stop-color="rgba(255,255,255,0)" stop-opacity="0" offset="40%"/>',
             '</linearGradient>'
@@ -546,11 +517,11 @@ contract OnChainJournal is
     }
 
     /**
-     * @notice Generates the grain filter for the SVG
+     * @notice Generates the grain filter for the SVG with short chain-specific ID
      */
-    function _generateFilter(string memory filterId) internal pure returns (string memory) {
+    function _generateFilter(string memory chainId) internal pure returns (string memory) {
         return string(abi.encodePacked(
-            '<filter id="', filterId, '" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">',
+            '<filter id="f-', chainId, '" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">',
                 '<feTurbulence type="fractalNoise" baseFrequency="0.63" numOctaves="2" seed="2" stitchTiles="stitch" result="turbulence"/>',
                 '<feColorMatrix type="saturate" values="0" in="turbulence" result="colormatrix"/>',
                 '<feComponentTransfer in="colormatrix" result="componentTransfer">',
@@ -570,10 +541,26 @@ contract OnChainJournal is
      */
     function _escapeString(string memory _str) internal pure returns (string memory) {
         bytes memory strBytes = bytes(_str);
-        // Allocate enough space for worst case (all chars need escaping)
-        bytes memory result = new bytes(strBytes.length * 6);
+
+        // First pass: calculate exact size needed
+        uint256 finalSize = 0;
+        for (uint256 i = 0; i < strBytes.length; i++) {
+            if (strBytes[i] == '&') {
+                finalSize += 5; // &amp;
+            } else if (strBytes[i] == '<' || strBytes[i] == '>') {
+                finalSize += 4; // &lt; or &gt;
+            } else if (strBytes[i] == '"' || strBytes[i] == '\'') {
+                finalSize += 6; // &quot; or &apos;
+            } else {
+                finalSize += 1;
+            }
+        }
+
+        // Allocate exact size (no trimming needed)
+        bytes memory result = new bytes(finalSize);
         uint256 resultIndex = 0;
 
+        // Second pass: build escaped string
         for (uint256 i = 0; i < strBytes.length; i++) {
             if (strBytes[i] == '&') {
                 result[resultIndex++] = '&';
@@ -610,12 +597,28 @@ contract OnChainJournal is
             }
         }
 
-        // Trim result to actual size
-        bytes memory finalResult = new bytes(resultIndex);
-        for(uint256 i = 0; i < resultIndex; i++) {
-            finalResult[i] = result[i];
+        return string(result);
+    }
+
+    /**
+     * @notice Converts a string to lowercase (for ASCII characters only)
+     * @param _str The string to convert
+     * @return Lowercase version of the string
+     */
+    function _toLowercase(string memory _str) internal pure returns (string memory) {
+        bytes memory strBytes = bytes(_str);
+        bytes memory result = new bytes(strBytes.length);
+
+        for (uint256 i = 0; i < strBytes.length; i++) {
+            // If uppercase letter (A-Z), convert to lowercase
+            if (strBytes[i] >= 0x41 && strBytes[i] <= 0x5A) {
+                result[i] = bytes1(uint8(strBytes[i]) + 32);
+            } else {
+                result[i] = strBytes[i];
+            }
         }
-        return string(finalResult);
+
+        return string(result);
     }
 
     // ============================================
@@ -667,7 +670,7 @@ contract OnChainJournal is
      */
     function withdraw() external onlyOwner {
         (bool success, ) = owner().call{value: address(this).balance}("");
-        require(success, "Transfer failed");
+        if (!success) revert TransferFailed();
     }
 
     /**
@@ -675,6 +678,6 @@ contract OnChainJournal is
      * @return Version string
      */
     function version() external pure returns (string memory) {
-        return "2.5.1";
+        return "2.5.2";
     }
 }

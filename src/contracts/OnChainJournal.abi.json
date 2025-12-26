@@ -967,6 +967,11 @@
   },
   {
     "type": "error",
+    "name": "InsufficientPayment",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InvalidInitialization",
     "inputs": []
   },
@@ -980,6 +985,11 @@
         "internalType": "uint8"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "MintingPaused",
+    "inputs": []
   },
   {
     "type": "error",
@@ -1050,6 +1060,11 @@
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "TransferFailed",
+    "inputs": []
   },
   {
     "type": "error",

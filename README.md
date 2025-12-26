@@ -1,186 +1,54 @@
-# MintMyMood - On-Chain Journal
+# MintMyMood
 
-> A minimalist journaling app where thoughts can be made permanent as on-chain SVG NFTs.
+> **On-Chain Journaling**. Thoughts auto-delete after 7 days, or live forever as SVG NFTs.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-beta-yellow.svg)](docs/todo.md)
 
 ---
 
-## 🎯 Core Concept
+## 👋 Start Here
 
-**Ephemeral vs Permanent**: Thoughts auto-delete after 7 days by default, but users can mint them as NFTs to preserve them forever on-chain as beautiful SVG artwork.
+Select the guide that matches your goal:
 
-**Target Audience**: Crypto-native users who already have wallets and want a permanent on-chain record of their thoughts.
+### I want to...
+- **🚀 [Run the App Locally](docs/GETTING_STARTED.md#-quick-start-5-min)**  
+  *Get the frontend running in 5 minutes.*
+  
+- **🛠️ [Contribute or Deep Dive](docs/GETTING_STARTED.md#%EF%B8%8F-full-setup-guide)**  
+  *Setup for smart contracts, backend, and core development.*
 
----
-
-## ⚡ Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Start development
-npm run dev              # Frontend only (port 3000)
-
-# Test smart contracts
-cd contracts && forge test
-```
-
-**New developer?** → Read [QUICK_START.md](docs/QUICK_START.md) for detailed setup (5 minutes)
+- **📖 [Understand the Architecture](docs/DEVELOPER_GUIDE.md)**  
+  *Learn how the pieces fit together (React, Supabase, Foundry).*
 
 ---
 
-## 📚 Documentation
+## 📂 Repository Structure
 
-| Doc | Purpose | Audience |
-|-----|---------|----------|
-| [QUICK_START.md](docs/QUICK_START.md) | Get running in 5 minutes | New developers |
-| [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | Architecture & workflow | All developers |
-| [CONTRACT_GUIDE.md](docs/CONTRACT_GUIDE.md) | Smart contract details | Smart contract devs |
-| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy to testnet/mainnet | DevOps/deployers |
-| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | How to contribute | Contributors |
-| [todo.md](docs/todo.md) | Current tasks & status | Project tracking |
+- **`/src`**: **Frontend**. React app that users interact with.
+- **`/contracts`**: **Blockchain**. Solidity contracts for the NFT logic. [See README](contracts/README.md).
+- **`/backend`**: **API**. Services for signatures and database management.
+- **`/docs`**: **Knowledge Base**.
+  - [CONTRACT_GUIDE.md](docs/CONTRACT_GUIDE.md): Smart contract specific details.
+  - [DEPLOYMENT.md](docs/DEPLOYMENT.md): Ops guide.
+  - [svg/README.md](docs/svg/README.md): Design specs for on-chain art.
+
+---
+
+## 💡 The Concept
+
+**MintMyMood** explores the balance between the ephemeral and the permanent.
+- **Ephemeral**: Thoughts written in the app exist for 7 days, then vanish.
+- **Permanent**: If a thought is meaningful, you can "mint" it. This turns it into an on-chain NFT that exists forever on the blockchain, visualized as beautiful SVG art.
 
 ---
 
 ## 🏗️ Tech Stack
 
-### Frontend
-**React 18** + **TypeScript** + **Vite** | **Tailwind CSS** + **Radix UI** | **wagmi v2** + **viem** + **RainbowKit**
-
-### Backend
-**Supabase** (PostgreSQL with native Web3 authentication)
-
-### Blockchain
-**Foundry** + **Solidity 0.8.20** | **UUPS Upgradeable ERC721** | **Base, Bob & Ink** (testnet & mainnet)
+- **Frontend**: React, TypeScript, Vite, Tailwind, Wagmi/RainbowKit.
+- **Backend**: Supabase (Auth & DB), Express (Signatures).
+- **Chain**: Solidity (Foundry), deployed on Base, Bob, and Ink.
 
 ---
 
-## 🚀 Current Status
-
-**Sprint 3.6 Complete** ✅ - Production Ready for Beta Testing
-
-### What's Built
-
-**Frontend**:
-- ✅ Complete UI flow (writing → mood → mint preview → gallery)
-- ✅ Auto-save to Supabase (3-second debounce)
-- ✅ Real wallet connection (RainbowKit with Rabby prioritized)
-- ✅ SIWE authentication (Sign-In with Ethereum / EIP-4361)
-- ✅ JWT-based session management (24-hour expiry)
-- ✅ ENS name display (frontend resolution)
-- ✅ Multi-chain support (Base, Bob, & Ink)
-- ✅ React Router navigation
-- ✅ Loading states throughout
-
-**Smart Contracts (V2.4.0)**:
-- ✅ UUPS Upgradeable ERC721
-- ✅ On-chain SVG generation with animations
-- ✅ Simplified minting (2 parameters: text, mood)
-- ✅ Chain-specific gradients (Base: blue, Bob: orange, Ink: purple)
-- ✅ Gas optimized (~30% reduction vs V2.3.0)
-- ✅ 18/18 tests passing
-- ✅ Deployed to Base Sepolia, Bob Testnet & Ink Sepolia
-
-**Backend**:
-- ✅ Supabase native Web3 authentication (SIWE)
-- ✅ Production Row Level Security policies
-- ✅ JWT-based session management
-- ✅ Automatic profile creation via database triggers
-
-### Deployed Contract Addresses (V2.4.0)
-
-| Network | Proxy Address | Explorer |
-|---------|---------------|----------|
-| Base Sepolia | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Basescan](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
-| Bob Testnet | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
-| Ink Sepolia | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Ink Explorer](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
-
-### Next Up: Sprint 4 - Beta Testing & Public Launch
-
-**Beta Testing**:
-- Deploy to public testnet URL
-- Recruit 5-10 beta testers
-- Collect feedback and optimize UX
-- Mobile and cross-browser testing
-
-**Monitoring**:
-- Set up analytics (Vercel Analytics)
-- Monitor gas costs and user flows
-- Error tracking (Sentry)
-
-See [docs/todo.md](docs/todo.md) for detailed task tracking.
-
----
-
-## 📁 Project Structure
-
-```
-MintMyMood/
-├── src/                    # React frontend
-│   ├── components/         # UI components
-│   ├── hooks/             # Custom hooks (minting, ENS)
-│   ├── store/             # Zustand state management
-│   └── contracts/         # Contract ABIs & config
-├── contracts/             # Solidity smart contracts
-│   ├── src/               # OnChainJournal.sol
-│   ├── test/              # Foundry tests (18/18 ✅)
-│   └── script/            # Deploy & upgrade scripts
-└── docs/                  # Documentation
-```
-
----
-
-## 🎨 Design Philosophy
-
-**Skeuomorphic Minimalism** - Clean digital interface with subtle textures that evoke physical journaling.
-
-**Colors**: Paper Cream `#F9F7F1` | Soft Black `#2D2D2D` | Leather Brown `#8B7355`
-
-**Typography**: Lora (serif) for content | Inter (sans-serif) for UI
-
-**Layout**: 8pt grid | 680px max width | Generous whitespace
-
-See [SVG design specs](docs/svg/README.md) for complete visual reference.
-
----
-
-## 🔑 Key Features
-
-1. **Ephemeral Thoughts** - Auto-delete after 7 days unless minted
-2. **On-Chain NFTs** - Permanent SVG NFTs with animations
-3. **ENS Display** - Shows ENS names for verified addresses
-4. **Multi-Chain** - Deploy on Base, Bob, & Ink (mainnet ready)
-5. **Auto-Save** - Save drafts to Supabase after 3 seconds
-6. **Gallery** - View all thoughts (minted & ephemeral)
-
----
-
-## 🛠️ Development Commands
-
-```bash
-# Development
-npm run dev              # Start frontend (http://localhost:3000)
-
-# Production
-npm run build            # Build frontend for production
-
-# Smart Contracts
-cd contracts
-forge build              # Compile contracts
-forge test               # Run tests (18/18 should pass)
-forge test -vvv          # Verbose test output
-```
-
----
-
-## 📄 License
-
-TBD
-
-
----
-
-**Built with ❤️ for the on-chain journaling community** 🚀
+*Built with ❤️ for the on-chain journaling community.*

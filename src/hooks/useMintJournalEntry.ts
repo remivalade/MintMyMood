@@ -1,4 +1,4 @@
-import { useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useChainId, useReadContract } from 'wagmi';
 import { getContractAddress, OnChainJournalABI } from '../contracts/config';
 import { useThoughtStore } from '../store/useThoughtStore';
 
@@ -21,6 +21,13 @@ export function useMintJournalEntry() {
   const { markAsMinted } = useThoughtStore();
 
   const contractAddress = getContractAddress(chainId);
+
+  // Read the mint price from the contract
+  const { data: mintPrice } = useReadContract({
+    address: contractAddress,
+    abi: OnChainJournalABI,
+    functionName: 'mintPrice',
+  });
 
   const {
     writeContract,
@@ -57,7 +64,7 @@ export function useMintJournalEntry() {
       abi: OnChainJournalABI,
       functionName: 'mintEntry',
       args: [text, mood, styleId],
-      value: 0n, // Free mint
+      value: mintPrice || 0n, // Use contract's mint price (0n if not loaded yet)
       ...txOptions,
     });
   };
