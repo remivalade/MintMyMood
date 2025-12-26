@@ -154,23 +154,24 @@ ALTER TABLE public.thoughts ENABLE ROW LEVEL SECURITY;
 -- ============================================================================
 
 -- Users can view their own profile
+-- Note: auth.uid() wrapped in SELECT for performance (evaluated once vs per-row)
 CREATE POLICY "Users can view own profile"
 ON public.profiles
 FOR SELECT
-USING (auth.uid() = id);
+USING ((SELECT auth.uid()) = id);
 
 -- Users can insert their own profile (via trigger)
 CREATE POLICY "Users can insert own profile"
 ON public.profiles
 FOR INSERT
-WITH CHECK (auth.uid() = id);
+WITH CHECK ((SELECT auth.uid()) = id);
 
 -- Users can update their own profile
 CREATE POLICY "Users can update own profile"
 ON public.profiles
 FOR UPDATE
-USING (auth.uid() = id)
-WITH CHECK (auth.uid() = id);
+USING ((SELECT auth.uid()) = id)
+WITH CHECK ((SELECT auth.uid()) = id);
 
 
 -- ============================================================================
@@ -178,29 +179,30 @@ WITH CHECK (auth.uid() = id);
 -- ============================================================================
 
 -- Users can view their own thoughts
+-- Note: auth.uid() wrapped in SELECT for performance (evaluated once vs per-row)
 CREATE POLICY "Users can view own thoughts"
 ON public.thoughts
 FOR SELECT
-USING (auth.uid() = user_id);
+USING ((SELECT auth.uid()) = user_id);
 
 -- Users can insert their own thoughts
 CREATE POLICY "Users can insert own thoughts"
 ON public.thoughts
 FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- Users can update their own thoughts
 CREATE POLICY "Users can update own thoughts"
 ON public.thoughts
 FOR UPDATE
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING ((SELECT auth.uid()) = user_id)
+WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- Users can delete their own thoughts
 CREATE POLICY "Users can delete own thoughts"
 ON public.thoughts
 FOR DELETE
-USING (auth.uid() = user_id);
+USING ((SELECT auth.uid()) = user_id);
 
 
 ```
@@ -227,6 +229,7 @@ CREATE OR REPLACE FUNCTION public.update_thought_after_mint(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     UPDATE public.thoughts
@@ -262,6 +265,7 @@ CREATE OR REPLACE FUNCTION public.cleanup_expired_thoughts()
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     deleted_count INTEGER;
@@ -296,6 +300,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     -- Insert profile if doesn't exist
@@ -328,6 +333,8 @@ COMMENT ON TRIGGER auto_create_user_profile ON public.thoughts IS 'Creates user 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     NEW.updated_at = NOW();
