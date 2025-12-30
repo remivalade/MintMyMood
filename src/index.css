@@ -2270,4 +2270,13 @@ body:before {
   animation: pulse-border 2s infinite;
 }
 
+/* Hide scrollbar for horizontal scrolling containers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 

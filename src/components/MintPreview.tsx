@@ -55,6 +55,12 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
   const styleId = selectedTemplate === 'classic' ? 1 : 0;
 
   const handleMintButtonClick = () => {
+    // If no content, redirect to write page
+    if (!content) {
+      window.location.href = '/write';
+      return;
+    }
+
     if (!isConnected) {
       onConnectWallet();
     } else if (!isOnCorrectChain) {
@@ -93,30 +99,86 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
 
   return (
     <div
-      className="fixed inset-0 overflow-y-auto flex flex-col"
-      style={{ backgroundColor: 'var(--paper-cream)' }}
+      className="fixed inset-0 flex flex-col"
+      style={{
+        backgroundColor: 'var(--paper-cream)',
+        overflowY: 'auto'
+      }}
     >
       {/* Minimal floating nav */}
       <div className="absolute top-4 right-4 z-10">
         <ConnectButton />
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row lg:items-stretch pt-20 lg:pt-24">
+      <div
+        className="flex flex-col lg:flex-row lg:items-stretch pb-12 lg:pt-24 min-h-full"
+        style={{ paddingTop: '2.5rem' }}
+      >
         {/* Left side - NFT Preview */}
-        <div className="lg:w-1/2 flex items-center justify-center p-6 md:p-12 lg:sticky lg:top-24 lg:h-[calc(100vh-6rem)]">
-          <div className="w-full max-w-xl">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-black/10">
+        <div className="lg:w-1/2 flex items-center justify-center px-6 py-4 md:p-12 lg:sticky lg:top-24 lg:h-[calc(100vh-6rem)]">
+          <div className="w-full max-w-md">
+            {content ? (
               <OnChainNFTPreview
                 content={content}
                 mood={moodEmojis[mood] || mood}
                 styleId={styleId}
               />
-            </div>
+            ) : (
+              <div
+                className="aspect-square w-full max-w-[500px] mx-auto rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center"
+                style={{ backgroundColor: '#F9F7F1' }}
+              >
+                <svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <filter id="drop-shadow-empty" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"></feDropShadow>
+                    </filter>
+                  </defs>
+
+                  <rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="transparent" filter="url(#drop-shadow-empty)"></rect>
+
+                  <rect x="8" y="8" width="484" height="484" rx="15" ry="15" fill="#F9F7F1"></rect>
+
+                  <text
+                    x="250"
+                    y="240"
+                    fontFamily="Georgia, serif"
+                    fontSize="18"
+                    fill="#5A5A5A"
+                    textAnchor="middle"
+                    style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9)' }}
+                  >
+                    <tspan x="250" dy="0">Your thought is no longer</tspan>
+                    <tspan x="250" dy="24">available...</tspan>
+                  </text>
+
+                  <text
+                    x="250"
+                    y="290"
+                    fontFamily="Georgia, serif"
+                    fontSize="18"
+                    fill="#8B7355"
+                    textAnchor="middle"
+                    textDecoration="underline"
+                    style={{
+                      cursor: 'pointer',
+                      textShadow: '1px 1px 2px rgba(0,0,0,0.2), -1px -1px 2px rgba(255,255,255,0.9)'
+                    }}
+                    onClick={() => window.location.href = '/write'}
+                  >
+                    Start over!
+                  </text>
+
+                  <text x="35" y="475" fontFamily="monospace" fontSize="16" fill="#8B7355" fillOpacity="0.7" textAnchor="start">CLASSIC</text>
+                  <text x="465" y="475" fontFamily="monospace" fontSize="16" fill="#8B7355" fillOpacity="0.7" textAnchor="end">MintMyMood</text>
+                </svg>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Right side - Controls */}
-        <div className="lg:w-1/2 flex items-center justify-center p-6 md:p-12">
+        <div className="lg:w-1/2 flex items-start justify-center p-6 md:p-12">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
               <h2 className="mb-2" style={{
@@ -139,17 +201,14 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
 
             {/* Style & Chain Selection Orbs */}
             <div className="mb-8">
-              <div className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-500">
-                <Sparkles className="w-4 h-4" />
-                <span>Select Style</span>
-              </div>
-
+              {/* Orbs container - grid layout for 2 rows */}
               <div
-                className="flex items-center gap-4 overflow-x-auto pb-4 px-2 pt-2 scrollbar-hide"
+                className="pb-4"
                 style={{
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  WebkitOverflowScrolling: 'touch'
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '1rem',
+                  justifyItems: 'center'
                 }}
               >
                 {/* 1. Classic Orb */}
@@ -162,7 +221,7 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                       switchChain({ chainId: CHAIN_KEY_TO_ID['base'] });
                     }
                   }}
-                  className="flex-shrink-0 flex flex-col items-center gap-2 group relative outline-none"
+                  className="flex flex-col items-center gap-2 group relative outline-none"
                 >
                   <div
                     className={`relative w-14 h-14 rounded-full transition-all duration-300 flex items-center justify-center overflow-hidden ${selectedTemplate === 'classic'
@@ -186,9 +245,6 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                   </div>
                 </button>
 
-                {/* Separator */}
-                <div className="w-px h-10 bg-gray-200 mx-1" />
-
                 {/* 2. Chain Native Orbs */}
                 {(Object.keys(CHAIN_KEY_TO_ID) as ChainKey[]).map((key) => {
                   const chainId = CHAIN_KEY_TO_ID[key];
@@ -209,7 +265,7 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                         }
                       }}
                       disabled={isDisabled}
-                      className={`flex-shrink-0 flex flex-col items-center gap-2 group relative outline-none ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                      className={`flex flex-col items-center gap-2 group relative outline-none ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                         }`}
                     >
                       <div
@@ -242,7 +298,18 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                       </div>
 
                       {isDisabled && (
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div
+                          className="whitespace-nowrap z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            color: 'var(--medium-gray)',
+                            fontSize: '11px',
+                            fontWeight: '600'
+                          }}
+                        >
                           soon™
                         </div>
                       )}
@@ -285,6 +352,14 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     {(() => {
+                      if (!content) {
+                        return (
+                          <>
+                            <Sparkles className="w-5 h-5" />
+                            <span>Start Writing</span>
+                          </>
+                        );
+                      }
                       if (!isConnected) {
                         return (
                           <>
@@ -312,16 +387,18 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                 </Button>
               </div>
 
-              {/* Ephemeral Save Link */}
-              <button
-                onClick={onDiscard}
-                className="transition-opacity underline decoration-1 underline-offset-4 text-xs font-medium tracking-wide order-3"
-                style={{
-                  color: 'var(--medium-gray)',
-                }}
-              >
-                Save as ephemeral instead
-              </button>
+              {/* Ephemeral Save Link - only show if content exists */}
+              {content && (
+                <button
+                  onClick={onDiscard}
+                  className="transition-opacity underline decoration-1 underline-offset-4 text-xs font-medium tracking-wide order-3"
+                  style={{
+                    color: 'var(--medium-gray)',
+                  }}
+                >
+                  Save as ephemeral instead
+                </button>
+              )}
 
               <p className="text-center text-xs text-gray-500 order-4">
                 Minted thoughts live on-chain forever · Ephemeral thoughts disappear in 7 days
