@@ -34,7 +34,8 @@ interface ThoughtStore {
     chainId: number,
     tokenId: string,
     contractAddress: string,
-    txHash: string
+    txHash: string,
+    blockNumber?: string
   ) => Promise<void>;
 
   // Bridge-specific actions
@@ -215,6 +216,7 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
     tokenId: string,
     contractAddress: string,
     txHash: string,
+    blockNumber?: string,
     styleId: number = 0
   ) => {
     set({ isLoading: true, error: null });
@@ -227,6 +229,7 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
           p_token_id: tokenId,
           p_contract_address: contractAddress,
           p_tx_hash: txHash,
+          p_block_number: blockNumber || null,
         })
       );
 
@@ -251,6 +254,7 @@ export const useThoughtStore = create<ThoughtStore>((set, get) => ({
                 token_id: tokenId,
                 contract_address: contractAddress,
                 tx_hash: txHash,
+                block_number: blockNumber || null,
                 nft_metadata: metadata,
               }
             : t

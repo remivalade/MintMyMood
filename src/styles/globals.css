@@ -292,3 +292,9 @@ body::before {
     display: none;
   }
 }
+
+/* Toast notification styling - fix description text visibility */
+[data-sonner-toast] [data-description] {
+  color: var(--soft-black) !important;
+  opacity: 1 !important;
+}

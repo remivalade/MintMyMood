@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Grid3x3 } from 'lucide-react';
+import { Grid3x3, Info } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { Button } from './ui/button';
 import { ConnectButton } from './ConnectButton';
+import { AboutModal } from './AboutModal';
 import { useThoughtStore } from '../store/useThoughtStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { toast } from 'sonner';
@@ -22,8 +23,7 @@ export function WritingInterface({
   const [content, setContent] = useState('');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const [logoOpacity, setLogoOpacity] = useState(0.2);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const { address, isConnected } = useAccount();
   const { isAuthenticated, walletAddress: authWalletAddress } = useAuthStore();
@@ -97,20 +97,22 @@ export function WritingInterface({
         {/* Header - matching Gallery header exactly */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <h1
-              className="transition-opacity duration-300 cursor-default"
-              onMouseEnter={() => setLogoOpacity(1)}
-              onMouseLeave={() => setLogoOpacity(0.2)}
-              style={{
-                fontFamily: 'var(--font-serif)',
-                fontSize: 'var(--text-h1)',
-                fontWeight: '600',
-                color: 'var(--soft-black)',
-                opacity: logoOpacity,
-              }}
-            >
+            <h1 style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 'var(--text-h1)',
+              fontWeight: '600',
+              color: 'var(--soft-black)'
+            }}>
               MintMyMood
             </h1>
+            <button
+              onClick={() => setIsAboutOpen(true)}
+              className="p-1.5 transition-colors"
+              style={{ color: 'var(--medium-gray)' }}
+              title="About"
+            >
+              <Info className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -186,6 +188,8 @@ export function WritingInterface({
           </Button>
         </div>
       )}
+
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   );
 }

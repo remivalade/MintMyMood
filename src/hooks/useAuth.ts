@@ -39,6 +39,7 @@ export function useAuth() {
       // 4. Creates session & user in auth.users
       const { data, error } = await supabase.auth.signInWithWeb3({
         chain: 'ethereum',
+        statement: 'Welcome to MintMyMood! Sign this message to show it\'s your wallet! It will create your account so you can save ephemeral messages.',
       });
 
       toast.dismiss('siwe-signing');

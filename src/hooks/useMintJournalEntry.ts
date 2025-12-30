@@ -38,6 +38,7 @@ export function useMintJournalEntry() {
   } = useWriteContract();
 
   const {
+    data: receipt,
     isLoading: isConfirming,
     isSuccess: isConfirmed,
     error: confirmError,
@@ -73,16 +74,21 @@ export function useMintJournalEntry() {
    * Update database after successful mint
    * Call this in a useEffect when isConfirmed becomes true
    */
-  const updateDatabase = async (thoughtId: string, tokenId: string) => {
+  const updateDatabase = async (thoughtId: string, tokenId: string, styleId: number = 0) => {
     const contractAddress = getContractAddress(chainId);
     if (!contractAddress || !hash) return;
+
+    // Get block number from transaction receipt
+    const blockNumber = receipt?.blockNumber?.toString();
 
     await markAsMinted(
       thoughtId,
       chainId,
       tokenId,
       contractAddress,
-      hash
+      hash,
+      blockNumber,
+      styleId
     );
   };
 

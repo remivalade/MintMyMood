@@ -96,7 +96,8 @@ interface Thought {
   origin_chain_id: number | null;
   current_chain_id: number | null;
   token_id: string | null;
-  mint_tx_hash: string | null;
+  tx_hash: string | null;
+  block_number: string | null;  // Block number where NFT was minted
   nft_metadata: any | null;
 }
 ```

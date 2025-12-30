@@ -224,6 +224,7 @@ export function Gallery({ onNewThought, onThoughtClick, onMintFromGallery }: Gal
                         mood={thought.mood}
                         chainId={thought.current_chain_id}
                         walletAddress={address}
+                        blockNumber={thought.block_number || undefined}
                         styleId={thought.nft_metadata?.styleId}
                         onClick={() => onThoughtClick(thought)}
                       />

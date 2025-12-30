@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS public.thoughts (
     token_id TEXT, -- NFT token ID from contract
     contract_address TEXT, -- Lowercase contract address
     tx_hash TEXT, -- Minting transaction hash
+    block_number TEXT, -- Block number where NFT was minted
     last_bridge_tx TEXT, -- V2 feature: Last bridge transaction (currently unused)
     bridge_count INTEGER DEFAULT 0, -- V2 feature: Number of bridges (currently unused)
     nft_metadata JSONB, -- Currently: { styleId: 0|1 }, future: additional metadata
@@ -127,7 +128,8 @@ CREATE OR REPLACE FUNCTION public.update_thought_after_mint(
     p_origin_chain_id INTEGER,
     p_token_id TEXT,
     p_contract_address TEXT,
-    p_tx_hash TEXT
+    p_tx_hash TEXT,
+    p_block_number TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -143,6 +145,7 @@ BEGIN
         token_id = p_token_id,
         contract_address = LOWER(p_contract_address),
         tx_hash = p_tx_hash,
+        block_number = p_block_number,
         expires_at = NULL,
         updated_at = NOW()
     WHERE id = thought_id

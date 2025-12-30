@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAccount, usePublicClient, useWaitForTransactionReceipt, useChainId } from 'wagmi';
 import { Toaster } from './components/ui/sonner';
-import { IntroModal } from './components/IntroModal';
+import { AboutModal } from './components/AboutModal';
 import { Gallery } from './components/Gallery';
 import { WritingInterface } from './components/WritingInterface';
 import { MoodSelection } from './components/MoodSelection';
@@ -153,13 +153,17 @@ export default function App() {
             }
           }
 
-          // Mark thought as minted in database with actual token ID
+          // Extract block number from receipt
+          const blockNumber = receipt.blockNumber?.toString();
+
+          // Mark thought as minted in database with actual token ID and block number
           await markAsMinted(
             currentMintingThoughtId,
             chainId,
             tokenId,
             contractAddress,
             hash,
+            blockNumber,
             mintingStyleId
           );
         }
@@ -315,8 +319,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      {/* Intro Modal - shown only once */}
-      <IntroModal isOpen={showIntroModal} onClose={handleCloseIntro} />
+      {/* About Modal - shown only once on first visit */}
+      <AboutModal isOpen={showIntroModal} onClose={handleCloseIntro} />
 
       {currentView === 'write' && (
         <WritingInterface

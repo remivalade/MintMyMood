@@ -22,6 +22,7 @@ export interface Thought {
   token_id: string | null;
   contract_address: string | null;
   tx_hash: string | null;
+  block_number: string | null;
   nft_metadata?: {
     styleId?: number;
     [key: string]: any;
