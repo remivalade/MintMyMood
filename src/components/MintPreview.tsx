@@ -347,7 +347,7 @@ export function MintPreview({ content, mood, onMint, onDiscard, onConnectWallet 
                 <Button
                   onClick={handleMintButtonClick}
                   size="lg"
-                  className="w-full text-white shadow-xl py-7 text-lg font-medium tracking-wide hover:translate-y-[-2px] active:translate-y-[0px] transition-all duration-200 rounded-xl"
+                  className="w-full text-white shadow-xl py-7 text-lg font-medium tracking-wide hover:opacity-90 transition-opacity rounded-xl"
                   style={{ backgroundColor: 'var(--leather-brown)' }}
                 >
                   <span className="relative z-10 flex items-center gap-2">
