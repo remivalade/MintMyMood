@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS public.thoughts (
     token_id TEXT, -- NFT token ID from contract
     contract_address TEXT, -- Contract address (lowercase)
     tx_hash TEXT, -- Minting transaction hash
+    block_number TEXT, -- Block number where NFT was minted
 
     -- Bridging (V2 feature - currently unused)
     last_bridge_tx TEXT, -- Last bridge transaction hash
@@ -224,7 +225,8 @@ CREATE OR REPLACE FUNCTION public.update_thought_after_mint(
     p_origin_chain_id INTEGER,
     p_token_id TEXT,
     p_contract_address TEXT,
-    p_tx_hash TEXT
+    p_tx_hash TEXT,
+    p_block_number TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -240,6 +242,7 @@ BEGIN
         token_id = p_token_id,
         contract_address = LOWER(p_contract_address),
         tx_hash = p_tx_hash,
+        block_number = p_block_number,
         expires_at = NULL, -- Minted thoughts don't expire
         updated_at = NOW()
     WHERE id = thought_id
@@ -483,42 +486,182 @@ No custom backend auth needed! ✨
 
 ## Verification
 
-### Test Database Setup
+⚠️ **IMPORTANT**: Run these verification queries BEFORE setting up the frontend. They will confirm your database is production-ready.
+
+### Quick Pass/Fail Check
+
+Run this single query to verify everything at once:
 
 ```sql
--- Check tables exist (should show: profiles, thoughts)
-SELECT table_name FROM information_schema.tables
+SELECT
+    (SELECT COUNT(*) FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name IN ('profiles', 'thoughts'))
+     as tables_count_should_be_2,
+
+    (SELECT COUNT(*) FROM information_schema.routines
+     WHERE routine_schema = 'public'
+     AND routine_name IN ('update_thought_after_mint', 'cleanup_expired_thoughts', 'handle_new_user', 'update_updated_at_column'))
+     as functions_count_should_be_4,
+
+    (SELECT COUNT(*) FROM information_schema.triggers
+     WHERE trigger_schema = 'public'
+     AND trigger_name IN ('auto_create_user_profile', 'update_profiles_updated_at', 'update_thoughts_updated_at'))
+     as triggers_count_should_be_3,
+
+    (SELECT COUNT(*) FROM pg_policies WHERE schemaname = 'public')
+     as policies_count_should_be_7,
+
+    (SELECT rowsecurity FROM pg_tables WHERE tablename = 'profiles' AND schemaname = 'public')
+     as profiles_rls_should_be_true,
+
+    (SELECT rowsecurity FROM pg_tables WHERE tablename = 'thoughts' AND schemaname = 'public')
+     as thoughts_rls_should_be_true,
+
+    (SELECT COUNT(*) FROM information_schema.columns
+     WHERE table_name = 'thoughts' AND column_name = 'block_number')
+     as block_number_exists_should_be_1,
+
+    (SELECT COUNT(*) FROM information_schema.columns
+     WHERE table_name = 'thoughts' AND column_name = 'nft_metadata')
+     as nft_metadata_exists_should_be_1;
+```
+
+**All values should match the column names!** If any don't match, see detailed checks below.
+
+---
+
+### Detailed Verification Queries
+
+If the quick check shows issues, run these individual queries to debug:
+
+#### 1. Check Tables Exist
+```sql
+SELECT table_name
+FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY table_name;
+```
+✅ **Expected**: Should show `profiles` and `thoughts`
 
--- Check RLS is enabled
-SELECT schemaname, tablename, rowsecurity
+#### 2. Check All Columns in Thoughts Table
+```sql
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'thoughts' AND table_schema = 'public'
+ORDER BY ordinal_position;
+```
+✅ **Expected**: 18 columns including `block_number` and `nft_metadata`
+
+#### 3. Check RLS is Enabled
+```sql
+SELECT tablename, rowsecurity
 FROM pg_tables
-WHERE schemaname = 'public';
-
--- Check indexes
-SELECT tablename, indexname FROM pg_indexes
 WHERE schemaname = 'public'
-ORDER BY tablename, indexname;
+AND tablename IN ('profiles', 'thoughts');
+```
+✅ **Expected**: Both should show `rowsecurity = true`
 
--- Check functions
-SELECT routine_name FROM information_schema.routines
+#### 4. Check RLS Policies
+```sql
+SELECT schemaname, tablename, policyname, cmd
+FROM pg_policies
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;
+```
+✅ **Expected**: 7 policies total (3 for profiles, 4 for thoughts)
+
+#### 5. Check Functions Exist
+```sql
+SELECT routine_name, routine_type
+FROM information_schema.routines
 WHERE routine_schema = 'public'
 ORDER BY routine_name;
 ```
+✅ **Expected**: 4 functions:
+- `cleanup_expired_thoughts`
+- `handle_new_user`
+- `update_thought_after_mint`
+- `update_updated_at_column`
 
-### Test CRUD Operations
+#### 6. Check update_thought_after_mint Has block_number Parameter
+```sql
+SELECT
+    r.routine_name,
+    p.parameter_name,
+    p.data_type,
+    p.parameter_default
+FROM information_schema.routines r
+LEFT JOIN information_schema.parameters p
+    ON r.specific_name = p.specific_name
+WHERE r.routine_schema = 'public'
+    AND r.routine_name = 'update_thought_after_mint'
+ORDER BY p.ordinal_position;
+```
+✅ **Expected**: 6 parameters including `p_block_number` (text)
 
-After setting up Web3 auth and connecting with your wallet:
+#### 7. Check Triggers
+```sql
+SELECT trigger_name, event_object_table, event_manipulation
+FROM information_schema.triggers
+WHERE trigger_schema = 'public'
+ORDER BY trigger_name;
+```
+✅ **Expected**: 3 triggers:
+- `auto_create_user_profile` on thoughts (INSERT)
+- `update_profiles_updated_at` on profiles (UPDATE)
+- `update_thoughts_updated_at` on thoughts (UPDATE)
+
+#### 8. Check Indexes
+```sql
+SELECT tablename, indexname
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
+```
+✅ **Expected**: At least 8 indexes with names like `idx_thoughts_*`, `idx_profiles_*`
+
+#### 9. Check Cron Extension & Job
+```sql
+-- Check if pg_cron extension exists
+SELECT extname, extversion
+FROM pg_extension
+WHERE extname = 'pg_cron';
+```
+✅ **Expected**: Should show `pg_cron` with a version number
 
 ```sql
--- Insert test thought (via authenticated user)
-INSERT INTO public.thoughts (wallet_address, text, mood)
-VALUES ('0x742d35cc6634c0532925a3b844bc9e7595f0beb', 'Test thought', '😊');
-
--- Query should return only your thoughts
-SELECT * FROM public.thoughts;
+-- Check if cleanup job is scheduled
+SELECT jobid, schedule, command, active, jobname
+FROM cron.job
+WHERE jobname = 'cleanup-expired-thoughts';
 ```
+✅ **Expected**: 1 row with schedule `0 2 * * *`
+
+#### 10. Test Cleanup Function
+```sql
+-- This should run without errors and return 0 (no expired thoughts yet)
+SELECT cleanup_expired_thoughts() as deleted_count;
+```
+✅ **Expected**: Returns `0` (no errors)
+
+---
+
+### ⚠️ Why You Can't Test CRUD Operations Yet
+
+You **cannot** test INSERT/SELECT operations in SQL Editor because:
+
+1. RLS requires authentication via `auth.uid()`
+2. SQL Editor runs queries as an anonymous user
+3. `auth.uid()` returns `NULL` in SQL Editor
+4. This triggers the "null value in column id" error
+
+**This is expected and correct!** It proves your RLS is working.
+
+**CRUD testing happens via the frontend** after you:
+1. ✅ Complete all verification checks above
+2. ✅ Enable Web3 authentication in Supabase
+3. ✅ Set up frontend environment variables
+4. ✅ Connect wallet and authenticate
 
 ---
 
@@ -591,12 +734,99 @@ AND expires_at < NOW();
 
 ---
 
-## Next Steps
+## When to Move to Frontend/Backend Setup
 
-- **Frontend Setup**: See [GETTING_STARTED.md](GETTING_STARTED.md)
-- **Deployment**: See [DEPLOYMENT.md](DEPLOYMENT.md)
-- **Development**: See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+### ✅ Database Setup Complete - You Can Move On When:
+
+1. **All verification queries pass** (see [Verification](#verification) section above)
+2. **Cron job is scheduled** and shows in `cron.job` table
+3. **Web3 authentication enabled** in Supabase dashboard (Authentication → Providers → Web3)
+4. **Cleanup function tested** without errors
+
+### 🚫 Do NOT Move On If:
+
+- Missing tables, functions, triggers, or indexes
+- RLS not enabled on both tables
+- Cron job not scheduled (expired thoughts won't auto-delete!)
+- `block_number` column or parameter missing
+- Any verification query fails
+
+### ⚠️ Common Mistake
+
+**Don't try to test CRUD operations in SQL Editor!** They will fail with "null value in column id" error. This is expected - RLS requires Web3 authentication which only works via the frontend.
 
 ---
 
-**Questions?** Check [CLAUDE.md](../CLAUDE.md) for project context.
+## Next Steps
+
+Once all verification checks pass, proceed in this order:
+
+### 1. Frontend Setup (Required)
+
+Set up your local development environment:
+
+1. **Clone the repository** (if not already done):
+   ```bash
+   git clone <repository-url>
+   cd MintMyMood
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Create `.env` file** in project root:
+   ```bash
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key-here
+   VITE_WALLETCONNECT_PROJECT_ID=your-walletconnect-id
+   VITE_ENVIRONMENT=development
+   ```
+
+4. **Start development server**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Test the full flow**:
+   - Connect wallet (MetaMask, Rabby, etc.)
+   - Write a thought
+   - Select mood
+   - Mint it on-chain
+   - View in gallery
+
+See [QUICK_START.md](QUICK_START.md) for detailed setup instructions.
+
+### 2. Smart Contract Setup (Optional - Already Deployed)
+
+Contracts are already deployed on testnets. Only needed if:
+- You want to deploy to new chains
+- You need to upgrade contracts
+- You're developing contract features
+
+See [CONTRACT_GUIDE.md](CONTRACT_GUIDE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### 3. Production Deployment (After Testing)
+
+Once you've tested locally:
+
+1. **Deploy frontend** to Vercel/Netlify
+2. **Update environment variables** for production
+3. **Test on testnet** with real wallets
+4. **Monitor cron job** execution in Supabase
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for production deployment guide.
+
+---
+
+## Additional Resources
+
+- **Architecture & Development**: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
+- **Smart Contracts**: [CONTRACT_GUIDE.md](CONTRACT_GUIDE.md)
+- **Project Context**: [CLAUDE.md](../CLAUDE.md)
+- **Quick 5-minute Setup**: [QUICK_START.md](QUICK_START.md)
+
+---
+
+**Questions or Issues?** Check the [Troubleshooting](#troubleshooting) section above or review [CLAUDE.md](../CLAUDE.md) for project context.
