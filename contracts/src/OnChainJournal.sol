@@ -170,8 +170,9 @@ contract OnChainJournal is
 
         // Mint the NFT
         uint256 tokenId = _nextTokenId++;
-        _safeMint(msg.sender, tokenId);
 
+        // IMPORTANT: Write state BEFORE external call (_safeMint) to follow CEI pattern
+        // This ensures onERC721Received callbacks can safely read token data
         journalEntries[tokenId] = JournalEntry({
             text: _text,
             mood: _mood,
@@ -181,6 +182,8 @@ contract OnChainJournal is
             originChainId: block.chainid,
             styleId: _styleId
         });
+
+        _safeMint(msg.sender, tokenId);
 
         emit EntryMinted(tokenId, msg.sender, _mood, block.timestamp, _styleId);
     }
@@ -678,6 +681,18 @@ contract OnChainJournal is
      * @return Version string
      */
     function version() external pure returns (string memory) {
-        return "2.5.2";
+        return "2.5.3";
     }
+
+    // ============================================
+    // STORAGE GAP
+    // ============================================
+
+    /**
+     * @dev Storage gap to prevent storage collisions in future upgrades.
+     * This reserves 50 storage slots for future state variables.
+     * If you add new state variables, reduce this gap accordingly.
+     * See: https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[50] private __gap;
 }

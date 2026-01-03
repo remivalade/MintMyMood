@@ -200,6 +200,32 @@ export const bob = defineChain({
   testnet: false,
 });
 
+export const ink = defineChain({
+  id: 57073, // Ink mainnet chain ID
+  name: 'Ink',
+  network: 'ink',
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://rpc-gel.inkonchain.com'],
+    },
+    public: {
+      http: ['https://rpc-gel.inkonchain.com'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Ink Explorer',
+      url: 'https://explorer.inkonchain.com',
+    },
+  },
+  testnet: false,
+});
+
 // =====================================================
 // CHAIN METADATA
 // =====================================================
@@ -423,6 +449,30 @@ export const CHAIN_METADATA: Record<number, ChainMetadata> = {
       },
     },
   },
+
+  // Ink Mainnet
+  [ink.id]: {
+    chainId: ink.id,
+    name: 'Ink',
+    shortName: 'Ink',
+    isTestnet: false,
+    layerZeroEndpointId: 0, // TODO: Update with actual LZ endpoint
+    colors: {
+      from: '#5848d5',
+      to: '#0d0c52',
+    },
+    chainColor: '#5848d5',
+    background: 'linear-gradient(135deg, #f0edff 0%, #ddd6ff 50%, #bfb3ff 100%)',
+    textColor: '#1a0f4d',
+    secondaryColor: '#5848d5',
+    fontFamily: 'var(--font-sans)',
+    blockExplorers: {
+      default: {
+        name: 'Ink Explorer',
+        url: 'https://explorer.inkonchain.com',
+      },
+    },
+  },
 };
 
 // =====================================================
@@ -453,7 +503,7 @@ export function getLayerZeroEndpointId(chainId: number): number | undefined {
 export const TESTNET_CHAINS = [baseSepolia, bobSepolia, inkSepolia, megaethSepolia, hyperliquidSepolia] as const;
 
 // Export mainnet chains for production
-export const MAINNET_CHAINS = [base, bob] as const;
+export const MAINNET_CHAINS = [base, bob, ink] as const;
 
 // Export all chains
 export const ALL_CHAINS = [...TESTNET_CHAINS, ...MAINNET_CHAINS] as const;

@@ -10,12 +10,11 @@ Complete guide for deploying MintMyMood to production.
 2. [Hosting Stack](#hosting-stack)
 3. [Database Setup (Supabase)](#database-setup-supabase)
 4. [Frontend Deployment (Vercel)](#frontend-deployment-vercel)
-5. [Backend Deployment (Hostinger VPS)](#backend-deployment-hostinger-vps)
-6. [Smart Contract Deployment](#smart-contract-deployment)
-7. [Contract Addresses](#contract-addresses)
-8. [Post-Deployment Checklist](#post-deployment-checklist)
-9. [Upgrading Contracts](#upgrading-contracts)
-10. [Troubleshooting](#troubleshooting)
+5. [Smart Contract Deployment](#smart-contract-deployment)
+6. [Contract Addresses](#contract-addresses)
+7. [Post-Deployment Checklist](#post-deployment-checklist)
+8. [Upgrading Contracts](#upgrading-contracts)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -26,9 +25,10 @@ MintMyMood consists of three deployment components:
 | Component | Platform | Cost |
 |-----------|----------|------|
 | **Frontend** | Vercel (Hobby) | $0 |
-| **Backend API** | Hostinger VPS | ~$5/month |
-| **Database** | Supabase | $0 (free tier) |
+| **Database + Auth** | Supabase | $0 (free tier) |
 | **Smart Contracts** | Base, Bob, Ink | One-time gas fees |
+
+**Note**: MintMyMood uses Supabase as its backend (database + authentication + RLS). No separate backend API server is needed.
 
 ---
 
@@ -37,20 +37,24 @@ MintMyMood consists of three deployment components:
 ### Why This Stack?
 
 - **Vercel**: Free tier with 100GB bandwidth, global CDN, auto-deploy on git push, custom domain support
-- **Hostinger VPS**: Always-on Node.js (no cold starts), ~$5/month for 4GB RAM, full control
-- **Supabase**: Managed PostgreSQL with RLS, generous free tier
+- **Supabase**: Managed PostgreSQL with RLS, Web3 authentication, generous free tier, built-in REST API
 
 ### Architecture
 
 ```
-Users → Vercel (yourdomain.com) → Frontend (React)
-                ↓
-        Hostinger VPS (api.yourdomain.com) → Backend (Express.js)
-                ↓
-        Supabase → Database (PostgreSQL)
-                ↓
-        Base/Bob/Ink → Smart Contracts (ERC721)
+Users → Vercel (yourdomain.com)
+          ↓
+       [Frontend: React + Vite]
+          ↓
+       Supabase (Database + Auth + RLS)
+          ↓
+       Base/Bob/Ink → Smart Contracts (ERC721)
 ```
+
+**No backend API server needed!** The frontend connects directly to:
+- Supabase for database operations (via `@supabase/supabase-js`)
+- Smart contracts for minting (via `wagmi` + `viem`)
+- RPC providers for blockchain reads
 
 ---
 
@@ -99,15 +103,39 @@ Users → Vercel (yourdomain.com) → Frontend (React)
 
 2. **Configure Environment Variables**
 
-   In Vercel Dashboard → Settings → Environment Variables:
+   In Vercel Dashboard → Settings → Environment Variables, add these for **Production** environment:
 
+   **Supabase (Database + Auth):**
    ```
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=sb_publishable_your-key-here
-   VITE_WALLETCONNECT_PROJECT_ID=your-project-id
-   VITE_BACKEND_URL=https://api.yourdomain.com
+   VITE_SUPABASE_URL=https://hkzvnpksjpxfsyiqyhpk.supabase.co
+   VITE_SUPABASE_ANON_KEY=sb_publishable_kF1DBfUdwEcFBENzWbXNOQ_nolka5Ns
+   ```
+
+   **WalletConnect:**
+   ```
+   VITE_WALLETCONNECT_PROJECT_ID=35f80388c61eb9c22772f2c64bc0d7da
+   ```
+
+   **Environment:**
+   ```
    VITE_ENVIRONMENT=production
    ```
+
+   **Contract Addresses - Testnets:**
+   ```
+   VITE_JOURNAL_PROXY_BASE_SEPOLIA=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
+   VITE_JOURNAL_PROXY_BOB_SEPOLIA=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
+   VITE_JOURNAL_PROXY_INK_SEPOLIA=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
+   ```
+
+   **Contract Addresses - Mainnets (V2.5.3):**
+   ```
+   VITE_JOURNAL_PROXY_BASE=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
+   VITE_JOURNAL_PROXY_BOB=0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8
+   VITE_JOURNAL_PROXY_INK=0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B
+   ```
+
+   **Note:** Set these same variables for "Preview" environment if you want preview deployments to work.
 
 3. **Custom Domain**
    - Settings → Domains → Add `yourdomain.com`
@@ -119,145 +147,6 @@ Users → Vercel (yourdomain.com) → Frontend (React)
 - **Production**: Auto-deploys on push to `main`
 - **Preview**: Auto-deploys on PR (unique URL per PR)
 - **Manual**: `vercel --prod` from CLI
-
----
-
-## Backend Deployment (Hostinger VPS)
-
-### VPS Requirements
-
-- **Plan**: KVM 1 or higher (4GB RAM, 1 vCPU)
-- **OS**: Ubuntu 22.04 or 24.04
-- **Location**: EU or US (based on audience)
-
-### Initial Server Setup
-
-```bash
-# SSH into VPS
-ssh root@your-vps-ip
-
-# Update system
-apt update && apt upgrade -y
-
-# Install Node.js 20.x
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
-
-# Install PM2 globally
-npm install -g pm2
-
-# Install Certbot for SSL
-apt install -y certbot
-```
-
-### Deploy Backend
-
-```bash
-# Create app directory
-mkdir -p /var/www/mintmymood-api
-cd /var/www/mintmymood-api
-
-# Clone or copy backend files
-# Option A: Git clone
-git clone https://github.com/your-repo.git .
-cd backend/api
-
-# Option B: SCP from local
-# scp -r backend/api/* root@your-vps-ip:/var/www/mintmymood-api/
-
-# Install dependencies
-npm install --production
-
-# Create environment file
-cat > .env << 'EOF'
-PORT=3001
-FRONTEND_URL=https://yourdomain.com
-JWT_SECRET=your-secure-jwt-secret-min-32-chars
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_your-key-here
-EOF
-
-# Start with PM2
-pm2 start server.js --name mintmymood-api
-pm2 save
-pm2 startup  # Follow instructions to enable auto-start
-```
-
-### SSL with Let's Encrypt
-
-```bash
-# Point api.yourdomain.com to VPS IP first (A record in DNS)
-
-# Get SSL certificate
-certbot certonly --standalone -d api.yourdomain.com
-
-# Certificates stored at:
-# /etc/letsencrypt/live/api.yourdomain.com/fullchain.pem
-# /etc/letsencrypt/live/api.yourdomain.com/privkey.pem
-
-# Auto-renewal (already configured by certbot)
-certbot renew --dry-run  # Test renewal
-```
-
-### Update Backend for HTTPS
-
-Update `backend/api/server.js` to use HTTPS:
-
-```javascript
-const https = require('https');
-const fs = require('fs');
-
-const options = {
-  key: fs.readFileSync('/etc/letsencrypt/live/api.yourdomain.com/privkey.pem'),
-  cert: fs.readFileSync('/etc/letsencrypt/live/api.yourdomain.com/fullchain.pem')
-};
-
-https.createServer(options, app).listen(443, () => {
-  console.log('HTTPS Server running on port 443');
-});
-```
-
-Or use **Nginx as reverse proxy** (recommended):
-
-```bash
-apt install -y nginx
-
-cat > /etc/nginx/sites-available/mintmymood-api << 'EOF'
-server {
-    listen 80;
-    server_name api.yourdomain.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name api.yourdomain.com;
-
-    ssl_certificate /etc/letsencrypt/live/api.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.yourdomain.com/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-EOF
-
-ln -s /etc/nginx/sites-available/mintmymood-api /etc/nginx/sites-enabled/
-nginx -t && systemctl restart nginx
-```
-
-### Verify Backend
-
-```bash
-curl https://api.yourdomain.com/health
-# Should return: {"status":"ok"}
-```
 
 ---
 
@@ -356,19 +245,49 @@ export const CONTRACT_ADDRESSES = {
 
 ## Contract Addresses
 
-### Current Deployments (V2.4.0)
+### Current Deployments (V2.5.3) ✅ PRODUCTION READY
+
+**Testnets:**
 
 | Network | Chain ID | Proxy Address | Explorer |
 |---------|----------|---------------|----------|
-| **Base Sepolia** | 84532 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Basescan](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
-| **Bob Testnet** | 808813 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Bob Explorer](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
-| **Ink Sepolia** | 763373 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Ink Explorer](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
-| **Base Mainnet** | 8453 | TBD | - |
-| **Bob Mainnet** | 60808 | TBD | - |
+| **Base Sepolia** | 84532 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Basescan ↗](https://sepolia.basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
+| **Bob Testnet** | 808813 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Bob Explorer ↗](https://testnet.explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
+| **Ink Sepolia** | 763373 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Ink Explorer ↗](https://explorer-sepolia.inkonchain.com/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
+
+**Mainnets (LIVE):**
+
+| Network | Chain ID | Proxy Address | Explorer |
+|---------|----------|---------------|----------|
+| **Base Mainnet** | 8453 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Basescan ↗](https://basescan.org/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
+| **Bob Mainnet** | 60808 | `0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8` | [Bob Explorer ↗](https://explorer.gobob.xyz/address/0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8) |
+| **Ink Mainnet** | 57073 | `0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B` | [Ink Explorer ↗](https://explorer.inkonchain.com/address/0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B) |
+
+### Frontend Config
+
+Update `src/contracts/config.ts` with these addresses:
+
+```typescript
+export const CONTRACT_ADDRESSES = {
+  // Testnets
+  84532: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',   // Base Sepolia
+  808813: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',  // Bob Testnet
+  763373: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',  // Ink Sepolia
+
+  // Mainnets (PRODUCTION)
+  8453: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',    // Base Mainnet
+  60808: '0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8',   // Bob Mainnet
+  57073: '0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B',   // Ink Mainnet
+};
+```
 
 ### Version History
 
-- **V2.4.0**: Simplified minting (2 params), gas optimized (current)
+- **V2.5.3** (Jan 3, 2026): Critical security fixes - CEI pattern + storage gap (current)
+- **V2.5.2**: SVG optimization with shortened chain IDs
+- **V2.5.1**: Native text wrapping with `<tspan>` elements
+- **V2.5.0**: Chain-specific styles (Ink waves, Base/Bob gradients)
+- **V2.4.0**: Simplified minting (2 params), gas optimized
 - **V2.3.0**: Added ENS truncation
 - **V2.2.0**: Added `updateChainName()`
 - **V2.1.0**: Fixed Unicode checkmark
@@ -394,12 +313,6 @@ export const CONTRACT_ADDRESSES = {
 - [ ] SSL working (automatic)
 - [ ] All pages load without errors
 - [ ] Wallet connection works
-
-### Backend (Hostinger VPS)
-- [ ] PM2 running and auto-start enabled
-- [ ] SSL certificate installed
-- [ ] CORS configured for frontend domain
-- [ ] Health endpoint responding
 
 ### Smart Contracts
 - [ ] Deployed to target chains
@@ -450,26 +363,23 @@ Use multisig (Gnosis Safe) for mainnet upgrades:
 
 ## Troubleshooting
 
-### CORS Error
-Update `backend/api/server.js`:
-```javascript
-app.use(cors({
-  origin: 'https://yourdomain.com',
-  credentials: true
-}));
-```
+### Supabase Connection Issues
+1. **Check environment variables** in Vercel:
+   - `VITE_SUPABASE_URL` should be your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` should be your anon/publishable key
+2. **Verify Web3 auth is enabled** in Supabase Dashboard → Authentication → Providers
+3. **Check browser console** for specific Supabase errors
+4. **Test Supabase directly**:
+   ```bash
+   curl https://your-project.supabase.co/rest/v1/ \
+     -H "apikey: your-anon-key"
+   ```
 
-### Backend Not Starting
-```bash
-pm2 logs mintmymood-api  # Check logs
-pm2 restart mintmymood-api
-```
-
-### SSL Certificate Issues
-```bash
-certbot renew --force-renewal
-systemctl restart nginx
-```
+### Wallet Connection Issues
+1. **Check RainbowKit configuration** in `src/main.tsx`
+2. **Verify VITE_WALLETCONNECT_PROJECT_ID** is set in Vercel
+3. **Test with different wallets** (MetaMask, Rabby, Coinbase Wallet)
+4. **Check browser console** for wallet-specific errors
 
 ### Contract Verification Failed
 ```bash
@@ -479,10 +389,11 @@ forge verify-contract <ADDRESS> \
   --etherscan-api-key $BASESCAN_API_KEY
 ```
 
-### Frontend Can't Connect
-1. Check `VITE_BACKEND_URL` in Vercel env vars
-2. Verify backend is accessible: `curl https://api.yourdomain.com/health`
-3. Check browser console for specific errors
+### Minting Fails
+1. **Check user has enough ETH** for gas on the target chain
+2. **Verify contract address** in `src/contracts/config.ts` matches deployed proxy
+3. **Check transaction in block explorer** for specific error message
+4. **Ensure wallet is connected** to the correct chain
 
 ---
 
@@ -491,13 +402,15 @@ forge verify-contract <ADDRESS> \
 | Item | Cost |
 |------|------|
 | Vercel (Hobby) | $0/month |
-| Hostinger VPS (12 months) | ~$5/month |
 | Supabase (Free tier) | $0/month |
 | Domain (if needed) | ~$10/year |
-| **Total** | **~$5/month** |
+| **Total** | **$0/month** (+ domain if needed) |
 
-Contract deployment gas (testnet): Free
-Contract deployment gas (mainnet): ~$50-150 one-time
+**Contract deployment gas:**
+- Testnet (Base Sepolia, Bob Testnet, Ink Sepolia): Free (faucet ETH)
+- Mainnet (Base, Bob): ~$20-50 one-time per chain
+
+**Note:** No VPS or backend server needed! Everything runs on free tiers.
 
 ---
 

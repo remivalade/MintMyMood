@@ -13,12 +13,13 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
  *   2. Deploy to Anvil (local): forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal --rpc-url anvil --broadcast
  *   3. Deploy to testnet: forge script script/DeployOnChainJournal.s.sol:DeployOnChainJournal --rpc-url base_sepolia --broadcast --verify
  *
- * V1 Scope: Base and Bob only (single-chain NFTs)
+ * V1 Scope: Base, Bob, and Ink (single-chain NFTs)
  * V2 will add: Cross-chain bridging via LayerZero ONFT
  *
  * Chain-specific configurations:
+ * - Base: Blue (#0052FF)
  * - Bob: Orange gradient (#FF6B35 → #F7931E)
- * - Base: Blue (#0052FF → #0052FF)
+ * - Ink: Purple (#5848d5 → #0d0c52)
  */
 contract DeployOnChainJournal is Script {
     // Chain-specific color configurations
@@ -121,6 +122,12 @@ contract DeployOnChainJournal is Script {
         }
         // Ink Sepolia (763373)
         else if (chainId == 763373) {
+            config.color1 = "#5848d5";
+            config.color2 = "#0d0c52";
+            config.name = "Ink";
+        }
+        // Ink Mainnet (57073)
+        else if (chainId == 57073) {
             config.color1 = "#5848d5";
             config.color2 = "#0d0c52";
             config.name = "Ink";

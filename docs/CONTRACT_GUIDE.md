@@ -21,19 +21,21 @@ This guide covers the deployment, testing, and management of the On-Chain Journa
 
 The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that stores journal entries entirely on-chain as SVG images. Each deployment is chain-specific with hardcoded gradient colors.
 
-### Key Features - V2.4.0
+### Key Features - V2.5.3
 
 - **UUPS Upgradeable**: Allows contract logic upgrades while preserving state
 - **On-chain SVG**: Fully on-chain (no IPFS or external storage)
 - **Chain-specific gradients**: Each chain deployment has unique colors (Base, Bob, & Ink)
 - **Advanced SVG Features**:
   - Grain texture with feTurbulence filter
-
   - Drop shadows and blend modes
-  - ForeignObject for text wrapping
+  - Native SVG text wrapping with `<tspan>` elements
 - **Input validation**: 400 byte text limit, 64 byte mood limit
 - **XML escaping**: Security against injection attacks
-- **Gas efficient**: Optimized gas costs (~170k for basic mint, ~30% reduction from V2.3.0)
+- **Gas efficient**: Optimized gas costs (~214k for basic mint)
+- **Security hardened** (V2.5.3):
+  - ✅ Checks-Effects-Interactions pattern enforced in `mintEntry()`
+  - ✅ Storage gap (50 slots) to prevent storage collisions in future upgrades
 
 ### What's NOT in V1
 
@@ -76,16 +78,18 @@ The On-Chain Journal contract is a UUPS upgradeable ERC721 NFT contract that sto
 - Same token ID across chains
 - Unified cross-chain gallery
 
-### Contract Addresses - V2.4.0
+### Contract Addresses - V2.5.3
 
-| Network | Chain ID | Proxy Address | Implementation |
-|---------|----------|---------------|----------------|
-| Base Sepolia | 84532 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0xe6297d7932c11d29c6f07598a33cbedd72714548 |
-| Bob Testnet | 808813 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x4d80dff7c4781d89ac40a0c81928ef3ecc139e65 |
-| Ink Sepolia | 763373 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x7883add112f18fdd7fd02d10c5914368dae7c8ef |
-| Base Mainnet | 8453 | TBD | TBD |
-| Bob Mainnet | 60808 | TBD | TBD |
-| Ink Mainnet | TBD | TBD | TBD |
+| Network | Chain ID | Proxy Address | Implementation (V2.5.3) |
+|---------|----------|---------------|-------------------------|
+| **Testnets** ||||
+| Base Sepolia | 84532 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x5b8a81ccC987c06849408778b85524e4aF02A496 |
+| Bob Testnet | 808813 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0xa35eAbf6320b95B48017ABd1f1A90aa3FBC12ee7 |
+| Ink Sepolia | 763373 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x069E356F9FaF3a10c50F991303c5AcDbB70a5df5 |
+| **Mainnets** ||||
+| Base Mainnet | 8453 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x9331532548eE79bE848125b83Ca387753A4B5Ce6 |
+| Bob Mainnet | 60808 | 0xC2De374bb678bD1491B53AaF909F3fd8073f9ec8 | 0x9331532548eE79bE848125b83Ca387753A4B5Ce6 |
+| Ink Mainnet | 57073 | 0xd2e8cb55cb91EC7d111eA187415f309Ba5DaBE8B | 0xceC072B04bF99517f12a86E8b19eb1e6AAf8b0eF |
 
 ---
 
@@ -528,6 +532,22 @@ forge verify-contract <PROXY_ADDRESS> \
 
 ## Security Considerations
 
+### V2.5.3 Security Improvements ✅
+
+**Critical Fixes Implemented:**
+
+1. **Checks-Effects-Interactions Pattern Enforced**
+   - **Issue Fixed**: `mintEntry()` previously called `_safeMint()` before writing `journalEntries[tokenId]`
+   - **Impact**: If receiver contract called `tokenURI()` in `onERC721Received` callback, it would read empty data
+   - **Fix**: State is now updated BEFORE `_safeMint()` call (lines 176-184 in OnChainJournal.sol)
+   - **Benefit**: Ensures composability with marketplaces, indexers, and DeFi protocols
+
+2. **Storage Gap Added for Upgrade Safety**
+   - **Issue Fixed**: No storage gap existed, risking storage collisions in future upgrades
+   - **Impact**: Adding new state variables could corrupt existing NFT data
+   - **Fix**: Added `uint256[50] private __gap;` at end of contract (line 697)
+   - **Benefit**: Reserves 50 storage slots for future upgrades without breaking existing data
+
 ### Input Validation
 
 - Text limited to 400 bytes (prevents gas griefing)
@@ -545,6 +565,7 @@ forge verify-contract <PROXY_ADDRESS> \
 - UUPS pattern requires implementation to authorize upgrades
 - Owner must call `upgradeToAndCall()`
 - Cannot be upgraded by proxy storage manipulation
+- Storage gap protects against storage collisions
 
 ### XML/SVG Security
 
@@ -687,6 +708,12 @@ uint256 public constant MAX_MOOD_LENGTH = 64;
 
 ---
 
-**Last Updated:** November 14, 2025
-**Contract Version:** V2.5.0
+**Last Updated:** January 3, 2026
+**Contract Version:** V2.5.3 (Critical Security Release)
 **Foundry Version:** 1.4.1-stable
+
+### V2.5.3 Changelog (January 3, 2026)
+- ✅ Fixed Checks-Effects-Interactions violation in `mintEntry()`
+- ✅ Added storage gap (50 slots) for upgrade safety
+- ✅ Deployed to all testnets and mainnets
+- ✅ All 25 tests passing

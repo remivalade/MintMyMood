@@ -23,9 +23,10 @@ remappings = [
 [rpc_endpoints]
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 bob_sepolia = "${BOB_SEPOLIA_RPC_URL}"
-base = "${BASE_MAINNET_RPC_URL}"
-bob = "${BOB_MAINNET_RPC_URL}"
 ink_sepolia = "${INK_SEPOLIA_RPC_URL}"
+base = "${BASE_RPC_URL}"
+bob = "${BOB_RPC_URL}"
+ink = "${INK_RPC_URL}"
 megaeth_testnet = "${MEGAETH_TESTNET_RPC_URL}"
 hyperliquid_testnet = "${HYPERLIQUID_TESTNET_RPC_URL}"
 anvil = "http://127.0.0.1:8545"
@@ -34,8 +35,10 @@ anvil = "http://127.0.0.1:8545"
 [etherscan]
 base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }
 base = { key = "${BASESCAN_API_KEY}", url = "https://api.basescan.org/api" }
-# Bob uses Blockscout - API key may not be required for verification
-bob_sepolia = { key = "${BLOCKSCOUT_API_KEY}", url = "https://bob-sepolia.explorer.gobob.xyz/api" }
-bob = { key = "${BLOCKSCOUT_API_KEY}", url = "https://explorer.gobob.xyz/api" }
+# Bob and Ink use Blockscout - API key not required for verification
+bob_sepolia = { key = "dummy", url = "https://bob-sepolia.explorer.gobob.xyz/api" }
+bob = { key = "dummy", url = "https://explorer.gobob.xyz/api" }
+ink_sepolia = { key = "dummy", url = "https://explorer-sepolia.inkonchain.com/api" }
+ink = { key = "dummy", url = "https://explorer.inkonchain.com/api" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
